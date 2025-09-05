@@ -1,3 +1,33 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* 1) Global reset first */
+@import url("https://fonts.googleapis.com/css2?family=Poppins&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box; /* optional; Tailwind Preflight also handles this */
+}
+
+/* 2) Tailwind after reset */
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Base layer: fonts, element-level defaults */
+@layer base {
+  html {
+    font-family: "Poppins", sans-serif;
+    font-style: normal;
+  }
+}
+
+/* Components layer: reusable classes built from utilities */
+@layer components {
+  .iconOutline {
+    @apply flex items-center justify-center;
+  }
+}
+
+/* Plain CSS classes that don’t map cleanly to utilities */
+.clip-diagonal {
+  clip-path: polygon(40% 0, 100% 0, 100% 100%, 0 100%);
+}
