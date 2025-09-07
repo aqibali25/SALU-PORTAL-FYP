@@ -194,7 +194,6 @@ export default function ListUsers() {
 
   const chevron = (key) =>
     sort.key === key ? (sort.dir === "asc" ? "▲" : "▼") : "";
-
   return (
     <div
       className="sm:!px-[40px] md:!px-[80px] !px-5 !py-[20px] min-h-[calc(100vh-90px)] w-[100%] bg-white dark:bg-gray-900"
@@ -276,7 +275,7 @@ export default function ListUsers() {
                 rows.map((user) => (
                   <tr
                     key={user.id}
-                    className="flex justify-start !p-3 !px-10 items-center w-full border-b border-gray-300 dark:border-gray-700 dark:hover:bg-gray-800 transition"
+                    className="flex justify-start !p-3 !px-10 items-center w-full border-b border-gray-300 dark:border-gray-700 dark:hover:bg-gray-800 transition hover:bg-gray-100 "
                   >
                     <td className="px-6 py-3 text-left text-md font-medium tracking-wider w-[25%] text-gray-900 dark:text-gray-100">
                       {user.username}

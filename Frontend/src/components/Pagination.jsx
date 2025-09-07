@@ -60,18 +60,17 @@ export default function Pagination({
   const canPrev = currentPage > 1;
   const canNext = currentPage < totalPages;
 
-  // Base button: gray-900 in light, white in dark
+  // Now includes cursor-pointer
   const baseBtn =
-    "min-w-[36px] h-9 px-2 inline-flex items-center justify-center rounded-md " +
-    "text-[15px] font-medium text-gray-900 dark:text-white " +
+    "min-w-[36px] h-9 px-2 inline-flex items-center justify-center rounded-md cursor-pointer " +
+    "text-[15px] font-medium text-[#FC00B3] dark:text-[#FC00B3] " +
     "hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors " +
-    "focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300";
+    "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FC00B3]/30";
 
-  // Active page: #D5BBE0 background, text matches theme
   const activeBtn =
-    "bg-[#f5f5f5] text-gray-900 dark:text-white ring-2 ring-[#CA4DFF]/70";
+    "bg-[#f5f5f5] text-[#FC00B3] dark:text-[#FC00B3] ring-2 ring-[#FC00B3]/70";
 
-  // Nav chevrons use the same text color as base (so arrows match text color)
+  // navBtn inherits baseBtn (also cursor-pointer)
   const navBtn = baseBtn;
 
   const disabled = "opacity-40 pointer-events-none";
@@ -96,7 +95,7 @@ export default function Pagination({
         p === DOTS ? (
           <span
             key={`dots-${idx}`}
-            className="px-2 text-gray-900 dark:text-white opacity-60"
+            className="px-2 text-[#FC00B3] dark:text-[#FC00B3]"
             aria-hidden="true"
           >
             …
