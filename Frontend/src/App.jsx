@@ -4,7 +4,7 @@ import Navbar from "./components/navbar/Navbar";
 import { Routes, Route } from "react-router-dom";
 import AddUser from "./components/AddUser/AddUser";
 import Profile from "./components/profile/Profile";
-import Sittings from "./components/sittings/Sittings";
+import Settings from "./components/settings/Settings";
 
 function App() {
   return (
@@ -14,7 +14,7 @@ function App() {
         <Route path="/SALU-PORTAL-FYP/" element={<Home />} />
         <Route path="/SALU-PORTAL-FYP/profile" element={<Profile />} />
         <Route path="/SALU-PORTAL-FYP/adduser" element={<AddUser />} />
-        <Route path="/SALU-PORTAL-FYP/Sittings" element={<Sittings />} />
+        <Route path="/SALU-PORTAL-FYP/Settings" element={<Settings />} />
       </Routes>
     </>
   );

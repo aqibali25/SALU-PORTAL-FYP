@@ -33,13 +33,13 @@ const ThemeToggle = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="relative flex items-center w-[80px] h-[40px] rounded-full px-3 cursor-pointer transition-colors duration-300"
+      className="relative flex items-center w-[70px] h-[35px] !px-1 rounded-full cursor-pointer transition-colors duration-300"
       style={{ backgroundColor: "#374759", justifyContent: "space-around" }}
       aria-label="Toggle Dark Mode"
     >
       {/* Highlight Circle */}
       <span
-        className={`absolute w-[30px] h-[30px] rounded-full bg-gray-100 transition-all duration-300`}
+        className={`absolute w-[28px] h-[28px] rounded-full bg-gray-100 transition-all duration-300`}
         style={{
           left: theme === "dark" ? "calc(100% - 35px)" : "5px",
           zIndex: 1,
@@ -48,13 +48,13 @@ const ThemeToggle = () => {
 
       {/* Icons */}
       <FiSun
-        size={20}
+        size={15}
         className={`z-10 transition-colors duration-300 ${
           theme === "dark" ? "text-gray-300" : "text-yellow-500"
         }`}
       />
       <FiMoon
-        size={20}
+        size={18}
         className={`z-10 transition-colors duration-300 ${
           theme === "dark" ? "text-blue-400" : "text-gray-500"
         }`}

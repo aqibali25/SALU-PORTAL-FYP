@@ -8,65 +8,116 @@ import ThemeToggle from "./ThemeToggle";
 const Navbar = () => {
   return (
     <div
-      className="m-0 flex h-[90px] w-full !pl-4 items-center justify-between overflow-hidden bg-gray-100 dark:bg-gray-800 shadow-[0px_7px_13px_-2px_rgba(0,0,0,0.44)]
+      className="
+        m-0 flex w-full items-center justify-between
+        bg-gray-100 dark:bg-gray-800
+        shadow-[0px_7px_13px_-2px_rgba(0,0,0,0.44)]
+        h-16 sm:h-20 lg:h-24
 
-"
+      [@media(max-width:767px)]:!px-10
+
+        /* When screen is md (>=768px) and above, override it */
+        md:px-3 md:sm:px-4
+      "
     >
-      {/* Left: Logo + Text */}
-      <div className="flex h-full min-w-[500px] w-full items-center gap-2">
+      {/* LEFT: Logo + Text (Shrinks first) */}
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink md:!pl-10 ">
+        {/* Logo */}
         <img
           src={Logo}
           alt="Logo"
-          className="ml-2 mr-2 h-18 w-18 rounded-full"
+          className="ml-1 sm:ml-2 mr-2 rounded-full
+                     h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 lg:h-16 lg:w-16"
         />
 
+        {/* University Text - hidden on very small screens */}
         <Link
           to="/SALU-PORTAL-FYP/"
-          className="no-underline flex flex-col items-center justify-center text-black dark:text-white"
+          className="hidden [@media(min-width:520px)]:flex flex-col items-start justify-center text-black dark:text-white min-w-0"
         >
-          <h1 className="text-center text-[1.4rem] font-semibold uppercase  dark:text-gray-200">
+          <h1
+            className="
+              truncate font-semibold uppercase leading-tight
+              text-[0.72rem] xs:text-[0.8rem] sm:text-[1rem] md:text-[1.3rem] lg:text-[1.6rem]
+            dark:text-gray-200
+            "
+          >
             SHAH ABDUL LATIF UNIVERSITY
           </h1>
 
-          <h2 className="text-center text-[1.4rem] font-semibold uppercase  dark:text-gray-300">
+          <h2
+            className="
+                truncate font-semibold uppercase leading-tight
+                text-[0.72rem] xs:text-[0.8rem] sm:text-[1rem] md:text-[1.3rem] lg:text-[1.6rem]
+
+             dark:text-gray-300
+            "
+          >
             GHOTKI CAMPUS
           </h2>
         </Link>
       </div>
 
-      {/* Right: Gradient Icons Section */}
-      <div className="relative h-[100px] min-w-[300px] w-[60%] overflow-hidden bg-gray-100 dark:bg-gray-800">
+      {/* RIGHT: Action Icons (ALWAYS visible, doesn't shrink) */}
+      <div
+        className="
+          relative h-full flex-none
+          w-auto overflow-visible
+          md:w-[50%]
+        "
+      >
         <div
           className="
-            absolute inset-0 flex items-center justify-end gap-5 !pr-5 text-2xl text-white
-            bg-gradient-to-r from-[#cbb4d4] to-[#d9a7c7]
-            [clip-path:polygon(28%_0,100%_0,100%_100%,0%_100%)]
+            absolute inset-0 flex items-center gap-2 sm:gap-3 md:gap-5
+            justify-end md:!pr-5
+            /* Background behavior */
+            bg-white md:bg-gradient-to-r md:from-[#D5D5D5] md:to-[#CA4DFF]
+            md:[clip-path:polygon(28%_0,100%_0,100%_100%,0%_100%)]
+            text-gray-900 md:text-white
           "
         >
-          {/* Theme toggle shouldn't be wrapped in a Link */}
-          <div>
+          {/* Theme Toggle */}
+          <div className="scale-90 sm:scale-100">
             <ThemeToggle />
           </div>
 
+          {/* Home */}
           <Link
             to="/SALU-PORTAL-FYP/"
-            className="grid h-10 w-10 place-items-center rounded-full bg-white text-gray-900 ring-1 ring-white/40 transition hover:ring-white/60"
+            className="
+              grid h-8 w-8 place-items-center rounded-full
+              bg-white text-gray-900 ring-1 ring-black/10 md:ring-white/40
+              transition hover:ring-black/20 md:hover:ring-white/60
+              shrink-0
+            "
             aria-label="Home"
           >
-            <HiOutlineHome className="h-6 w-6" />
+            <HiOutlineHome className="h-5 w-5" />
           </Link>
 
+          {/* Settings */}
           <Link
-            to="/SALU-PORTAL-FYP/Sittings"
-            className="grid h-10 w-10 place-items-center rounded-full bg-white text-gray-900 ring-1 ring-white/40 transition hover:ring-white/60"
+            to="/SALU-PORTAL-FYP/Settings"
+            className="
+              grid h-8 w-8 place-items-center rounded-full
+              bg-white text-gray-900 ring-1 ring-black/10 md:ring-white/40
+              transition hover:ring-black/20 md:hover:ring-white/60
+              shrink-0
+            "
             aria-label="Settings"
           >
-            <FiSettings className="h-6 w-6" />
+            <FiSettings className="h-5 w-5" />
           </Link>
 
+          {/* Profile */}
           <Link
             to="/SALU-PORTAL-FYP/Profile"
-            className="h-10 w-10 overflow-hidden rounded-full ring-1 ring-white/40 transition hover:ring-white/60"
+            className="
+              h-8 w-8 overflow-hidden rounded-full
+              ring-1 ring-black/10 md:ring-white/40
+              transition hover:ring-black/20 md:hover:ring-white/60
+              shrink-0
+            "
             aria-label="Profile"
           >
             <img
