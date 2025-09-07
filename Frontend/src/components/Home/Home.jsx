@@ -42,7 +42,7 @@ const Home = () => {
         min-h-[calc(100vh-90px)]
         w-full
         bg-white dark:bg-gray-900
-        justify-between
+        justify-start
       "
       style={{
         backgroundImage: `url(${Background})`,

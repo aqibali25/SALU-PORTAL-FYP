@@ -13,18 +13,23 @@ const InputContainer = forwardRef(
       placeholder = "",
       disabled,
       width = "70%",
+      autoComplete, // NEW: allow override
+      spellCheck = false, // reduce browser suggestions
     },
     ref
   ) => {
+    const computedAC =
+      autoComplete ?? (inputType === "password" ? "new-password" : "off"); // default behavior
+
     return (
       <div
         className="
-          flex w-full max-w-[800px]
-          items-start md:items-center justify-start
-          flex-col md:flex-row
-          gap-[8px] md:gap-5
-          [@media(max-width:550px)]:gap-[5px]
-        "
+        flex w-full max-w-[800px]
+        items-start md:items-center justify-start
+        flex-col md:flex-row
+        gap-[8px] md:gap-5
+        [@media(max-width:550px)]:gap-[5px]
+      "
       >
         <label
           htmlFor={htmlFor}
@@ -49,11 +54,17 @@ const InputContainer = forwardRef(
           onChange={onChange}
           placeholder={placeholder}
           disabled={disabled}
+          autoComplete={computedAC}
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={spellCheck}
+          data-1p-ignore // hint for 1Password
+          data-lpignore="true" // hint for LastPass
           className="
             w-full md:w-auto
             [@media(max-width:768px)]:!w-full
             min-w-0 flex-1
-            px-2 py-1
+            !px-2 !py-1
             border-2 border-[#a5a5a5] outline-none
             bg-[#f9f9f9] text-[#2a2a2a]
             dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100
