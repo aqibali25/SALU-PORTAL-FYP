@@ -1,5 +1,5 @@
 import Card from "./Card";
-import { faUserPlus, faCog } from "@fortawesome/free-solid-svg-icons";
+import { faUserPlus, faCog, faUser } from "@fortawesome/free-solid-svg-icons";
 import Background from "../../assets/Background.png";
 
 const Home = () => {
@@ -28,6 +28,15 @@ const Home = () => {
       isImg: false,
       Icon: faCog,
       color1: "#09FDEE",
+      color2: "#f5f5f5",
+    },
+    {
+      id: 4,
+      Heading: "List Users",
+      link: "ListUsers",
+      isImg: false,
+      Icon: faUser,
+      color1: "#E40070",
       color2: "#f5f5f5",
     },
   ];

@@ -5,6 +5,7 @@ import { Routes, Route } from "react-router-dom";
 import AddUser from "./components/AddUser/AddUser";
 import Profile from "./components/profile/Profile";
 import Settings from "./components/settings/Settings";
+import ListUsers from "./components/ListUsers/ListUsers";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/SALU-PORTAL-FYP/" element={<Home />} />
         <Route path="/SALU-PORTAL-FYP/profile" element={<Profile />} />
         <Route path="/SALU-PORTAL-FYP/adduser" element={<AddUser />} />
+        <Route path="/SALU-PORTAL-FYP/ListUsers" element={<ListUsers />} />
         <Route path="/SALU-PORTAL-FYP/Settings" element={<Settings />} />
       </Routes>
     </>
