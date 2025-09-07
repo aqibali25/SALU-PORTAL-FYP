@@ -37,8 +37,8 @@ const Home = () => {
       className="
         flex flex-wrap
         gap-x-6
-        gap-y-0
-        !p-10 !px-20
+        gap-y-3
+        !p-10 !max-px-20
         min-h-[calc(100vh-90px)]
         w-full
         bg-white dark:bg-gray-900
