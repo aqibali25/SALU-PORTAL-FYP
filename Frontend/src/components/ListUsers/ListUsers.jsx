@@ -2,181 +2,178 @@ import { FaEdit, FaTrash } from "react-icons/fa";
 import Background from "./../../assets/Background.png";
 import Pagination from "../../components/Pagination";
 import { useUsersTable } from "../../Hooks/useUsersTable";
+import { Link } from "react-router-dom";
+
 /* Sample data */
 const initialUsers = [
   {
     username: "Mr. Asif Ali",
     cnic: "45102-1210766-1",
     role: "Office Secretary",
+    email: "asif.ali@salu.edu.pk",
   },
-  { username: "Mr. Taj Muhammad", cnic: "45102-1210766-1", role: "Assistant" },
-  { username: "Mr. Asadullah", cnic: "45102-1210766-1", role: "P.A To PVC" },
-  { username: "Mr. Kaleemullah", cnic: "45102-1210766-1", role: "Clerk" },
-  { username: "Mr. Hafeezullah", cnic: "45102-1210766-1", role: "Peon" },
-  { username: "Mr. Imran Ali", cnic: "45102-1210766-1", role: "Peon" },
-  { username: "Mr. Abdul Ghaffar", cnic: "45102-1210766-1", role: "Peon" },
-  { username: "Mr. Asad Ali", cnic: "45102-1210766-1", role: "Clerk" },
-  // extra rows
-  { username: "Mr. Bilal Ahmed", cnic: "42101-9876543-1", role: "Supervisor" },
-  { username: "Mr. Kamran Khan", cnic: "61101-2345678-5", role: "Admin" },
+  {
+    username: "Mr. Taj Muhammad",
+    cnic: "45102-1210766-2",
+    role: "Assistant",
+    email: "taj.muhammad@salu.edu.pk",
+  },
+  {
+    username: "Mr. Asadullah",
+    cnic: "45102-1210766-3",
+    role: "Assistant", // P.A To PVC → Assistant
+    email: "asadullah@salu.edu.pk",
+  },
+  {
+    username: "Mr. Kaleemullah",
+    cnic: "45102-1210766-4",
+    role: "Clerk",
+    email: "kaleemullah@salu.edu.pk",
+  },
+  {
+    username: "Mr. Hafeezullah",
+    cnic: "45102-1210766-5",
+    role: "Peon",
+    email: "hafeezullah@salu.edu.pk",
+  },
+  {
+    username: "Mr. Imran Ali",
+    cnic: "45102-1210766-6",
+    role: "Peon",
+    email: "imran.ali@salu.edu.pk",
+  },
+  {
+    username: "Mr. Abdul Ghaffar",
+    cnic: "45102-1210766-7",
+    role: "Peon",
+    email: "abdul.ghaffar@salu.edu.pk",
+  },
+  {
+    username: "Mr. Asad Ali",
+    cnic: "45102-1210766-8",
+    role: "Clerk",
+    email: "asad.ali@salu.edu.pk",
+  },
+  {
+    username: "Mr. Bilal Ahmed",
+    cnic: "42101-9876543-1",
+    role: "Supervisor",
+    email: "bilal.ahmed@salu.edu.pk",
+  },
+  {
+    username: "Mr. Kamran Khan",
+    cnic: "61101-2345678-5",
+    role: "Admin",
+    email: "kamran.khan@salu.edu.pk",
+  },
   {
     username: "Ms. Ayesha Siddiqui",
     cnic: "35201-1122334-8",
     role: "HR Officer",
+    email: "ayesha.siddiqui@salu.edu.pk",
   },
-  { username: "Mr. Fahad Iqbal", cnic: "37405-6677889-3", role: "Accountant" },
-  { username: "Ms. Sana Tariq", cnic: "42301-2233445-6", role: "IT Support" },
-  { username: "Mr. Waqas Ahmed", cnic: "37406-7788990-1", role: "Clerk" },
-  { username: "Ms. Rabia Noor", cnic: "61102-3456789-2", role: "Librarian" },
+  {
+    username: "Mr. Fahad Iqbal",
+    cnic: "37405-6677889-3",
+    role: "Accountant",
+    email: "fahad.iqbal@salu.edu.pk",
+  },
+  {
+    username: "Ms. Sana Tariq",
+    cnic: "42301-2233445-6",
+    role: "IT Support",
+    email: "sana.tariq@salu.edu.pk",
+  },
+  {
+    username: "Mr. Waqas Ahmed",
+    cnic: "37406-7788990-1",
+    role: "Clerk",
+    email: "waqas.ahmed@salu.edu.pk",
+  },
+  {
+    username: "Ms. Rabia Noor",
+    cnic: "61102-3456789-2",
+    role: "Librarian",
+    email: "rabia.noor@salu.edu.pk",
+  },
   {
     username: "Mr. Zain Ul Abidin",
     cnic: "42102-9988776-4",
-    role: "Data Entry Operator",
+    role: "IT Support", // Data Entry Operator → IT Support
+    email: "zain.abidin@salu.edu.pk",
   },
   {
     username: "Mr. Naveed Anjum",
     cnic: "35202-5566778-9",
-    role: "Security Guard",
+    role: "Assistant", // Security Guard → Assistant
+    email: "naveed.anjum@salu.edu.pk",
   },
-  { username: "Mr. Salman Raza", cnic: "61103-7654321-0", role: "Driver" },
+  {
+    username: "Mr. Salman Raza",
+    cnic: "61103-7654321-0",
+    role: "Assistant", // Driver → Assistant
+    email: "salman.raza@salu.edu.pk",
+  },
   {
     username: "Ms. Hina Qureshi",
     cnic: "37407-8899001-2",
-    role: "Receptionist",
+    role: "Clerk", // Receptionist → Clerk
+    email: "hina.qureshi@salu.edu.pk",
   },
   {
     username: "Mr. Umair Javed",
     cnic: "42302-3344556-7",
-    role: "Lab Assistant",
-  },
-  { username: "Ms. Mariam Shah", cnic: "35203-6677990-5", role: "Lecturer" },
-  { username: "Mr. Danish Ali", cnic: "37408-4455667-8", role: "Assistant" },
-  { username: "Ms. Kiran Fatima", cnic: "61104-1122446-3", role: "Clerk" },
-  { username: "Mr. Rashid Mehmood", cnic: "42103-5566443-9", role: "Peon" },
-  { username: "Ms. Iqra Nazeer", cnic: "35204-8899112-1", role: "Assistant" },
-  { username: "Mr. Saqib Akhtar", cnic: "61105-2233114-2", role: "Peon" },
-  { username: "Ms. Mahnoor Ali", cnic: "37409-9900112-6", role: "Assistant" },
-  { username: "Mr. Hamza Yousaf", cnic: "42303-7788665-4", role: "Clerk" },
-  { username: "Mr. Bilal Ahmed", cnic: "42101-9876543-1", role: "Supervisor" },
-  { username: "Mr. Kamran Khan", cnic: "61101-2345678-5", role: "Admin" },
-  {
-    username: "Ms. Ayesha Siddiqui",
-    cnic: "35201-1122334-8",
-    role: "HR Officer",
-  },
-  { username: "Mr. Fahad Iqbal", cnic: "37405-6677889-3", role: "Accountant" },
-  { username: "Ms. Sana Tariq", cnic: "42301-2233445-6", role: "IT Support" },
-  { username: "Mr. Waqas Ahmed", cnic: "37406-7788990-1", role: "Clerk" },
-  { username: "Ms. Rabia Noor", cnic: "61102-3456789-2", role: "Librarian" },
-  {
-    username: "Mr. Zain Ul Abidin",
-    cnic: "42102-9988776-4",
-    role: "Data Entry Operator",
+    role: "Assistant", // Lab Assistant → Assistant
+    email: "umair.javed@salu.edu.pk",
   },
   {
-    username: "Mr. Naveed Anjum",
-    cnic: "35202-5566778-9",
-    role: "Security Guard",
-  },
-  { username: "Mr. Salman Raza", cnic: "61103-7654321-0", role: "Driver" },
-  {
-    username: "Ms. Hina Qureshi",
-    cnic: "37407-8899001-2",
-    role: "Receptionist",
+    username: "Ms. Mariam Shah",
+    cnic: "35203-6677990-5",
+    role: "Assistant", // Lecturer → Assistant
+    email: "mariam.shah@salu.edu.pk",
   },
   {
-    username: "Mr. Umair Javed",
-    cnic: "42302-3344556-7",
-    role: "Lab Assistant",
-  },
-  { username: "Ms. Mariam Shah", cnic: "35203-6677990-5", role: "Lecturer" },
-  { username: "Mr. Danish Ali", cnic: "37408-4455667-8", role: "Assistant" },
-  { username: "Ms. Kiran Fatima", cnic: "61104-1122446-3", role: "Clerk" },
-  { username: "Mr. Rashid Mehmood", cnic: "42103-5566443-9", role: "Peon" },
-  { username: "Ms. Iqra Nazeer", cnic: "35204-8899112-1", role: "Assistant" },
-  { username: "Mr. Saqib Akhtar", cnic: "61105-2233114-2", role: "Peon" },
-  { username: "Ms. Mahnoor Ali", cnic: "37409-9900112-6", role: "Assistant" },
-  { username: "Mr. Hamza Yousaf", cnic: "42303-7788665-4", role: "Clerk" },
-  { username: "Mr. Bilal Ahmed", cnic: "42101-9876543-1", role: "Supervisor" },
-  { username: "Mr. Kamran Khan", cnic: "61101-2345678-5", role: "Admin" },
-  {
-    username: "Ms. Ayesha Siddiqui",
-    cnic: "35201-1122334-8",
-    role: "HR Officer",
-  },
-  { username: "Mr. Fahad Iqbal", cnic: "37405-6677889-3", role: "Accountant" },
-  { username: "Ms. Sana Tariq", cnic: "42301-2233445-6", role: "IT Support" },
-  { username: "Mr. Waqas Ahmed", cnic: "37406-7788990-1", role: "Clerk" },
-  { username: "Ms. Rabia Noor", cnic: "61102-3456789-2", role: "Librarian" },
-  {
-    username: "Mr. Zain Ul Abidin",
-    cnic: "42102-9988776-4",
-    role: "Data Entry Operator",
+    username: "Mr. Danish Ali",
+    cnic: "37408-4455667-8",
+    role: "Assistant",
+    email: "danish.ali@salu.edu.pk",
   },
   {
-    username: "Mr. Naveed Anjum",
-    cnic: "35202-5566778-9",
-    role: "Security Guard",
-  },
-  { username: "Mr. Salman Raza", cnic: "61103-7654321-0", role: "Driver" },
-  {
-    username: "Ms. Hina Qureshi",
-    cnic: "37407-8899001-2",
-    role: "Receptionist",
+    username: "Ms. Kiran Fatima",
+    cnic: "61104-1122446-3",
+    role: "Clerk",
+    email: "kiran.fatima@salu.edu.pk",
   },
   {
-    username: "Mr. Umair Javed",
-    cnic: "42302-3344556-7",
-    role: "Lab Assistant",
-  },
-  { username: "Ms. Mariam Shah", cnic: "35203-6677990-5", role: "Lecturer" },
-  { username: "Mr. Danish Ali", cnic: "37408-4455667-8", role: "Assistant" },
-  { username: "Ms. Kiran Fatima", cnic: "61104-1122446-3", role: "Clerk" },
-  { username: "Mr. Rashid Mehmood", cnic: "42103-5566443-9", role: "Peon" },
-  { username: "Ms. Iqra Nazeer", cnic: "35204-8899112-1", role: "Assistant" },
-  { username: "Mr. Saqib Akhtar", cnic: "61105-2233114-2", role: "Peon" },
-  { username: "Ms. Mahnoor Ali", cnic: "37409-9900112-6", role: "Assistant" },
-  { username: "Mr. Hamza Yousaf", cnic: "42303-7788665-4", role: "Clerk" },
-  { username: "Mr. Bilal Ahmed", cnic: "42101-9876543-1", role: "Supervisor" },
-  { username: "Mr. Kamran Khan", cnic: "61101-2345678-5", role: "Admin" },
-  {
-    username: "Ms. Ayesha Siddiqui",
-    cnic: "35201-1122334-8",
-    role: "HR Officer",
-  },
-  { username: "Mr. Fahad Iqbal", cnic: "37405-6677889-3", role: "Accountant" },
-  { username: "Ms. Sana Tariq", cnic: "42301-2233445-6", role: "IT Support" },
-  { username: "Mr. Waqas Ahmed", cnic: "37406-7788990-1", role: "Clerk" },
-  { username: "Ms. Rabia Noor", cnic: "61102-3456789-2", role: "Librarian" },
-  {
-    username: "Mr. Zain Ul Abidin",
-    cnic: "42102-9988776-4",
-    role: "Data Entry Operator",
+    username: "Mr. Rashid Mehmood",
+    cnic: "42103-5566443-9",
+    role: "Peon",
+    email: "rashid.mehmood@salu.edu.pk",
   },
   {
-    username: "Mr. Naveed Anjum",
-    cnic: "35202-5566778-9",
-    role: "Security Guard",
-  },
-  { username: "Mr. Salman Raza", cnic: "61103-7654321-0", role: "Driver" },
-  {
-    username: "Ms. Hina Qureshi",
-    cnic: "37407-8899001-2",
-    role: "Receptionist",
+    username: "Ms. Iqra Nazeer",
+    cnic: "35204-8899112-1",
+    role: "Assistant",
+    email: "iqra.nazeer@salu.edu.pk",
   },
   {
-    username: "Mr. Umair Javed",
-    cnic: "42302-3344556-7",
-    role: "Lab Assistant",
+    username: "Mr. Saqib Akhtar",
+    cnic: "61105-2233114-2",
+    role: "Peon",
+    email: "saqib.akhtar@salu.edu.pk",
   },
-  { username: "Ms. Mariam Shah", cnic: "35203-6677990-5", role: "Lecturer" },
-  { username: "Mr. Danish Ali", cnic: "37408-4455667-8", role: "Assistant" },
-  { username: "Ms. Kiran Fatima", cnic: "61104-1122446-3", role: "Clerk" },
-  { username: "Mr. Rashid Mehmood", cnic: "42103-5566443-9", role: "Peon" },
-  { username: "Ms. Iqra Nazeer", cnic: "35204-8899112-1", role: "Assistant" },
-  { username: "Mr. Saqib Akhtar", cnic: "61105-2233114-2", role: "Peon" },
-  { username: "Ms. Mahnoor Ali", cnic: "37409-9900112-6", role: "Assistant" },
-  { username: "Mr. Hamza Yousaf", cnic: "42303-7788665-4", role: "Clerk" },
+  {
+    username: "Ms. Mahnoor Ali",
+    cnic: "37409-9900112-6",
+    role: "Assistant",
+    email: "mahnoor.ali@salu.edu.pk",
+  },
+  {
+    username: "Mr. Hamza Yousaf",
+    cnic: "42303-7788665-4",
+    role: "Clerk",
+    email: "hamza.yousaf@salu.edu.pk",
+  },
 ];
 
 export default function ListUsers() {
@@ -288,14 +285,14 @@ export default function ListUsers() {
                     </td>
                     <td className="w-[25%]">
                       <div className="flex justify-center items-center gap-4">
-                        <button
+                        <Link
+                          to="/SALU-PORTAL-FYP/UpdateUser"
+                          state={{ user }} // 👈 pass the whole user object
                           type="button"
                           className="text-green-600 hover:text-green-700 cursor-pointer"
-                          onClick={() => alert(`Edit ${user.username}`)}
-                          aria-label={`Edit ${user.username}`}
                         >
                           <FaEdit size={20} />
-                        </button>
+                        </Link>
                         <button
                           type="button"
                           className="text-red-500 hover:text-red-600 cursor-pointer"

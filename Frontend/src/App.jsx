@@ -15,8 +15,15 @@ function App() {
       <Routes>
         <Route path="/SALU-PORTAL-FYP/" element={<Home />} />
         <Route path="/SALU-PORTAL-FYP/profile" element={<Profile />} />
-        <Route path="/SALU-PORTAL-FYP/adduser" element={<AddUser />} />
+        <Route
+          path="/SALU-PORTAL-FYP/adduser"
+          element={<AddUser Title="Add User" />}
+        />
         <Route path="/SALU-PORTAL-FYP/ListUsers" element={<ListUsers />} />
+        <Route
+          path="/SALU-PORTAL-FYP/UpdateUser"
+          element={<AddUser Title="Update User" />}
+        />
         <Route
           path="/SALU-PORTAL-FYP/ComputerOperator"
           element={<ComputerOperator />}
