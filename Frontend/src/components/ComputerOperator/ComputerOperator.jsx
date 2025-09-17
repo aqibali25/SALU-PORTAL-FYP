@@ -12,6 +12,7 @@ const ComputerOperator = () => {
       borderColor: "#FACC15", // Yellow border
       iconBg: "#FACC15", // Yellow icon background
       Icon: LuClipboardList, // Outlined clipboard icon
+      to: "ListUsers",
     },
     {
       id: 2,
@@ -20,6 +21,7 @@ const ComputerOperator = () => {
       borderColor: "#3B82F6", // Blue border
       iconBg: "#3B82F6", // Blue icon background
       Icon: LuClipboardList,
+      to: "ListUsers",
     },
     {
       id: 3,
@@ -28,6 +30,7 @@ const ComputerOperator = () => {
       borderColor: "#06B6D4", // Teal border
       iconBg: "#06B6D4", // Teal icon background
       Icon: LuClipboardList,
+      to: "ListUsers",
     },
     {
       id: 4,
@@ -36,6 +39,7 @@ const ComputerOperator = () => {
       borderColor: "#22C55E", // Green border
       iconBg: "#22C55E", // Green icon background
       Icon: LuClipboardList,
+      to: "ListUsers",
     },
     {
       id: 5,
@@ -44,6 +48,7 @@ const ComputerOperator = () => {
       borderColor: "#EF4444", // Red border
       iconBg: "#EF4444", // Red icon background
       Icon: LuClipboardList,
+      to: "ListUsers",
     },
   ];
 
@@ -74,6 +79,7 @@ const ComputerOperator = () => {
               borderColor={card.borderColor}
               iconBg={card.iconBg}
               Icon={card.Icon}
+              to={card.to}
             />
           ))}
         </div>

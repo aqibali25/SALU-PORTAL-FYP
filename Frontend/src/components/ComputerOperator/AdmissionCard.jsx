@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-const AdmissionCard = ({ title, bgColor, borderColor, iconBg, Icon }) => {
+const AdmissionCard = ({ title, bgColor, borderColor, iconBg, Icon, to }) => {
   return (
     <div
       className="flex flex-col items-center justify-center gap-5 w-55 h-70 !p-6 rounded-lg shadow-sm"
@@ -19,7 +19,7 @@ const AdmissionCard = ({ title, bgColor, borderColor, iconBg, Icon }) => {
 
       {/* Button */}
       <Link
-        to="/SALU-PORTAL-FYP/"
+        to={`/SALU-PORTAL-FYP/${to}`}
         className="!px-4 !py-1 bg-white border border-gray-300 text-gray-800 "
         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = bgColor)}
         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
