@@ -1,5 +1,10 @@
 import Card from "./Card";
-import { faUserPlus, faCog, faUser } from "@fortawesome/free-solid-svg-icons";
+import {
+  faUserPlus,
+  faCog,
+  faUsers,
+  faComputer,
+} from "@fortawesome/free-solid-svg-icons";
 import Background from "../../assets/Background.png";
 
 const Home = () => {
@@ -23,20 +28,29 @@ const Home = () => {
     },
     {
       id: 3,
+      Heading: "List Users",
+      link: "ListUsers",
+      isImg: false,
+      Icon: faUsers,
+      color1: "#E40070",
+      color2: "#f5f5f5",
+    },
+    {
+      id: 4,
+      Heading: "Computer Operator",
+      link: "ComputerOperator",
+      isImg: false,
+      Icon: faComputer, // ✅ Updated icon
+      color1: "#22b508",
+      color2: "#f5f5f5",
+    },
+    {
+      id: 5,
       Heading: "Settings",
       link: "Settings",
       isImg: false,
       Icon: faCog,
       color1: "#09FDEE",
-      color2: "#f5f5f5",
-    },
-    {
-      id: 4,
-      Heading: "List Users",
-      link: "ListUsers",
-      isImg: false,
-      Icon: faUser,
-      color1: "#E40070",
       color2: "#f5f5f5",
     },
   ];
@@ -51,7 +65,7 @@ const Home = () => {
         min-h-[calc(100vh-90px)]
         w-full
         bg-white dark:bg-gray-900
-        justify-start
+        justify-center
       "
       style={{
         backgroundImage: `url(${Background})`,
@@ -65,9 +79,9 @@ const Home = () => {
           key={card.id}
           className="
             basis-[20%] 
-            min-w-[220px] 
-            max-[1031px]:grow 
-            h-[150px]
+            min-w-[200px] 
+            max-[950px]:grow 
+            h-[180px]
           "
         >
           <Card
