@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 const Card = ({ isImg = false, Heading, Icon, color1, color2, link }) => {
   return (
     <Link
-      to={`/Portal.Salu-Gc/${link}`}
+      to={`/SALU-PORTAL-FYP/${link}`}
       className="
         no-underline
         h-full w-full

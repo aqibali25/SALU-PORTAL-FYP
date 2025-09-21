@@ -32,7 +32,7 @@ export default function ListUsers() {
       label: "Edit",
       onClick: (row) => {
         // 👇 navigate with CNIC in the URL and full object in state
-        navigate(`/Portal.Salu-Gc/UpdateUser?${row.cnic}`, {
+        navigate(`/SALU-PORTAL-FYP/UpdateUser?${row.cnic}`, {
           state: { user: row },
         });
       },

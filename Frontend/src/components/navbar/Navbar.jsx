@@ -22,7 +22,7 @@ const Navbar = () => {
     >
       {/* LEFT: Logo + Text (Shrinks first) */}
       <Link
-        to="/Portal.Salu-Gc/"
+        to="/SALU-PORTAL-FYP/"
         className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink md:!pl-10 "
       >
         {/* Logo */}
@@ -83,7 +83,7 @@ const Navbar = () => {
 
           {/* Home */}
           <Link
-            to="/Portal.Salu-Gc/"
+            to="/SALU-PORTAL-FYP/"
             className="
               grid h-8 w-8 place-items-center rounded-full
               bg-white text-gray-900 ring-1 ring-black/10 md:ring-white/40
@@ -97,7 +97,7 @@ const Navbar = () => {
 
           {/* Settings */}
           <Link
-            to="/Portal.Salu-Gc/Settings"
+            to="/SALU-PORTAL-FYP/Settings"
             className="
               grid h-8 w-8 place-items-center rounded-full
               bg-white text-gray-900 ring-1 ring-black/10 md:ring-white/40
@@ -111,7 +111,7 @@ const Navbar = () => {
 
           {/* Profile */}
           <Link
-            to="/Portal.Salu-Gc/Profile"
+            to="/SALU-PORTAL-FYP/Profile"
             className="
               h-8 w-8 overflow-hidden rounded-full
               ring-1 ring-black/10 md:ring-white/40

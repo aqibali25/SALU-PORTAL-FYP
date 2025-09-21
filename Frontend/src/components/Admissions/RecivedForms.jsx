@@ -36,7 +36,7 @@ export default function ReceivedForms() {
     {
       label: "View",
       onClick: (row) =>
-        navigate(`/Portal.Salu-Gc/Admissions/RecivedForms?${row.cnic}`, {
+        navigate(`/SALU-PORTAL-FYP/Admissions/RecivedForms?${row.cnic}`, {
           state: { form: row },
         }),
       icon: (
