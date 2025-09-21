@@ -19,7 +19,7 @@ const AdmissionCard = ({ title, bgColor, borderColor, iconBg, Icon, to }) => {
 
       {/* Button */}
       <Link
-        to={`/SALU-PORTAL-FYP/${to}`}
+        to={`/Portal.Salu-Gc/${to}`}
         className="!px-4 !py-1 bg-white border border-gray-300 text-gray-800 "
         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = bgColor)}
         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}

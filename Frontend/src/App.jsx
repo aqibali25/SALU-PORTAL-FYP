@@ -13,22 +13,22 @@ function App() {
     <>
       <Navbar />
       <Routes>
-        <Route path="/SALU-PORTAL-FYP/" element={<Home />} />
-        <Route path="/SALU-PORTAL-FYP/profile" element={<Profile />} />
+        <Route path="/Portal.Salu-Gc/" element={<Home />} />
+        <Route path="/Portal.Salu-Gc/profile" element={<Profile />} />
         <Route
-          path="/SALU-PORTAL-FYP/adduser"
+          path="/Portal.Salu-Gc/adduser"
           element={<AddUser Title="Add User" />}
         />
-        <Route path="/SALU-PORTAL-FYP/ListUsers" element={<ListUsers />} />
+        <Route path="/Portal.Salu-Gc/ListUsers" element={<ListUsers />} />
         <Route
-          path="/SALU-PORTAL-FYP/UpdateUser"
+          path="/Portal.Salu-Gc/UpdateUser"
           element={<AddUser Title="Update User" />}
         />
         <Route
-          path="/SALU-PORTAL-FYP/ComputerOperator"
+          path="/Portal.Salu-Gc/ComputerOperator"
           element={<ComputerOperator />}
         />
-        <Route path="/SALU-PORTAL-FYP/Settings" element={<Settings />} />
+        <Route path="/Portal.Salu-Gc/Settings" element={<Settings />} />
       </Routes>
     </>
   );

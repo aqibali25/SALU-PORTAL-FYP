@@ -21,7 +21,10 @@ const Navbar = () => {
       "
     >
       {/* LEFT: Logo + Text (Shrinks first) */}
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink md:!pl-10 ">
+      <Link
+        to="/Portal.Salu-Gc/"
+        className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink md:!pl-10 "
+      >
         {/* Logo */}
         <img
           src={Logo}
@@ -31,10 +34,7 @@ const Navbar = () => {
         />
 
         {/* University Text - hidden on very small screens */}
-        <Link
-          to="/SALU-PORTAL-FYP/"
-          className="hidden [@media(min-width:520px)]:flex flex-col items-start justify-center text-black dark:text-white min-w-0"
-        >
+        <div className="hidden [@media(min-width:520px)]:flex flex-col items-center justify-center text-black dark:text-white min-w-0">
           <h1
             className="
               truncate font-semibold uppercase leading-tight
@@ -55,8 +55,8 @@ const Navbar = () => {
           >
             GHOTKI CAMPUS
           </h2>
-        </Link>
-      </div>
+        </div>
+      </Link>
 
       {/* RIGHT: Action Icons (ALWAYS visible, doesn't shrink) */}
       <div
@@ -83,7 +83,7 @@ const Navbar = () => {
 
           {/* Home */}
           <Link
-            to="/SALU-PORTAL-FYP/"
+            to="/Portal.Salu-Gc/"
             className="
               grid h-8 w-8 place-items-center rounded-full
               bg-white text-gray-900 ring-1 ring-black/10 md:ring-white/40
@@ -97,7 +97,7 @@ const Navbar = () => {
 
           {/* Settings */}
           <Link
-            to="/SALU-PORTAL-FYP/Settings"
+            to="/Portal.Salu-Gc/Settings"
             className="
               grid h-8 w-8 place-items-center rounded-full
               bg-white text-gray-900 ring-1 ring-black/10 md:ring-white/40
@@ -111,7 +111,7 @@ const Navbar = () => {
 
           {/* Profile */}
           <Link
-            to="/SALU-PORTAL-FYP/Profile"
+            to="/Portal.Salu-Gc/Profile"
             className="
               h-8 w-8 overflow-hidden rounded-full
               ring-1 ring-black/10 md:ring-white/40

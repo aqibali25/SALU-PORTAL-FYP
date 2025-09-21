@@ -202,7 +202,7 @@ export default function ListUsers() {
       }}
     >
       <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl py-3 font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl sm:text-3xl md:text!-4xl !py-3 font-bold text-gray-900 dark:text-white">
           Users List
         </h1>
 
@@ -228,12 +228,12 @@ export default function ListUsers() {
         </div>
 
         {/* Table */}
-        <div className="flex flex-col justify-start items-center min-h-[60vh] w-full bg-white dark:bg-gray-900 rounded-md overflow-x-auto">
-          <table className="min-w-[800px] w-full">
-            <thead className="flex justify-center items-center w-full h-8 bg-[#D6D6D6] rounded-tl-md rounded-tr-md border-b-2 border-gray-500">
-              <tr className="flex justify-start !p-10 items-center w-full text-gray-900">
+        <div className="w-full overflow-x-auto bg-white dark:bg-gray-900 rounded-md">
+          <table className="min-w-[800px] w-full border-collapse">
+            <thead className=" bg-[#D6D6D6] rounded-tl-md rounded-tr-md border-b-2 border-gray-500">
+              <tr>
                 <th
-                  className="px-6 py-3 text-left text-lg font-medium tracking-wider w-[25%] cursor-pointer select-none"
+                  className="!px-6 !py-3 text-left text-lg font-medium tracking-wider cursor-pointer select-none"
                   onClick={() => onSort("username")}
                 >
                   <div className="flex items-center gap-2">
@@ -242,7 +242,7 @@ export default function ListUsers() {
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-lg font-medium tracking-wider w-[25%] cursor-pointer select-none"
+                  className="!px-6 !py-3 text-left text-lg font-medium tracking-wider cursor-pointer select-none"
                   onClick={() => onSort("cnic")}
                 >
                   <div className="flex items-center gap-2">
@@ -253,7 +253,7 @@ export default function ListUsers() {
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-lg font-medium tracking-wider w-[25%] cursor-pointer select-none"
+                  className="!px-6 !py-3 text-left text-lg font-medium tracking-wider cursor-pointer select-none"
                   onClick={() => onSort("role")}
                 >
                   <div className="flex items-center gap-2">
@@ -261,32 +261,32 @@ export default function ListUsers() {
                     <span className="text-xs">{chevron("role")}</span>
                   </div>
                 </th>
-                <th className="px-6 py-3 text-center text-lg font-medium tracking-wider w-[25%]">
+                <th className="!px-6 !py-3 text-center text-lg font-medium tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
 
-            <tbody className="flex flex-col justify-center items-center w-full">
+            <tbody>
               {rows.length > 0 ? (
                 rows.map((user) => (
                   <tr
                     key={user.id}
-                    className="flex justify-start !p-3 !px-10 items-center w-full border-b border-gray-300 dark:border-gray-700 dark:hover:bg-gray-800 transition hover:bg-gray-100 "
+                    className="hover:bg-gray-100 dark:hover:bg-gray-800 transition border-b border-gray-300 dark:border-gray-700"
                   >
-                    <td className="px-6 py-3 text-left text-md font-medium tracking-wider w-[25%] text-gray-900 dark:text-gray-100">
+                    <td className="!px-6 !py-3 text-md font-medium tracking-wider text-gray-900 dark:text-gray-100">
                       {user.username}
                     </td>
-                    <td className="px-6 py-3 text-left text-md font-medium tracking-wider w-[25%] text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                    <td className="!px-6 !py-3 text-md font-medium tracking-wider text-gray-700 dark:text-gray-300 whitespace-nowrap">
                       {user.cnic}
                     </td>
-                    <td className="px-6 py-3 text-left text-md font-medium tracking-wider w-[25%] text-gray-700 dark:text-gray-300">
+                    <td className="!px-6 !py-3 text-md font-medium tracking-wider text-gray-700 dark:text-gray-300">
                       {user.role}
                     </td>
-                    <td className="w-[25%]">
+                    <td className="!px-6 !py-3">
                       <div className="flex justify-center items-center gap-4">
                         <Link
-                          to="/SALU-PORTAL-FYP/UpdateUser"
+                          to="/Portal.Salu-Gc/UpdateUser"
                           state={{ user }} // 👈 pass the whole user object
                           type="button"
                           className="text-green-600 hover:text-green-700 cursor-pointer"
@@ -306,7 +306,7 @@ export default function ListUsers() {
                   </tr>
                 ))
               ) : (
-                <tr className="flex justify-center items-center w-full">
+                <tr>
                   <td
                     colSpan={4}
                     className="text-center text-gray-900 text-2xl dark:text-gray-100 py-6"
