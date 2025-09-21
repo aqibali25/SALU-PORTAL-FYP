@@ -5,5 +5,5 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  base: "Portal.Salu-Gc",
+  base: "SALU-PORTAL-FYP",
 });
