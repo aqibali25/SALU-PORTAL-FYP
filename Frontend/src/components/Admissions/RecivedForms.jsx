@@ -6,6 +6,7 @@ import Pagination from "../../components/Pagination";
 import Background from "./../../assets/Background.png";
 import { initialForms } from "../../Hooks/useRecivedForms";
 import useRecivedForm from "../../Hooks/useRecivedForms";
+import BackButton from "../BackButton";
 
 export default function ReceivedForms() {
   const navigate = useNavigate();
@@ -35,10 +36,15 @@ export default function ReceivedForms() {
   const actions = [
     {
       label: "View",
-      onClick: (row) =>
-        navigate(`/SALU-PORTAL-FYP/Admissions/RecivedForms?${row.cnic}`, {
-          state: { form: row },
-        }),
+      onClick: (row) => {
+        localStorage.removeItem("reviewFormStep"); // clear previous step
+        navigate(
+          `/SALU-PORTAL-FYP/Admissions/RecivedForms/ReviewForm?${row.cnic}`,
+          {
+            state: { form: row },
+          }
+        );
+      },
       icon: (
         <button className="!px-4 !py-1 border border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-white transition cursor-pointer">
           View
@@ -59,10 +65,12 @@ export default function ReceivedForms() {
       }}
     >
       <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
-        <h1 className="text-2xl sm:text-3xl md:text!-4xl !py-3 font-bold text-gray-900 dark:text-white">
-          Recived Forms
-        </h1>
-
+        <div className="flex justify-start items-center gap-3">
+          <BackButton></BackButton>
+          <h1 className="text-2xl sm:text-3xl md:text!-4xl !py-3 font-bold text-gray-900 dark:text-white">
+            Recived Forms
+          </h1>
+        </div>
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 
         {/* Search */}

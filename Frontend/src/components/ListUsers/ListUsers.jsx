@@ -5,6 +5,7 @@ import Pagination from "../../components/Pagination";
 import { useUsersTable, initialUsers } from "../../Hooks/useUsersTable";
 import Background from "./../../assets/Background.png";
 import { useNavigate } from "react-router-dom";
+import BackButton from "../BackButton";
 
 export default function ListUsers() {
   const {
@@ -60,10 +61,12 @@ export default function ListUsers() {
       }}
     >
       <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
-        <h1 className="text-2xl sm:text-3xl md:text!-4xl !py-3 font-bold text-gray-900 dark:text-white">
-          Users List
-        </h1>
-
+        <div className="flex justify-start items-center gap-3">
+          <BackButton></BackButton>
+          <h1 className="text-2xl sm:text-3xl md:text!-4xl !py-3 font-bold text-gray-900 dark:text-white">
+            Users List
+          </h1>
+        </div>
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 
         {/* Search */}

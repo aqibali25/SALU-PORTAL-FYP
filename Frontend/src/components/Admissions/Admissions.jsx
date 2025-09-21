@@ -1,6 +1,9 @@
-import { LuClipboardList } from "react-icons/lu";
+import { LuFileText, LuRotateCcw, LuTrash2 } from "react-icons/lu";
+import { AiOutlineClockCircle, AiOutlineCheckCircle } from "react-icons/ai";
+
 import Background from "../../assets/Background.png";
 import AdmissionCard from "./AdmissionCard";
+import BackButton from "../BackButton";
 
 const ComputerOperator = () => {
   // Object for cards
@@ -8,37 +11,37 @@ const ComputerOperator = () => {
     {
       id: 1,
       title: "Recived Forms",
-      bgColor: "#FEFCE8",
-      borderColor: "#FACC15",
-      iconBg: "#FACC15",
-      Icon: LuClipboardList,
+      bgColor: "#EFF6FF",
+      borderColor: "#3B82F6",
+      iconBg: "#3B82F6",
+      Icon: LuFileText,
       to: "Admissions/RecivedForms",
     },
     {
       id: 2,
       title: "Approved Form",
-      bgColor: "#EFF6FF",
-      borderColor: "#3B82F6",
-      iconBg: "#3B82F6",
-      Icon: LuClipboardList,
+      bgColor: "#ECFDF5",
+      borderColor: "#22C55E",
+      iconBg: "#22C55E",
+      Icon: AiOutlineCheckCircle,
       to: "Admissions",
     },
     {
       id: 3,
       title: "Pending Form",
-      bgColor: "#ECFEFF",
-      borderColor: "#06B6D4",
-      iconBg: "#06B6D4",
-      Icon: LuClipboardList,
+      bgColor: "#FEFCE8",
+      borderColor: "#FACC15",
+      iconBg: "#FACC15",
+      Icon: AiOutlineClockCircle,
       to: "Admissions",
     },
     {
       id: 4,
       title: "Revert Form",
-      bgColor: "#ECFDF5",
-      borderColor: "#22C55E",
-      iconBg: "#22C55E",
-      Icon: LuClipboardList,
+      bgColor: "#ECFEFF",
+      borderColor: "#06B6D4",
+      iconBg: "#06B6D4",
+      Icon: LuRotateCcw,
       to: "Admissions",
     },
     {
@@ -47,7 +50,7 @@ const ComputerOperator = () => {
       bgColor: "#FEF2F2",
       borderColor: "#EF4444",
       iconBg: "#EF4444",
-      Icon: LuClipboardList,
+      Icon: LuTrash2,
       to: "Admissions",
     },
   ];
@@ -63,14 +66,16 @@ const ComputerOperator = () => {
       }}
     >
       <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
-        {/* Header Section */}
-        <h1 className="text-2xl sm:text-3xl md:text-4xl py-3 font-bold text-gray-900 dark:text-white">
-          Computer Operator
-        </h1>
+        <div className="flex justify-start items-center gap-3">
+          <BackButton></BackButton>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl py-3 font-bold text-gray-900 dark:text-white">
+            Computer Operator
+          </h1>
+        </div>
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 
         {/* Cards Section */}
-        <div className="flex flex-wrap items-center justify-center gap-5 min-h-[60vh] w-full bg-white dark:bg-gray-900 rounded-md overflow-x-auto p-5">
+        <div className="flex flex-wrap items-center justify-center gap-5 min-h-[60vh] w-full bg-white dark:bg-gray-900 rounded-md overflow-x-auto !p-5">
           {cardData.map((card) => (
             <AdmissionCard
               key={card.id}

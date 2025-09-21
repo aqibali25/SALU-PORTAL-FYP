@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Background from "../../assets/Background.png";
 import CnicInput from "../CNICInput";
 import InputContainer from "../InputContainer";
+import BackButton from "../BackButton";
 
 const AddUser = ({ Title }) => {
   const rolesArray = [
@@ -120,9 +121,12 @@ const AddUser = ({ Title }) => {
         onSubmit={handleSubmit}
         className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5"
       >
-        <h1 className="text-2xl sm:text-3xl md:text-4xl py-3 font-bold text-gray-900 dark:text-white">
-          {Title}
-        </h1>
+        <div className="flex justify-start items-center gap-3">
+          <BackButton></BackButton>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl py-3 font-bold text-gray-900 dark:text-white">
+            {Title}
+          </h1>
+        </div>
 
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 

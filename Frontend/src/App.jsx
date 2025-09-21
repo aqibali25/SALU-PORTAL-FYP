@@ -8,6 +8,7 @@ import Settings from "./components/settings/Settings";
 import ListUsers from "./components/ListUsers/ListUsers";
 import Admissions from "./components/Admissions/Admissions";
 import ReceivedForms from "./components/Admissions/RecivedForms";
+import { ReviewForm } from "./components/Admissions/ReviewForm";
 
 function App() {
   return (
@@ -29,6 +30,10 @@ function App() {
         <Route
           path="SALU-PORTAL-FYP/Admissions/RecivedForms"
           element={<ReceivedForms />}
+        />{" "}
+        <Route
+          path="SALU-PORTAL-FYP/Admissions/RecivedForms/ReviewForm"
+          element={<ReviewForm />}
         />
         <Route path="/SALU-PORTAL-FYP/Settings" element={<Settings />} />
       </Routes>
