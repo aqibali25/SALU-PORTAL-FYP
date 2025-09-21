@@ -6,7 +6,8 @@ import AddUser from "./components/AddUser/AddUser";
 import Profile from "./components/profile/Profile";
 import Settings from "./components/settings/Settings";
 import ListUsers from "./components/ListUsers/ListUsers";
-import ComputerOperator from "./components/ComputerOperator/ComputerOperator";
+import Admissions from "./components/Admissions/Admissions";
+import ReceivedForms from "./components/Admissions/RecivedForms";
 
 function App() {
   return (
@@ -24,9 +25,10 @@ function App() {
           path="/Portal.Salu-Gc/UpdateUser"
           element={<AddUser Title="Update User" />}
         />
+        <Route path="/Portal.Salu-Gc/Admissions" element={<Admissions />} />
         <Route
-          path="/Portal.Salu-Gc/ComputerOperator"
-          element={<ComputerOperator />}
+          path="Portal.Salu-Gc/Admissions/RecivedForms"
+          element={<ReceivedForms />}
         />
         <Route path="/Portal.Salu-Gc/Settings" element={<Settings />} />
       </Routes>

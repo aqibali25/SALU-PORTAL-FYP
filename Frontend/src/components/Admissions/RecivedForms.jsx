@@ -1,50 +1,49 @@
-// pages/ListUsers.jsx
-import { FaEdit, FaTrash } from "react-icons/fa";
+// pages/ReceivedForms.jsx
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import DataTable from "../TableData";
 import Pagination from "../../components/Pagination";
-import { useUsersTable, initialUsers } from "../../Hooks/useUsersTable";
 import Background from "./../../assets/Background.png";
-import { useNavigate } from "react-router-dom";
+import { initialForms } from "../../Hooks/useRecivedForms";
+import useRecivedForm from "../../Hooks/useRecivedForms";
 
-export default function ListUsers() {
-  const {
-    rows,
-    page,
-    pageCount,
-    setPage,
-    query,
-    setQuery,
-    sort,
-    onSort,
-    deleteUser,
-  } = useUsersTable({ initial: initialUsers, pageSize: 10 });
+export default function ReceivedForms() {
+  const navigate = useNavigate();
 
-  const navigate = useNavigate(); // 👈 hook
+  // 👇 page size based on initialForms now
+  const pageSize =
+    !initialForms || initialForms.length === 0
+      ? 0
+      : initialForms.length <= 10
+      ? initialForms.length
+      : 10;
+
+  const { rows, page, pageCount, setPage, query, setQuery, sort, onSort } =
+    useRecivedForm({
+      initial: initialForms, // 👈 pass initialForms here
+      pageSize,
+    });
 
   const columns = [
-    { key: "username", label: "Username" },
-    { key: "cnic", label: "User CNIC" },
-    { key: "role", label: "User Role" },
+    { key: "serialNo", label: "Serial No." }, // 👈 match your object key exactly
+    { key: "studentName", label: "Student's Name" },
+    { key: "fatherName", label: "Father's Name" },
+    { key: "department", label: "Department" },
+    { key: "cnic", label: "CNIC" },
   ];
 
   const actions = [
     {
-      label: "Edit",
-      onClick: (row) => {
-        // 👇 navigate with CNIC in the URL and full object in state
-        navigate(`/Portal.Salu-Gc/UpdateUser?${row.cnic}`, {
-          state: { user: row },
-        });
-      },
+      label: "View",
+      onClick: (row) =>
+        navigate(`/Portal.Salu-Gc/Admissions/RecivedForms?${row.cnic}`, {
+          state: { form: row },
+        }),
       icon: (
-        <FaEdit size={20} className="text-green-600 hover:text-green-700" />
+        <button className="!px-4 !py-1 border border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-white transition cursor-pointer">
+          View
+        </button>
       ),
-      className: "cursor-pointer",
-    },
-    {
-      label: "Delete",
-      onClick: (row) => deleteUser(row),
-      icon: <FaTrash size={20} className="text-red-500 hover:text-red-600" />,
       className: "cursor-pointer",
     },
   ];
@@ -61,7 +60,7 @@ export default function ListUsers() {
     >
       <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
         <h1 className="text-2xl sm:text-3xl md:text!-4xl !py-3 font-bold text-gray-900 dark:text-white">
-          Users List
+          Recived Forms
         </h1>
 
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
@@ -85,7 +84,6 @@ export default function ListUsers() {
           />
         </div>
 
-        {/* Table */}
         <DataTable
           columns={columns}
           rows={rows}
@@ -96,7 +94,7 @@ export default function ListUsers() {
 
         <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
           <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
-            Total Users : {initialUsers.length}
+            Total Forms : {initialForms.length}
           </span>
           <Pagination
             totalPages={pageCount}

@@ -7,48 +7,48 @@ const ComputerOperator = () => {
   const cardData = [
     {
       id: 1,
-      title: "Admissions",
-      bgColor: "#FEFCE8", // Light yellow background
-      borderColor: "#FACC15", // Yellow border
-      iconBg: "#FACC15", // Yellow icon background
-      Icon: LuClipboardList, // Outlined clipboard icon
-      to: "ListUsers",
+      title: "Recived Forms",
+      bgColor: "#FEFCE8",
+      borderColor: "#FACC15",
+      iconBg: "#FACC15",
+      Icon: LuClipboardList,
+      to: "Admissions/RecivedForms",
     },
     {
       id: 2,
       title: "Approved Form",
-      bgColor: "#EFF6FF", // Light blue background
-      borderColor: "#3B82F6", // Blue border
-      iconBg: "#3B82F6", // Blue icon background
+      bgColor: "#EFF6FF",
+      borderColor: "#3B82F6",
+      iconBg: "#3B82F6",
       Icon: LuClipboardList,
-      to: "ListUsers",
+      to: "Admissions",
     },
     {
       id: 3,
       title: "Pending Form",
-      bgColor: "#ECFEFF", // Light teal background
-      borderColor: "#06B6D4", // Teal border
-      iconBg: "#06B6D4", // Teal icon background
+      bgColor: "#ECFEFF",
+      borderColor: "#06B6D4",
+      iconBg: "#06B6D4",
       Icon: LuClipboardList,
-      to: "ListUsers",
+      to: "Admissions",
     },
     {
       id: 4,
       title: "Revert Form",
-      bgColor: "#ECFDF5", // Light green background
-      borderColor: "#22C55E", // Green border
-      iconBg: "#22C55E", // Green icon background
+      bgColor: "#ECFDF5",
+      borderColor: "#22C55E",
+      iconBg: "#22C55E",
       Icon: LuClipboardList,
-      to: "ListUsers",
+      to: "Admissions",
     },
     {
       id: 5,
       title: "Trash Form",
-      bgColor: "#FEF2F2", // Light red background
-      borderColor: "#EF4444", // Red border
-      iconBg: "#EF4444", // Red icon background
+      bgColor: "#FEF2F2",
+      borderColor: "#EF4444",
+      iconBg: "#EF4444",
       Icon: LuClipboardList,
-      to: "ListUsers",
+      to: "Admissions",
     },
   ];
 

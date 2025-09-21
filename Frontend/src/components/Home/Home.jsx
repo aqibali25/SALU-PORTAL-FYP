@@ -37,8 +37,8 @@ const Home = () => {
     },
     {
       id: 4,
-      Heading: "Computer Operator",
-      link: "ComputerOperator",
+      Heading: "Admissions",
+      link: "Admissions",
       isImg: false,
       Icon: faComputer, // ✅ Updated icon
       color1: "#22b508",
