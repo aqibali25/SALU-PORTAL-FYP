@@ -159,7 +159,7 @@ const AddUser = ({ Title }) => {
               <span className="text-[#ff0000] mr-1">*</span>
               CNIC:
             </label>
-            <CnicInput id="cnic" value={cnic} readOnly width="70%" />
+            <CnicInput id="cnic" value={cnic} readOnly width="35%" />
           </div>
 
           <InputContainer
@@ -203,7 +203,7 @@ const AddUser = ({ Title }) => {
               required
               value={form.userRole} // e.g. "Peon"
               onChange={onChange("userRole")}
-              className="w-full md:w-auto [@media(max-width:768px)]:!w-full min-w-0 flex-1 !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+              className="w-[40%] [@media(max-width:768px)]:!w-full min-w-0 !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
             >
               <option value="" disabled>
                 [Select an Option]

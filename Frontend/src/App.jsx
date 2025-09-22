@@ -9,6 +9,7 @@ import ListUsers from "./components/ListUsers/ListUsers";
 import Admissions from "./components/Admissions/Admissions";
 import ReceivedForms from "./components/Admissions/RecivedForms";
 import { ReviewForm } from "./components/Admissions/ReviewForm";
+import FormsByStatus from "./components/Admissions/FormsByStatus";
 
 function App() {
   return (
@@ -34,6 +35,22 @@ function App() {
         <Route
           path="SALU-PORTAL-FYP/Admissions/RecivedForms/ReviewForm"
           element={<ReviewForm />}
+        />
+        <Route
+          path="SALU-PORTAL-FYP/Admissions/ApprovedForms"
+          element={<ReceivedForms status={"Approved"} />}
+        />
+        <Route
+          path="SALU-PORTAL-FYP/Admissions/PendingForms"
+          element={<ReceivedForms status={"Pending"} />}
+        />
+        <Route
+          path="SALU-PORTAL-FYP/Admissions/RevertForms"
+          element={<ReceivedForms status={"Revert"} />}
+        />
+        <Route
+          path="SALU-PORTAL-FYP/Admissions/TrashForms"
+          element={<ReceivedForms status={"Trash"} />}
         />
         <Route path="/SALU-PORTAL-FYP/Settings" element={<Settings />} />
       </Routes>
