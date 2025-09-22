@@ -1,5 +1,6 @@
-// pages/ApprovedForms.jsx
+// pages/FormsByStatus.jsx
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import DataTable from "../TableData";
 import Pagination from "../Pagination";
 import Background from "./../../assets/Background.png";
@@ -7,36 +8,66 @@ import { initialForms } from "../../Hooks/useRecivedForms";
 import useRecivedForm from "../../Hooks/useRecivedForms";
 import BackButton from "../BackButton";
 
-function FormsByStatus({ status }) {
-  // 👇 filter only Approved status forms
-  const approvedForms =
-    status === "" || !status
+function FormsByStatus({ status = "" }) {
+  const navigate = useNavigate();
+
+  // 🟢 Filter based on status prop
+  const filteredForms =
+    !status || status.trim() === ""
       ? initialForms
       : initialForms.filter((form) => form.status === status);
-  // 👇 page size based on approvedForms now
+
+  // 👇 page size based on filteredForms
   const pageSize =
-    !approvedForms || approvedForms.length === 0
+    !filteredForms || filteredForms.length === 0
       ? 0
-      : approvedForms.length <= 10
-      ? approvedForms.length
+      : filteredForms.length <= 10
+      ? filteredForms.length
       : 10;
 
   const { rows, page, pageCount, setPage, query, setQuery, sort, onSort } =
     useRecivedForm({
-      initial: approvedForms, // 👈 pass only approved forms here
+      initial: filteredForms, // 👈 pass filtered forms here
       pageSize,
     });
 
+  // Build columns; include status column only if status prop is empty (means showing all forms)
   const columns = [
     { key: "serialNo", label: "Serial No." },
     { key: "studentName", label: "Student's Name" },
     { key: "fatherName", label: "Father's Name" },
     { key: "department", label: "Department" },
     { key: "cnic", label: "CNIC" },
-    { key: "status", label: "Status" },
+    // only show Status column if we are listing all forms (status prop empty)
+    status !== "" && status && { key: "status", label: "Status" },
   ];
 
-  const actions = [];
+  // Always show default “View” action
+  const actions = [
+    {
+      label: "View",
+      onClick: (row) => {
+        localStorage.removeItem("reviewFormStep");
+        navigate(
+          `/SALU-PORTAL-FYP/Admissions/RecivedForms/ReviewForm?${row.cnic}`,
+          {
+            state: { form: row },
+          }
+        );
+      },
+      icon: (
+        <button className="!px-4 !py-1 border border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-white transition cursor-pointer">
+          View
+        </button>
+      ),
+      className: "cursor-pointer",
+    },
+  ];
+
+  // 🟢 Dynamic heading
+  const heading = `${
+    status && status.trim() !== "" ? status : "Received"
+  } Forms`;
 
   return (
     <div
@@ -50,22 +81,22 @@ function FormsByStatus({ status }) {
     >
       <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
         <div className="flex justify-start items-center gap-3">
-          <BackButton></BackButton>
+          <BackButton />
           <h1 className="text-2xl sm:text-3xl md:text!-4xl !py-3 font-bold text-gray-900 dark:text-white">
-            Approved Forms
+            {heading}
           </h1>
         </div>
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 
         {/* Search */}
-        <div className="w-full max-w-[100%] flex justify-end overflow-hidden">
+        <div className="w-full max-w-[100%]] flex justify-end overflow-hidden">
           <input
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
               setPage(1);
             }}
-            placeholder="Search approved users..."
+            placeholder="Search users..."
             className="
             max-w-[100%]
             !px-2 !py-1
@@ -82,12 +113,12 @@ function FormsByStatus({ status }) {
           rows={rows}
           sort={sort}
           onSort={onSort}
-          actions={actions}
+          actions={status === "" && !status && actions} // always pass built-in action
         />
 
         <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
           <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
-            Total Approved Forms : {approvedForms.length}
+            Total Forms : {filteredForms.length}
           </span>
           <Pagination
             totalPages={pageCount}
