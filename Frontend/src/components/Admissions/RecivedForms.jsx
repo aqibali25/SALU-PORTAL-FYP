@@ -74,7 +74,7 @@ export default function ReceivedForms() {
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 
         {/* Search */}
-        <div className="w-full flex justify-end">
+        <div className="w-full max-w-[100%]] flex justify-end overflow-hidden">
           <input
             value={query}
             onChange={(e) => {
@@ -83,6 +83,7 @@ export default function ReceivedForms() {
             }}
             placeholder="Search users..."
             className="
+            max-w-[100%]
             !px-2 !py-1
             border-2 border-[#a5a5a5] outline-none
             bg-[#f9f9f9] text-[#2a2a2a]

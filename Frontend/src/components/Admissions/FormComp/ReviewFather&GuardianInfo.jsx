@@ -14,6 +14,7 @@ const ReviewFatherInfo = ({ title, data }) => {
 
       {/* CNIC as normal InputContainer with 30% width */}
       <InputContainer
+        width="40%"
         htmlFor="cnic"
         title={`${title} CNIC`}
         value={data.cnic || ""}

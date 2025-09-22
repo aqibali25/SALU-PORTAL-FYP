@@ -79,6 +79,7 @@ export default function ListUsers() {
             }}
             placeholder="Search users..."
             className="
+            max-w-[100%]
             !px-2 !py-1
             border-2 border-[#a5a5a5] outline-none
             bg-[#f9f9f9] text-[#2a2a2a]

@@ -5,6 +5,7 @@ const ReviewProgramOfStudy = () => {
   return (
     <div className="flex flex-col w-full justify-evenly items-center gap-6 !mt-10">
       <InputContainer
+        width="50%"
         value="Applied Department"
         title="Applied Department"
         htmlFor="appliedDepartment"
@@ -12,6 +13,7 @@ const ReviewProgramOfStudy = () => {
         disabled
       />
       <InputContainer
+        width="50%"
         value="Computer Science"
         title="First Choice"
         htmlFor="firstChoice"
@@ -19,6 +21,7 @@ const ReviewProgramOfStudy = () => {
         disabled
       />
       <InputContainer
+        width="50%"
         value="Business Administration"
         title="Second Choice"
         htmlFor="secondChoice"
@@ -26,6 +29,7 @@ const ReviewProgramOfStudy = () => {
         disabled
       />
       <InputContainer
+        width="50%"
         value="English Language And Literature"
         title="Third Choice"
         htmlFor="thirdChoice"

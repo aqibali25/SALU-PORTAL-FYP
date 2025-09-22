@@ -13,8 +13,8 @@ const InputContainer = forwardRef(
       placeholder = "",
       disabled,
       width = "70%",
-      autoComplete, // NEW: allow override
-      spellCheck = false, // reduce browser suggestions
+      autoComplete,
+      spellCheck = false,
     },
     ref
   ) => {
@@ -63,7 +63,7 @@ const InputContainer = forwardRef(
           className="
             w-full md:w-auto
             [@media(max-width:768px)]:!w-full
-            min-w-0 flex-1
+            min-w-0
             !px-2 !py-1
             border-2 border-[#a5a5a5] outline-none
             bg-[#f9f9f9] text-[#2a2a2a]

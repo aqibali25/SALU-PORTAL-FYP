@@ -4,7 +4,7 @@ import InputContainer from "../../InputContainer";
 const ReviewAcademicInfo = ({ title, data }) => {
   return (
     <div className="flex flex-col w-full justify-evenly items-center gap-6 !mt-6 !p-4">
-      <h5 className="text-2xl dark:text-white">{title}</h5>
+      {/* <h5 className="text-2xl dark:text-white">{title} Record</h5> */}
 
       <InputContainer
         htmlFor="group"
@@ -14,6 +14,7 @@ const ReviewAcademicInfo = ({ title, data }) => {
       />
 
       <InputContainer
+        width="40%"
         htmlFor="degreeYear"
         title="Degree Year"
         value={data.degreeYear || ""}
@@ -21,6 +22,7 @@ const ReviewAcademicInfo = ({ title, data }) => {
       />
 
       <InputContainer
+        width="40%"
         htmlFor="seatNo"
         title="Seat No"
         value={data.seatNo || ""}
@@ -42,6 +44,7 @@ const ReviewAcademicInfo = ({ title, data }) => {
       />
 
       <InputContainer
+        width="40%"
         htmlFor="totalMarks"
         title="Total Marks"
         value={data.totalMarks || ""}
