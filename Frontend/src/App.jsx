@@ -14,6 +14,8 @@ import Cookies from "js-cookie";
 import { useEffect } from "react";
 import SubjectAllocation from "./components/SubAlocation/SubjectAllocation";
 import AssigningSubject from "./components/SubAlocation/AssigningSubject";
+import Attendance from "./components/Attendance/Attendance";
+import MarkAttendances from "./components/Attendance/MarkAttendance";
 
 function App() {
   const isLoggedIn = Cookies.get("isLoggedIn") === "true";
@@ -82,6 +84,14 @@ function App() {
             <Route
               path="/SALU-PORTAL-FYP/SubjectAllocation/:subjectId"
               element={<AssigningSubject />}
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Attendance"
+              element={<Attendance />}
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Attendance/:subjectId"
+              element={<MarkAttendances />}
             />
           </>
         )}

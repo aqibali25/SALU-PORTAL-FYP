@@ -5,6 +5,7 @@ import {
   faUsers,
   faComputer,
   faBookOpen,
+  faCalendarAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import Background from "../../assets/Background.png";
 import { useEffect } from "react";
@@ -61,6 +62,15 @@ const Home = () => {
     },
     {
       id: 6,
+      Heading: "Attendance",
+      link: "Attendance",
+      isImg: false,
+      Icon: faCalendarAlt,
+      color1: "#007BFF", // calm blue for attendance
+      color2: "#f5f5f5",
+    },
+    {
+      id: 7,
       Heading: "Settings",
       link: "Settings",
       isImg: false,

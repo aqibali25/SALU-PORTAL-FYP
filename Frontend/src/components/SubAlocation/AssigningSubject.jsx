@@ -54,7 +54,7 @@ const AssigningSubject = () => {
 
   return (
     <div
-      className="!p-[25px] !px-[80px] min-h-[calc(100vh-90px)] w-[100%] bg-white dark:bg-gray-900"
+      className="!p-[25px] md:!px-[80px] min-h-[calc(100vh-90px)] w-[100%] bg-white dark:bg-gray-900"
       style={{
         backgroundImage: `url(${Background})`,
         backgroundSize: "cover",
