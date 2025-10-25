@@ -11,7 +11,8 @@ import {
 import Pagination from "../Pagination";
 import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
-import useMarkAttendance, {
+import {
+  useMarkAttendance,
   initialAttendance,
 } from "../../Hooks/useMarkAttendance";
 

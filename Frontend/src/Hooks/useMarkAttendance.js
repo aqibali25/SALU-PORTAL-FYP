@@ -1,7 +1,70 @@
+// src/Hooks/useMarkAttendance.js
+import { useState, useMemo } from "react";
+
+export const useMarkAttendance = ({ initial = [], pageSize = 10 }) => {
+  const [rows, setRows] = useState(initial);
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState({ key: "", dir: "" });
+  const [page, setPage] = useState(1);
+
+  // 🔹 Filter rows based on search query
+  const filteredRows = useMemo(() => {
+    if (!query) return rows;
+    return rows.filter(
+      (r) =>
+        r.studentName.toLowerCase().includes(query.toLowerCase()) ||
+        r.rollNo.toLowerCase().includes(query.toLowerCase())
+    );
+  }, [rows, query]);
+
+  // 🔹 Sort rows
+  const sortedRows = useMemo(() => {
+    if (!sort.key) return filteredRows;
+    return [...filteredRows].sort((a, b) => {
+      const aVal = a[sort.key];
+      const bVal = b[sort.key];
+      if (typeof aVal === "string") {
+        return sort.dir === "asc"
+          ? aVal.localeCompare(bVal)
+          : bVal.localeCompare(aVal);
+      }
+      return sort.dir === "asc" ? aVal - bVal : bVal - aVal;
+    });
+  }, [filteredRows, sort]);
+
+  // 🔹 Pagination
+  const pageCount = Math.ceil(sortedRows.length / pageSize);
+  const paginatedRows = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sortedRows.slice(start, start + pageSize);
+  }, [sortedRows, page, pageSize]);
+
+  // 🔹 Sorting handler
+  const onSort = (key) => {
+    setSort((prev) => {
+      if (prev.key === key) {
+        return { key, dir: prev.dir === "asc" ? "desc" : "asc" };
+      }
+      return { key, dir: "asc" };
+    });
+  };
+
+  return {
+    rows: paginatedRows,
+    query,
+    setQuery,
+    sort,
+    onSort,
+    page,
+    setPage,
+    pageCount,
+  };
+};
+
 export const initialAttendance = [
   {
     rollNo: "BSCS-001",
-    name: "Ali Raza",
+    studentName: "Ali Raza",
     attendance: [
       "Present",
       "Absent",
@@ -39,12 +102,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-002",
-    name: "Aqib Ali",
+    studentName: "Aqib Ali",
     attendance: [
       "Present",
       "Present",
@@ -82,12 +145,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-003",
-    name: "Hassan Ahmed",
+    studentName: "Hassan Ahmed",
     attendance: [
       "Present",
       "Present",
@@ -125,12 +188,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-004",
-    name: "Bilal Khan",
+    studentName: "Bilal Khan",
     attendance: [
       "Present",
       "Absent",
@@ -168,12 +231,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-005",
-    name: "Zain Shah",
+    studentName: "Zain Shah",
     attendance: [
       "Present",
       "Present",
@@ -211,12 +274,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-006",
-    name: "Umair Sheikh",
+    studentName: "Umair Sheikh",
     attendance: [
       "Present",
       "Present",
@@ -254,12 +317,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-007",
-    name: "Sana Tariq",
+    studentName: "Sana Tariq",
     attendance: [
       "Present",
       "Absent",
@@ -297,12 +360,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-008",
-    name: "Fatima Noor",
+    studentName: "Fatima Noor",
     attendance: [
       "Absent",
       "Absent",
@@ -340,12 +403,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-009",
-    name: "Hamza Yousuf",
+    studentName: "Hamza Yousuf",
     attendance: [
       "Present",
       "Present",
@@ -383,12 +446,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-010",
-    name: "Ayesha Khan",
+    studentName: "Ayesha Khan",
     attendance: [
       "Absent",
       "Present",
@@ -426,13 +489,13 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   // 🟢 Remaining 20 students (BSCS-011 to BSCS-030)
   {
     rollNo: "BSCS-011",
-    name: "Ahmed Ali",
+    studentName: "Ahmed Ali",
     attendance: [
       "Present",
       "Present",
@@ -470,12 +533,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-012",
-    name: "Maria Iqbal",
+    studentName: "Maria Iqbal",
     attendance: [
       "Absent",
       "Present",
@@ -513,12 +576,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-013",
-    name: "Shahid Mehmood",
+    studentName: "Shahid Mehmood",
     attendance: [
       "Present",
       "Absent",
@@ -556,12 +619,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-014",
-    name: "Eman Fatima",
+    studentName: "Eman Fatima",
     attendance: [
       "Absent",
       "Present",
@@ -599,12 +662,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-015",
-    name: "Noor Ahmed",
+    studentName: "Noor Ahmed",
     attendance: [
       "Present",
       "Present",
@@ -642,12 +705,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-016",
-    name: "Ibrahim Khan",
+    studentName: "Ibrahim Khan",
     attendance: [
       "Present",
       "Absent",
@@ -685,12 +748,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-017",
-    name: "Rida Hasan",
+    studentName: "Rida Hasan",
     attendance: [
       "Present",
       "Absent",
@@ -728,12 +791,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-018",
-    name: "Hassan Raza",
+    studentName: "Hassan Raza",
     attendance: [
       "Present",
       "Present",
@@ -771,12 +834,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-019",
-    name: "Sara Naveed",
+    studentName: "Sara Naveed",
     attendance: [
       "Absent",
       "Present",
@@ -814,12 +877,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-020",
-    name: "Kamran Ali",
+    studentName: "Kamran Ali",
     attendance: [
       "Present",
       "Absent",
@@ -857,12 +920,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-021",
-    name: "Hina Fatima",
+    studentName: "Hina Fatima",
     attendance: [
       "Present",
       "Present",
@@ -900,12 +963,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-022",
-    name: "Owais Sheikh",
+    studentName: "Owais Sheikh",
     attendance: [
       "Absent",
       "Present",
@@ -943,12 +1006,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-023",
-    name: "Mahnoor Tariq",
+    studentName: "Mahnoor Tariq",
     attendance: [
       "Absent",
       "Absent",
@@ -986,12 +1049,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-024",
-    name: "Adeel Rehman",
+    studentName: "Adeel Rehman",
     attendance: [
       "Present",
       "Present",
@@ -1029,12 +1092,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-025",
-    name: "Fizza Imran",
+    studentName: "Fizza Imran",
     attendance: [
       "Absent",
       "Present",
@@ -1072,12 +1135,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-026",
-    name: "Shahzaib Khan",
+    studentName: "Shahzaib Khan",
     attendance: [
       "Absent",
       "Absent",
@@ -1115,12 +1178,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-027",
-    name: "Khadija Noor",
+    studentName: "Khadija Noor",
     attendance: [
       "Absent",
       "Absent",
@@ -1158,12 +1221,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-028",
-    name: "Imran Qureshi",
+    studentName: "Imran Qureshi",
     attendance: [
       "Absent",
       "Absent",
@@ -1201,12 +1264,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-029",
-    name: "Nimra Aslam",
+    studentName: "Nimra Aslam",
     attendance: [
       "Absent",
       "Absent",
@@ -1244,12 +1307,12 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
   {
     rollNo: "BSCS-030",
-    name: "Faizan Malik",
+    studentName: "Faizan Malik",
     attendance: [
       "Absent",
       "Absent",
@@ -1287,7 +1350,7 @@ export const initialAttendance = [
         (this.attendance.filter((d) => d === "Present").length /
           this.attendance.length) *
         100
-      );
+      ).toFixed(1);
     },
   },
 ];
