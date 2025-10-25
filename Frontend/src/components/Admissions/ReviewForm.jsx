@@ -13,6 +13,9 @@ import RevertAndTrashMessage from "./RevertAndTrashMessage";
 import { useNavigate } from "react-router-dom";
 
 export const ReviewForm = () => {
+  useEffect(() => {
+    document.title = "SALU Portal | Review Form ";
+  }, []);
   const [step, setStep] = useState(() => {
     const savedStep = localStorage.getItem("reviewFormStep");
     return savedStep ? Number(savedStep) : 1;

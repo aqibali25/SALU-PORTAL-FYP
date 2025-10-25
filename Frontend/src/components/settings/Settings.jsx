@@ -1,7 +1,11 @@
+import { useEffect } from "react";
 import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
 
 const Sittings = () => {
+  useEffect(() => {
+    document.title = "SALU Portal | Settings ";
+  });
   return (
     <div
       className="!p-[25px] !px-[80px] min-h-[calc(100vh-90px)] w-[100%] bg-white dark:bg-gray-900"

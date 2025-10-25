@@ -4,10 +4,16 @@ import {
   faCog,
   faUsers,
   faComputer,
+  faBookOpen,
 } from "@fortawesome/free-solid-svg-icons";
 import Background from "../../assets/Background.png";
+import { useEffect } from "react";
 
 const Home = () => {
+  useEffect(() => {
+    document.title = "SALU Portal | Home ";
+  });
+
   const cards = [
     {
       id: 1,
@@ -40,12 +46,21 @@ const Home = () => {
       Heading: "Admissions",
       link: "Admissions",
       isImg: false,
-      Icon: faComputer, // ✅ Updated icon
+      Icon: faComputer,
       color1: "#22b508",
       color2: "#f5f5f5",
     },
     {
       id: 5,
+      Heading: "Subject Allocation",
+      link: "SubjectAllocation",
+      isImg: false,
+      Icon: faBookOpen,
+      color1: "#CA4DFF",
+      color2: "#f5f5f5",
+    },
+    {
+      id: 6,
       Heading: "Settings",
       link: "Settings",
       isImg: false,
@@ -62,7 +77,7 @@ const Home = () => {
         gap-x-6
         gap-y-3
         !p-10 !max-px-20
-        min-h-[calc(100vh-90px)]
+        min-h-[calc(100vh-96px)]
         w-full
         bg-white dark:bg-gray-900
         justify-center

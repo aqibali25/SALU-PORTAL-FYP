@@ -8,6 +8,10 @@ import InputContainer from "../InputContainer";
 import BackButton from "../BackButton";
 
 const AddUser = ({ Title }) => {
+  useEffect(() => {
+    document.title = `SALU Portal | ${Title}`;
+  }, [Title]);
+
   const rolesArray = [
     "Office Secretary",
     "Assistant",

@@ -4,8 +4,13 @@ import { AiOutlineClockCircle, AiOutlineCheckCircle } from "react-icons/ai";
 import Background from "../../assets/Background.png";
 import AdmissionCard from "./AdmissionCard";
 import BackButton from "../BackButton";
+import { useEffect } from "react";
 
 const ComputerOperator = () => {
+  useEffect(() => {
+    document.title = "SALU Portal | Computer Operator ";
+  });
+
   // Object for cards
   const cardData = [
     {

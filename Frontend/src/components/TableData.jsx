@@ -1,4 +1,3 @@
-// components/DataTable.jsx
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faAngleUp, faChevronDown } from "@fortawesome/free-solid-svg-icons";
 
@@ -46,9 +45,12 @@ export default function DataTable({
         </thead>
 
         {rows.length > 0 ? (
-          rows.map((row, i) => (
-            <tbody key={i}>
-              <tr className="hover:bg-gray-100 dark:hover:bg-gray-800 transition border-b border-gray-300 dark:border-gray-700">
+          <tbody>
+            {rows.map((row, i) => (
+              <tr
+                key={i}
+                className="hover:bg-gray-100 dark:hover:bg-gray-800 transition border-b border-gray-300 dark:border-gray-700"
+              >
                 {columns.map((col) => (
                   <td
                     key={col.key}
@@ -57,26 +59,35 @@ export default function DataTable({
                     {row[col.key]}
                   </td>
                 ))}
+
                 {actions.length > 0 && (
-                  <td className="!px-6 !py-3 whitespace-nowrap">
+                  <td className="!px-6 !py-3 whitespace-nowrap text-center">
                     <div className="flex justify-center items-center gap-4">
-                      {actions.map((action, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => action.onClick(row)}
-                          className={action.className}
-                          aria-label={`${action.label} ${row.username}`}
-                        >
-                          {action.icon}
-                        </button>
-                      ))}
+                      {actions.map((action, idx) =>
+                        action.render ? (
+                          // If the action provides a custom render function (like our Assign button)
+                          <div key={idx}>{action.render(row)}</div>
+                        ) : (
+                          // Otherwise render default button with icon or label
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => action.onClick(row)}
+                            className={action.className}
+                            aria-label={`${action.label || "Action"} ${
+                              row.username || ""
+                            }`}
+                          >
+                            {action.icon || action.label}
+                          </button>
+                        )
+                      )}
                     </div>
                   </td>
                 )}
               </tr>
-            </tbody>
-          ))
+            ))}
+          </tbody>
         ) : (
           <tbody>
             <tr>

@@ -2,8 +2,12 @@ import Background from "../../assets/Background.png";
 import InputContainer from "../InputContainer";
 import ProfilePic from "../../assets/Profile.png";
 import BackButton from "../BackButton";
+import { useEffect } from "react";
 
 const Profile = () => {
+  useEffect(() => {
+    document.title = "SALU Portal | Profile ";
+  });
   return (
     <div
       className="sm:!px-[40px] md:!px-[80px] !px-5 !py-[20px] min-h-[calc(100vh-90px)] w-[100%] bg-white dark:bg-gray-900"

@@ -1,5 +1,5 @@
 // pages/FormsByStatus.jsx
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DataTable from "../TableData";
 import Pagination from "../Pagination";
@@ -9,6 +9,12 @@ import useRecivedForm from "../../Hooks/useRecivedForms";
 import BackButton from "../BackButton";
 
 function FormsByStatus({ status = "" }) {
+  useEffect(() => {
+    document.title = `SALU Portal | ${
+      status && status.trim() !== "" ? status : "Received"
+    } Forms`;
+  }, [status]);
+
   const navigate = useNavigate();
 
   // 🟢 Filter based on status prop
@@ -118,7 +124,7 @@ function FormsByStatus({ status = "" }) {
 
         <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
           <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
-            Total Forms : {filteredForms.length}
+            Total Forms : {rows.length}
           </span>
           <Pagination
             totalPages={pageCount}

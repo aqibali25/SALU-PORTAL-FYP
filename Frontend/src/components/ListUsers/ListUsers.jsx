@@ -6,8 +6,13 @@ import { useUsersTable, initialUsers } from "../../Hooks/useUsersTable";
 import Background from "./../../assets/Background.png";
 import { useNavigate } from "react-router-dom";
 import BackButton from "../BackButton";
+import { useEffect } from "react";
 
 export default function ListUsers() {
+  useEffect(() => {
+    document.title = "SALU Portal | Users List ";
+  });
+
   const {
     rows,
     page,
@@ -100,7 +105,7 @@ export default function ListUsers() {
 
         <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
           <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
-            Total Users : {initialUsers.length}
+            Total Users : {rows.length}
           </span>
           <Pagination
             totalPages={pageCount}
