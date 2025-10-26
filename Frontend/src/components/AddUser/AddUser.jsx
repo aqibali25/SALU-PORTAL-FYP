@@ -1,17 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import Cookies from "js-cookie";
 import { useLocation, useNavigate } from "react-router-dom";
-
+import axios from "axios";
 import Background from "../../assets/Background.png";
 import CnicInput from "../CNICInput";
 import InputContainer from "../InputContainer";
 import BackButton from "../BackButton";
 
 const AddUser = ({ Title }) => {
-  useEffect(() => {
-    document.title = `SALU Portal | ${Title}`;
-  }, [Title]);
-
   const rolesArray = [
     "Office Secretary",
     "Assistant",
@@ -23,19 +19,19 @@ const AddUser = ({ Title }) => {
     "Accountant",
     "IT Support",
     "Librarian",
+    "Teacher",
   ];
 
   const [cnic, setCnic] = useState("");
+  const [loading, setLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
 
-  // If navigating from ListUsers "Edit", we’ll have a user here
   const editingUser = useMemo(
     () => location.state?.user ?? null,
     [location.state]
   );
 
-  // Local form state
   const [form, setForm] = useState({
     username: "",
     userEmail: "",
@@ -46,70 +42,114 @@ const AddUser = ({ Title }) => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    setCnic(Cookies.get("cnic") ?? "");
+    const cookieCnic = Cookies.get("cnic");
+    if (cookieCnic) setCnic(cookieCnic);
   }, []);
 
-  // Prefill if editing
+  // ✅ If editing, prefill the form
   useEffect(() => {
-    if (editingUser) {
-      setForm((f) => ({
-        ...f,
-        username: editingUser.username ?? "",
-        userEmail: editingUser.email ?? "",
-        userRole: editingUser.role ?? "",
-      }));
-      // If your edit flow stores CNIC in state, prefer that over cookie:
-      if (editingUser.cnic) setCnic(editingUser.cnic);
-    }
+    const initData = async () => {
+      try {
+        setLoading(true);
+
+        if (editingUser) {
+          // Normalize role (capitalize each word to match rolesArray)
+          const normalizeRole = (role = "") =>
+            role
+              .toLowerCase()
+              .split(" ")
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(" ");
+
+          setForm((f) => ({
+            ...f,
+            username: editingUser.username ?? "",
+            userEmail: editingUser.email ?? "",
+            userRole: normalizeRole(editingUser.role ?? ""),
+          }));
+
+          if (editingUser.cnic) setCnic(editingUser.cnic);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initData();
   }, [editingUser]);
 
   const onChange = (key) => (e) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
+  // ✅ CNIC formatting
+  const formatCNIC = (digitsOnly) => {
+    const a = digitsOnly.slice(0, 5);
+    const b = digitsOnly.slice(5, 12);
+    const c = digitsOnly.slice(12, 13);
+    return [a, b, c].filter(Boolean).join("-");
+  };
+
+  const handleCnicChange = (valOrEvent) => {
+    const raw =
+      typeof valOrEvent === "string"
+        ? valOrEvent
+        : valOrEvent?.target?.value ?? "";
+    const digits = raw.replace(/\D/g, "").slice(0, 13);
+    setCnic(formatCNIC(digits));
+  };
+
+  // ✅ Submit Handler (Axios)
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!cnic) {
-      alert("CNIC is required.");
-      return;
-    }
-    if (form.userPassword !== form.userConfirmPassword) {
-      alert("Passwords do not match.");
-      return;
-    }
+    if (!cnic) return alert("CNIC is required.");
+    if (!/^\d{5}-\d{7}-\d$/.test(cnic))
+      return alert("CNIC must be in the format 12345-1234567-1.");
+    if (form.userPassword !== form.userConfirmPassword)
+      return alert("Passwords do not match.");
 
     try {
       setSubmitting(true);
+      const token = localStorage.getItem("token");
+      const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-      // Build payload; allow password to be optional on update
       const payload = {
-        cnic, // unique key for upsert
+        cnic,
         username: form.username.trim(),
         email: form.userEmail.trim(),
         role: form.userRole,
-        password: form.userPassword || undefined, // backend should ignore if undefined on update
+        password: form.userPassword || undefined, // optional for updates
       };
 
-      const res = await fetch("/api/users/upsert", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        credentials: "include",
+      await axios.post(`${API}/api/users/upsert`, payload, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.message || "Failed to save user");
-      }
-
-      // success — route back to the list (or show a toast)
+      alert(
+        Title === "Update User"
+          ? "User updated successfully!"
+          : "User added successfully!"
+      );
       navigate("/SALU-PORTAL-FYP/ListUsers");
     } catch (err) {
       console.error(err);
-      alert(err.message);
+      alert(err.response?.data?.message || "Error saving user");
     } finally {
       setSubmitting(false);
     }
   };
+
+  // ✅ Loading Spinner
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[calc(100vh-90px)] bg-white dark:bg-gray-900">
+        <div className="w-16 h-16 border-4 border-yellow-400 border-dashed rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -126,7 +166,7 @@ const AddUser = ({ Title }) => {
         className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5"
       >
         <div className="flex justify-start items-center gap-3">
-          <BackButton></BackButton>
+          <BackButton />
           <h1 className="text-2xl sm:text-3xl md:text-4xl py-3 font-bold text-gray-900 dark:text-white">
             {Title}
           </h1>
@@ -163,7 +203,13 @@ const AddUser = ({ Title }) => {
               <span className="text-[#ff0000] mr-1">*</span>
               CNIC:
             </label>
-            <CnicInput id="cnic" value={cnic} readOnly width="35%" />
+            <CnicInput
+              id="cnic"
+              value={cnic}
+              onChange={handleCnicChange}
+              width="35%"
+              placeholder="12345-1234567-1"
+            />
           </div>
 
           <InputContainer
@@ -175,7 +221,7 @@ const AddUser = ({ Title }) => {
             title="User Password"
             htmlFor="userPassword"
             inputType="password"
-            required={Title !== "Update User"} // optional on update
+            required={Title !== "Update User"}
             value={form.userPassword}
             onChange={onChange("userPassword")}
           />
@@ -189,7 +235,7 @@ const AddUser = ({ Title }) => {
             title="User Confirm Password"
             htmlFor="userConfirmPassword"
             inputType="password"
-            required={Title !== "Update User"} // optional on update
+            required={Title !== "Update User"}
             value={form.userConfirmPassword}
             onChange={onChange("userConfirmPassword")}
           />
@@ -205,7 +251,7 @@ const AddUser = ({ Title }) => {
             <select
               id="userRole"
               required
-              value={form.userRole} // e.g. "Peon"
+              value={form.userRole}
               onChange={onChange("userRole")}
               className="w-[40%] [@media(max-width:768px)]:!w-full min-w-0 !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
             >
@@ -214,8 +260,6 @@ const AddUser = ({ Title }) => {
               </option>
               {rolesArray.map((role) => (
                 <option key={role} value={role}>
-                  {" "}
-                  {/* 👈 value is the exact role */}
                   {role}
                 </option>
               ))}

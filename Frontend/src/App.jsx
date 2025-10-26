@@ -44,9 +44,10 @@ function App() {
             />
             <Route path="/SALU-PORTAL-FYP/ListUsers" element={<ListUsers />} />
             <Route
-              path="/SALU-PORTAL-FYP/UpdateUser"
+              path="/SALU-PORTAL-FYP/UpdateUser/:userCnic"
               element={<AddUser Title="Update User" />}
             />
+
             <Route
               path="/SALU-PORTAL-FYP/Admissions"
               element={<Admissions />}
