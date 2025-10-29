@@ -35,9 +35,8 @@ export const ReviewForm = () => {
     1: "Program of Study",
     2: "Personal Information",
     3: "Father & Guardian Information",
-    4: "Matriculation Record",
-    5: "Intermediate Record",
-    6: "Photo & Documents",
+    4: "Academic Record",
+    5: "Photo & Documents",
   };
 
   const renderStepContent = () => {
@@ -49,58 +48,12 @@ export const ReviewForm = () => {
       case 3:
         return (
           <>
-            <ReviewFatherInfo
-              title="Father"
-              data={{
-                name: "Aqib Ali",
-                mobileNumber: "03001234567",
-                occupation: "Engineer",
-              }}
-            />
-            <hr className="my-4 w-full border-gray-400" />
-            <ReviewFatherInfo
-              title="Guardian"
-              data={{
-                name: "Ahmed Ali",
-                mobileNumber: "03109876543",
-                occupation: "Teacher",
-              }}
-            />
+            <ReviewFatherInfo />
           </>
         );
       case 4:
-        return (
-          <ReviewAcademicInfo
-            title="Matriculation"
-            data={{
-              group: "Science",
-              degreeYear: "2021",
-              seatNo: "654321",
-              institutionName: "Karachi School",
-              board: "Sindh Board",
-              totalMarks: "850",
-              marksObtained: "765",
-              percentage: "90%",
-            }}
-          />
-        );
+        return <ReviewAcademicInfo />;
       case 5:
-        return (
-          <ReviewAcademicInfo
-            title="Intermediate"
-            data={{
-              group: "Pre-Engineering",
-              degreeYear: "2023",
-              seatNo: "123456",
-              institutionName: "Karachi College",
-              board: "Sindh Board",
-              totalMarks: "1100",
-              marksObtained: "990",
-              percentage: "90%",
-            }}
-          />
-        );
-      case 6:
         return <ReviewDocuments />;
     }
   };

@@ -56,7 +56,7 @@ const ReviewFatherInfo = () => {
         />
       </div>
 
-      <div className="flex flex-col w-full justify-evenly items-center gap-6 border-t border-gray-400 pt-6">
+      <div className="flex flex-col w-full justify-evenly items-center gap-6 border-t border-gray-400 !pt-6">
         <h1 className="text-2xl dark:text-white">Guardian Information</h1>
 
         <InputContainer
