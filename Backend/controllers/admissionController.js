@@ -26,10 +26,33 @@ export const getAllAdmissions = async (req, res) => {
         f.name AS father_name,
         pos.applied_department AS department,
         p.cnic AS cnic,
-        p.form_status AS status
-      FROM \`${DB}\`.personal_info       p
-      LEFT JOIN \`${DB}\`.father_info        f   ON f.cnic  = p.cnic
-      LEFT JOIN \`${DB}\`.program_of_study   pos ON pos.cnic = p.cnic
+        p.form_status AS status,
+        
+        -- Add matriculation details
+        m.exam_group AS matric_exam_group,
+        m.year AS matric_year,
+        m.seat_no AS matric_seat_no,
+        m.institution_name AS matric_institution,
+        
+        -- Add intermediate details
+        i.exam_group AS inter_exam_group,
+        i.year AS inter_year,
+        i.seat_no AS inter_seat_no,
+        i.institution_name AS inter_institution,
+        
+        -- Add document details
+        d.photo_url,
+        d.cnic_front_url,
+        d.cnic_back_url,
+        d.matric_certificate_url,
+        d.inter_certificate_url
+
+      FROM \`${DB}\`.personal_info p
+      LEFT JOIN \`${DB}\`.father_info f ON f.cnic = p.cnic
+      LEFT JOIN \`${DB}\`.program_of_study pos ON pos.cnic = p.cnic
+      LEFT JOIN \`${DB}\`.matriculation m ON m.cnic = p.cnic
+      LEFT JOIN \`${DB}\`.intermediate i ON i.cnic = p.cnic
+      LEFT JOIN \`${DB}\`.uploaded_docs d ON d.cnic = p.cnic
       ${where}
       ORDER BY p.id DESC
       `,
@@ -44,13 +67,13 @@ export const getAllAdmissions = async (req, res) => {
 };
 
 /**
- * GET /api/admissions/:id
+ * GET /api/admissions/:cnic
  * Fetch ONE application’s full info for the Review pages.
- * :id corresponds to personal_info.id
+ * :cnic corresponds to personal_info.cnic
  */
-export const getAdmissionById = async (req, res) => {
+export const getAdmissionByCnic = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { cnic } = req.params;
 
     const [rows] = await sequelize.query(
       `
@@ -72,23 +95,45 @@ export const getAdmissionById = async (req, res) => {
         p.permanent_address,
         p.form_status,
 
-        f.name             AS father_name,
-        f.cnic_number      AS father_cnic_number,
-        f.mobile_number    AS father_mobile,
-        f.occupation       AS father_occupation,
+        f.name AS father_name,
+        f.cnic_number AS father_cnic_number,
+        f.mobile_number AS father_mobile,
+        f.occupation AS father_occupation,
 
         pos.applied_department,
         pos.first_choice,
         pos.second_choice,
-        pos.third_choice
+        pos.third_choice,
+        
+        -- Matriculation details
+        m.exam_group AS matric_exam_group,
+        m.year AS matric_year,
+        m.seat_no AS matric_seat_no,
+        m.institution_name AS matric_institution,
+        
+        -- Intermediate details
+        i.exam_group AS inter_exam_group,
+        i.year AS inter_year,
+        i.seat_no AS inter_seat_no,
+        i.institution_name AS inter_institution,
+        
+        -- Documents
+        d.photo_url,
+        d.cnic_front_url,
+        d.cnic_back_url,
+        d.matric_certificate_url,
+        d.inter_certificate_url
 
-      FROM \`${DB}\`.personal_info       p
-      LEFT JOIN \`${DB}\`.father_info        f   ON f.cnic  = p.cnic
-      LEFT JOIN \`${DB}\`.program_of_study   pos ON pos.cnic = p.cnic
-      WHERE p.id = ?
+      FROM \`${DB}\`.personal_info p
+      LEFT JOIN \`${DB}\`.father_info f ON f.cnic = p.cnic
+      LEFT JOIN \`${DB}\`.program_of_study pos ON pos.cnic = p.cnic
+      LEFT JOIN \`${DB}\`.matriculation m ON m.cnic = p.cnic
+      LEFT JOIN \`${DB}\`.intermediate i ON i.cnic = p.cnic
+      LEFT JOIN \`${DB}\`.uploaded_docs d ON d.cnic = p.cnic
+      WHERE p.cnic = ?
       LIMIT 1
       `,
-      { replacements: [id] }
+      { replacements: [cnic] }
     );
 
     if (!rows.length) {
@@ -131,6 +176,7 @@ export const getAdmissionById = async (req, res) => {
         second_choice: row.second_choice,
         third_choice: row.third_choice,
       },
+
       matriculation: {
         exam_group: row.matric_exam_group,
         year: row.matric_year,
@@ -156,36 +202,27 @@ export const getAdmissionById = async (req, res) => {
 
     res.json({ success: true, data: payload });
   } catch (err) {
-    console.error("getAdmissionById error:", err);
+    console.error("getAdmissionByCnic error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
 /**
- * GET /api/admissions/:id/academics
- * Returns matriculation and intermediate for the application (by personal_info.id)
+ * GET /api/admissions/:cnic/academics
+ * Returns matriculation and intermediate for the application (by personal_info.cnic)
  */
-export const getAcademicsById = async (req, res) => {
+export const getAcademicsByCnic = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    // 1) Resolve CNIC from personal_info.id
-    const [[pi]] = await sequelize.query(
-      `SELECT cnic FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
-      { replacements: [id] }
-    );
-    if (!pi) return res.status(404).json({ success: false, message: "Form not found" });
-
-    const cnic = pi.cnic;
+    const { cnic } = req.params;
 
     // 2) Matriculation (latest)
     const [matricRows] = await sequelize.query(
       `
       SELECT
         m.id,
-        m.exam_group    AS exam_group,
-        m.year          AS degree_year,
-        m.seat_no       AS seat_no,
+        m.exam_group AS exam_group,
+        m.year AS degree_year,
+        m.seat_no AS seat_no,
         m.institution_name,
         m.board,
         m.total_marks,
@@ -204,9 +241,9 @@ export const getAcademicsById = async (req, res) => {
       `
       SELECT
         i.id,
-        i.exam_group    AS exam_group,
-        i.year          AS degree_year,
-        i.seat_no       AS seat_no,
+        i.exam_group AS exam_group,
+        i.year AS degree_year,
+        i.seat_no AS seat_no,
         i.institution_name,
         i.board,
         i.total_marks,
@@ -229,27 +266,18 @@ export const getAcademicsById = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("getAcademicsById error:", err);
+    console.error("getAcademicsByCnic error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
 /**
- * GET /api/admissions/:id/documents
- * Returns uploaded documents for the application (by personal_info.id)
+ * GET /api/admissions/:cnic/documents
+ * Returns uploaded documents for the application (by personal_info.cnic)
  */
-export const getDocumentsById = async (req, res) => {
+export const getDocumentsByCnic = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    // 1) Resolve CNIC from personal_info.id
-    const [[pi]] = await sequelize.query(
-      `SELECT cnic FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
-      { replacements: [id] }
-    );
-    if (!pi) return res.status(404).json({ success: false, message: "Form not found" });
-
-    const cnic = pi.cnic;
+    const { cnic } = req.params;
 
     // 2) Latest uploaded docs
     const [docs] = await sequelize.query(
@@ -278,7 +306,7 @@ export const getDocumentsById = async (req, res) => {
       data: { cnic, documents: docs[0] || null },
     });
   } catch (err) {
-    console.error("getDocumentsById error:", err);
+    console.error("getDocumentsByCnic error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
