@@ -25,6 +25,7 @@ export default function ListUsers() {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsers(res.data);
+        console.log("✅ Users fetched:", res.data);
       } catch (err) {
         console.error(err);
         alert("Error loading users: " + err.message);

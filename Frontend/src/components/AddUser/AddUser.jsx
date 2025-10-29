@@ -20,6 +20,7 @@ const AddUser = ({ Title }) => {
     "IT Support",
     "Librarian",
     "Teacher",
+    "HOD",
   ];
 
   const [cnic, setCnic] = useState("");
@@ -40,11 +41,6 @@ const AddUser = ({ Title }) => {
     userRole: "",
   });
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    const cookieCnic = Cookies.get("cnic");
-    if (cookieCnic) setCnic(cookieCnic);
-  }, []);
 
   // ✅ If editing, prefill the form
   useEffect(() => {
@@ -208,7 +204,7 @@ const AddUser = ({ Title }) => {
               value={cnic}
               onChange={handleCnicChange}
               width="35%"
-              placeholder="12345-1234567-1"
+              placeholder="XXXXX-XXXXXXX-X"
             />
           </div>
 

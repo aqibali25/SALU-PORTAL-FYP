@@ -8,6 +8,7 @@ const CnicInput = ({
   required = true,
   width = "70%", // match InputContainer default
   className = "",
+  placeholder,
 }) => {
   const [cnic, setCnic] = useState("");
   const [hasBlurred, setHasBlurred] = useState(false);
@@ -58,7 +59,7 @@ const CnicInput = ({
         ${invalid ? "!border-red-500" : ""}
         ${className}
       `}
-      placeholder="12345-1234567-1"
+      placeholder={placeholder}
     />
   );
 };

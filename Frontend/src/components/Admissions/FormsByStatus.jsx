@@ -1,54 +1,116 @@
-// pages/FormsByStatus.jsx
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import DataTable from "../TableData";
 import Pagination from "../Pagination";
-import Background from "./../../assets/Background.png";
-import { initialForms } from "../../Hooks/useRecivedForms";
-import useRecivedForm from "../../Hooks/useRecivedForms";
+import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
 
-function FormsByStatus({ status = "" }) {
-  useEffect(() => {
-    document.title = `SALU Portal | ${
-      status && status.trim() !== "" ? status : "Received"
-    } Forms`;
-  }, [status]);
-
+export default function FormsByStatus({ status = "" }) {
   const navigate = useNavigate();
 
-  // 🟢 Filter based on status prop
-  const filteredForms =
-    !status || status.trim() === ""
-      ? initialForms
-      : initialForms.filter((form) => form.status === status);
+  const [forms, setForms] = useState([]);
+  const [filteredForms, setFilteredForms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  // 👇 page size based on filteredForms
-  const pageSize =
-    !filteredForms || filteredForms.length === 0
-      ? 0
-      : filteredForms.length <= 10
-      ? filteredForms.length
-      : 10;
+  useEffect(() => {
+    const fetchAdmissions = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
 
-  const { rows, page, pageCount, setPage, query, setQuery, sort, onSort } =
-    useRecivedForm({
-      initial: filteredForms, // 👈 pass filtered forms here
-      pageSize,
-    });
+        console.log("🔄 Fetching admissions from backend...");
 
-  // Build columns; include status column only if status prop is empty (means showing all forms)
+        const res = await axios.get("http://localhost:5000/api/admissions", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        console.log("✅ Raw Admissions Data:", res.data);
+
+        // ✅ Access nested array safely
+        let fetchedData = Array.isArray(res.data.data) ? res.data.data : [];
+
+        // ✅ Remove duplicate entries based on CNIC or form_id
+        const uniqueForms = fetchedData.filter(
+          (form, index, self) =>
+            index ===
+            self.findIndex(
+              (f) => f.cnic === form.cnic && f.form_id === form.form_id
+            )
+        );
+
+        console.log(
+          `🧾 Total fetched: ${fetchedData.length}, Unique: ${uniqueForms.length}`
+        );
+
+        setForms(uniqueForms);
+      } catch (err) {
+        console.error("❌ Error fetching admissions:", err);
+        alert(
+          err.response?.data?.message ||
+            "Failed to fetch admissions. Please check your token or try again."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAdmissions();
+  }, []);
+
+  // 🟢 Filter by status and search query
+  useEffect(() => {
+    let data = [...forms];
+
+    if (status && status.trim() !== "") {
+      data = data.filter(
+        (form) => form.status?.toLowerCase() === status.toLowerCase()
+      );
+    }
+
+    if (query.trim() !== "") {
+      const lowerQuery = query.toLowerCase();
+      data = data.filter(
+        (form) =>
+          form.student_name?.toLowerCase().includes(lowerQuery) ||
+          form.father_name?.toLowerCase().includes(lowerQuery) ||
+          form.department?.toLowerCase().includes(lowerQuery) ||
+          form.cnic?.toLowerCase().includes(lowerQuery)
+      );
+    }
+
+    setFilteredForms(data);
+    setPage(1);
+  }, [forms, status, query]);
+
+  // 🟢 Pagination logic
+  const startIndex = (page - 1) * pageSize;
+  const paginatedForms = filteredForms.slice(startIndex, startIndex + pageSize);
+  const pageCount = Math.ceil(filteredForms.length / pageSize);
+
+  // 🟢 Columns
   const columns = [
     { key: "serialNo", label: "Serial No." },
-    { key: "studentName", label: "Student's Name" },
-    { key: "fatherName", label: "Father's Name" },
+    { key: "student_name", label: "Student's Name" },
+    { key: "father_name", label: "Father's Name" },
     { key: "department", label: "Department" },
     { key: "cnic", label: "CNIC" },
-    // only show Status column if we are listing all forms (status prop empty)
-    status !== "" && status && { key: "status", label: "Status" },
   ];
 
-  // Always show default “View” action
+  if (!status || status.trim() === "") {
+    columns.push({ key: "status", label: "Status" });
+  }
+
+  // 🟢 Add serial numbers
+  const rows = paginatedForms.map((form, index) => ({
+    ...form,
+    serialNo: startIndex + index + 1,
+  }));
+
+  // 🟢 Actions
   const actions = [
     {
       label: "View",
@@ -56,9 +118,7 @@ function FormsByStatus({ status = "" }) {
         localStorage.removeItem("reviewFormStep");
         navigate(
           `/SALU-PORTAL-FYP/Admissions/RecivedForms/ReviewForm?${row.cnic}`,
-          {
-            state: { form: row },
-          }
+          { state: { form: row } }
         );
       },
       icon: (
@@ -66,14 +126,21 @@ function FormsByStatus({ status = "" }) {
           View
         </button>
       ),
-      className: "cursor-pointer",
     },
   ];
 
-  // 🟢 Dynamic heading
   const heading = `${
     status && status.trim() !== "" ? status : "Received"
   } Forms`;
+
+  // 🌀 Custom Spinner Loader
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[calc(100vh-90px)] bg-white dark:bg-gray-900">
+        <div className="w-16 h-16 border-4 border-yellow-400 border-dashed rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -88,52 +155,46 @@ function FormsByStatus({ status = "" }) {
       <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
         <div className="flex justify-start items-center gap-3">
           <BackButton />
-          <h1 className="text-2xl sm:text-3xl md:text!-4xl !py-3 font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl !py-3 font-bold text-gray-900 dark:text-white">
             {heading}
           </h1>
         </div>
+
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 
-        {/* Search */}
-        <div className="w-full max-w-[100%]] flex justify-end overflow-hidden">
+        {/* 🔍 Search */}
+        <div className="w-full flex justify-end overflow-hidden">
           <input
             value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Search users..."
-            className="
-            max-w-[100%]
-            !px-2 !py-1
-            border-2 border-[#a5a5a5] outline-none
-            bg-[#f9f9f9] text-[#2a2a2a]
-            dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100
-            disabled:opacity-60 disabled:cursor-not-allowed
-            "
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search forms..."
+            className="w-full sm:w-[250px] !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded"
           />
         </div>
 
-        <DataTable
-          columns={columns}
-          rows={rows}
-          sort={sort}
-          onSort={onSort}
-          actions={status === "" && !status && actions} // always pass built-in action
-        />
+        {/* 🧾 Table or No Data */}
+        {filteredForms.length === 0 ? (
+          <p className="text-center text-gray-700 dark:text-gray-200 mt-10">
+            No forms found.
+          </p>
+        ) : (
+          <>
+            <DataTable columns={columns} rows={rows} actions={actions} />
 
-        <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
-          <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
-            Total Forms : {rows.length}
-          </span>
-          <Pagination
-            totalPages={pageCount}
-            currentPage={page}
-            onPageChange={setPage}
-          />
-        </div>
+            {/* Pagination */}
+            <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
+              <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
+                Total Forms: {filteredForms.length}
+              </span>
+              <Pagination
+                totalPages={pageCount}
+                currentPage={page}
+                onPageChange={setPage}
+              />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 }
-export default FormsByStatus;
