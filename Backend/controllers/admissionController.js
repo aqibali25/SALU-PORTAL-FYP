@@ -131,6 +131,27 @@ export const getAdmissionById = async (req, res) => {
         second_choice: row.second_choice,
         third_choice: row.third_choice,
       },
+      matriculation: {
+        exam_group: row.matric_exam_group,
+        year: row.matric_year,
+        seat_no: row.matric_seat_no,
+        institution_name: row.matric_institution,
+      },
+
+      intermediate: {
+        exam_group: row.inter_exam_group,
+        year: row.inter_year,
+        seat_no: row.inter_seat_no,
+        institution_name: row.inter_institution,
+      },
+
+      documents: {
+        photo_url: row.photo_url,
+        cnic_front_url: row.cnic_front_url,
+        cnic_back_url: row.cnic_back_url,
+        matric_certificate_url: row.matric_certificate_url,
+        inter_certificate_url: row.inter_certificate_url,
+      }
     };
 
     res.json({ success: true, data: payload });
