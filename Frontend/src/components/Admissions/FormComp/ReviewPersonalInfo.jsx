@@ -1,25 +1,50 @@
+import { useLocation } from "react-router-dom";
 import InputContainer from "../../InputContainer";
 
 const ReviewPersonalInfo = () => {
+  const location = useLocation();
+  const formData = location.state?.form?.data;
+  const cnic = formData?.cnic;
+  const personalInfo = formData?.personal_info;
+
+  console.log("📦 Personal Info Data:", personalInfo);
+
+  if (!personalInfo) {
+    return (
+      <p className="text-center text-gray-700 dark:text-gray-200 mt-10">
+        No personal information found.
+      </p>
+    );
+  }
+
+  const [dobYear, dobMonth, dobDay] = personalInfo.dob
+    ? personalInfo.dob.split("-")
+    : ["", "", ""];
+
   return (
     <div className="flex flex-col w-full justify-evenly items-center gap-6 !mt-10 !p-4">
       <InputContainer
         htmlFor="firstName"
         title="First Name"
-        value="Aqib"
+        value={personalInfo.first_name || ""}
         disabled
       />
       <InputContainer
         htmlFor="lastName"
         title="Last Name"
-        value="Ali"
+        value={personalInfo.last_name || ""}
         disabled
       />
 
       {/* Gender */}
-      <InputContainer htmlFor="gender" title="Gender" value="Male" disabled />
+      <InputContainer
+        htmlFor="gender"
+        title="Gender"
+        value={personalInfo.gender || ""}
+        disabled
+      />
 
-      {/* Date of Birth split into 3 inputs */}
+      {/* Date of Birth */}
       <div className="flex w-full max-w-[800px] flex-col md:flex-row gap-[8px] md:gap-5">
         <label className="w-auto md:w-1/4 text-start md:text-right text-gray-900 dark:text-white">
           Date of Birth:
@@ -28,7 +53,7 @@ const ReviewPersonalInfo = () => {
           <input
             id="dobDay"
             type="text"
-            value="15"
+            value={dobDay || ""}
             disabled
             placeholder="DD"
             className="w-[20%] !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -36,7 +61,7 @@ const ReviewPersonalInfo = () => {
           <input
             id="dobMonth"
             type="text"
-            value="05"
+            value={dobMonth || ""}
             disabled
             placeholder="MM"
             className="w-[20%] !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -44,7 +69,7 @@ const ReviewPersonalInfo = () => {
           <input
             id="dobYear"
             type="text"
-            value="2000"
+            value={dobYear || ""}
             disabled
             placeholder="YYYY"
             className="w-[30%] !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -52,14 +77,14 @@ const ReviewPersonalInfo = () => {
         </div>
       </div>
 
-      {/* CNIC */}
+      {/* CNIC (from data or URL fallback) */}
       <InputContainer
         width="30%"
         htmlFor="cnic"
         title="CNIC"
-        value="12345-1234567-1"
+        value={personalInfo.cnic || cnic || ""}
         disabled
-        className="sm:w-full" // full width on small screens
+        className="sm:w-full"
       />
 
       {/* Religion */}
@@ -67,7 +92,7 @@ const ReviewPersonalInfo = () => {
         width="40%"
         htmlFor="religion"
         title="Religion"
-        value="Islam"
+        value={personalInfo.religion || ""}
         disabled
         className="sm:w-full"
       />
@@ -77,7 +102,7 @@ const ReviewPersonalInfo = () => {
         width="40%"
         htmlFor="nativeLanguage"
         title="Native Language"
-        value="Urdu"
+        value={personalInfo.native_language || "N/A"}
         disabled
       />
 
@@ -85,7 +110,7 @@ const ReviewPersonalInfo = () => {
       <InputContainer
         htmlFor="bloodGroup"
         title="Blood Group"
-        value="B+"
+        value={personalInfo.blood_group || "N/A"}
         disabled
       />
 
@@ -94,7 +119,7 @@ const ReviewPersonalInfo = () => {
         width="40%"
         htmlFor="province"
         title="Province"
-        value="Sindh"
+        value={personalInfo.province || ""}
         disabled
         className="sm:w-full"
       />
@@ -104,7 +129,7 @@ const ReviewPersonalInfo = () => {
         width="40%"
         htmlFor="city"
         title="City"
-        value="Karachi"
+        value={personalInfo.city || ""}
         disabled
         className="sm:w-full"
       />
@@ -113,13 +138,13 @@ const ReviewPersonalInfo = () => {
       <InputContainer
         htmlFor="postalAddress"
         title="Postal Address"
-        value="123 Street, Karachi"
+        value={personalInfo.postal_address || ""}
         disabled
       />
       <InputContainer
         htmlFor="permanentAddress"
         title="Permanent Address"
-        value="456 Street, Sukkur"
+        value={personalInfo.permanent_address || ""}
         disabled
       />
     </div>

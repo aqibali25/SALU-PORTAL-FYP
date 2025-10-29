@@ -12,10 +12,12 @@ export default function FormsByStatus({ status = "" }) {
   const [forms, setForms] = useState([]);
   const [filteredForms, setFilteredForms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingForm, setLoadingForm] = useState(false);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
+  // Fetch all admissions
   useEffect(() => {
     const fetchAdmissions = async () => {
       try {
@@ -30,10 +32,8 @@ export default function FormsByStatus({ status = "" }) {
 
         console.log("✅ Raw Admissions Data:", res.data);
 
-        // ✅ Access nested array safely
         let fetchedData = Array.isArray(res.data.data) ? res.data.data : [];
 
-        // ✅ Remove duplicate entries based on CNIC or form_id
         const uniqueForms = fetchedData.filter(
           (form, index, self) =>
             index ===
@@ -61,7 +61,7 @@ export default function FormsByStatus({ status = "" }) {
     fetchAdmissions();
   }, []);
 
-  // 🟢 Filter by status and search query
+  // Filter by status and search query
   useEffect(() => {
     let data = [...forms];
 
@@ -86,12 +86,12 @@ export default function FormsByStatus({ status = "" }) {
     setPage(1);
   }, [forms, status, query]);
 
-  // 🟢 Pagination logic
+  // Pagination logic
   const startIndex = (page - 1) * pageSize;
   const paginatedForms = filteredForms.slice(startIndex, startIndex + pageSize);
   const pageCount = Math.ceil(filteredForms.length / pageSize);
 
-  // 🟢 Columns
+  // Columns
   const columns = [
     { key: "serialNo", label: "Serial No." },
     { key: "student_name", label: "Student's Name" },
@@ -104,26 +104,51 @@ export default function FormsByStatus({ status = "" }) {
     columns.push({ key: "status", label: "Status" });
   }
 
-  // 🟢 Add serial numbers
+  // Add serial numbers
   const rows = paginatedForms.map((form, index) => ({
     ...form,
     serialNo: startIndex + index + 1,
   }));
 
-  // 🟢 Actions
+  // Actions
   const actions = [
     {
       label: "View",
-      onClick: (row) => {
-        localStorage.removeItem("reviewFormStep");
-        navigate(
-          `/SALU-PORTAL-FYP/Admissions/RecivedForms/ReviewForm?${row.cnic}`,
-          { state: { form: row } }
-        );
+      onClick: async (row) => {
+        try {
+          setLoadingForm(true);
+          const token = localStorage.getItem("token");
+          const res = await axios.get(
+            `http://localhost:5000/api/admissions/${row.form_id}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+
+          const formData = res.data;
+
+          localStorage.removeItem("reviewFormStep");
+
+          navigate(
+            `/SALU-PORTAL-FYP/Admissions/RecivedForms/ReviewForm?${row.cnic}`,
+            { state: { form: formData } }
+          );
+        } catch (err) {
+          console.error("❌ Error fetching form by CNIC:", err);
+          alert(
+            err.response?.data?.message ||
+              "Failed to fetch form data. Please try again."
+          );
+        } finally {
+          setLoadingForm(false);
+        }
       },
       icon: (
-        <button className="!px-4 !py-1 border border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-white transition cursor-pointer">
-          View
+        <button
+          disabled={loadingForm}
+          className="!px-4 !py-1 border border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-white transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loadingForm ? "Loading..." : "View"}
         </button>
       ),
     },
@@ -133,7 +158,7 @@ export default function FormsByStatus({ status = "" }) {
     status && status.trim() !== "" ? status : "Received"
   } Forms`;
 
-  // 🌀 Custom Spinner Loader
+  // Main loader
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-90px)] bg-white dark:bg-gray-900">
@@ -162,7 +187,7 @@ export default function FormsByStatus({ status = "" }) {
 
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 
-        {/* 🔍 Search */}
+        {/* Search */}
         <div className="w-full flex justify-end overflow-hidden">
           <input
             value={query}
@@ -172,7 +197,7 @@ export default function FormsByStatus({ status = "" }) {
           />
         </div>
 
-        {/* 🧾 Table or No Data */}
+        {/* Table or No Data */}
         {filteredForms.length === 0 ? (
           <p className="text-center text-gray-700 dark:text-gray-200 mt-10">
             No forms found.
