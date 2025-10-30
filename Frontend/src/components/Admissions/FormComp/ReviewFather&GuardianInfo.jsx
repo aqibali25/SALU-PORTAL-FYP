@@ -7,10 +7,10 @@ const ReviewFatherInfo = () => {
   // Get full form data
   const formData = location.state?.form?.data;
   const fatherInfo = formData?.father_info;
-  // const guardianInfo = formData?.guardian_info;
+  const guardianInfo = formData?.guardian_info;
 
   console.log("👨‍👦 Father Info:", fatherInfo);
-  // console.log("🧑‍🤝‍🧑 Guardian Info:", guardianInfo);
+  console.log("🧑‍🤝‍🧑 Guardian Info:", guardianInfo);
 
   if (!fatherInfo && !guardianInfo) {
     return (
@@ -62,7 +62,7 @@ const ReviewFatherInfo = () => {
         <InputContainer
           htmlFor="guardianName"
           title="Guardian Name"
-          value={""} //guardianInfo.name ||
+          value={guardianInfo.name || ""}
           disabled
         />
 
@@ -70,21 +70,21 @@ const ReviewFatherInfo = () => {
           width="40%"
           htmlFor="guardianCnic"
           title="Guardian CNIC"
-          value={""} // guardianInfo.cnic ||
+          value={guardianInfo.cnic_number || ""}
           disabled
         />
 
         <InputContainer
           htmlFor="guardianMobile"
           title="Guardian Mobile No"
-          value={""} //guardianInfo.mobile_number ||
+          value={guardianInfo.mobile_number || ""}
           disabled
         />
 
         <InputContainer
           htmlFor="guardianOccupation"
           title="Guardian Occupation"
-          value={""} //guardianInfo.occupation ||
+          value={guardianInfo.occupation || "N/A"}
           disabled
         />
       </div>
