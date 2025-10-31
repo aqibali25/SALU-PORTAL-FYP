@@ -8,6 +8,7 @@ import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/user.js";
 //import userRoutesGet from "./routes/userRoutesGet.js";
 import admissionsRoutes from "./routes/admissions.js";
+import subjectAllocationRoutes from "./routes/subjectAllocation.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -22,6 +23,7 @@ app.get("/api/health", (_req, res) => res.json({ ok: true }));
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/admissions", admissionsRoutes);
+app.use("/api/subject-allocations", subjectAllocationRoutes);
 // Error handler
 app.use((err, _req, res, _next) => {
   console.error(err);
