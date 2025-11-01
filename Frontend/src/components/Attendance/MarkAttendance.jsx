@@ -19,11 +19,25 @@ import {
 export default function MarkAttendance() {
   const { subjectId } = useParams();
   const [submitting, setSubmitting] = useState(false);
-  const [attendanceData, setAttendanceData] = useState({}); // ✅ store attendance per student
+  const [attendanceData, setAttendanceData] = useState({});
+  const [submitted, setSubmitted] = useState(false); // ✅ Added submitted state
+  const [currentDate, setCurrentDate] = useState(new Date().getDate()); // ✅ Track date
 
   useEffect(() => {
     document.title = `SALU Portal | Mark Attendance (${subjectId})`;
   }, [subjectId]);
+
+  // ✅ Reset submitted when day changes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const today = new Date().getDate();
+      if (today !== currentDate) {
+        setCurrentDate(today);
+        setSubmitted(false);
+      }
+    }, 60000); // check every 1 minute
+    return () => clearInterval(interval);
+  }, [currentDate]);
 
   const { rows, query, setQuery, sort, onSort, page, setPage, pageCount } =
     useMarkAttendance({
@@ -55,6 +69,7 @@ export default function MarkAttendance() {
       const formatted = Object.values(attendanceData);
       console.log("✅ Final Attendance Data:", formatted);
       setSubmitting(false);
+      setSubmitted(true); // ✅ Mark attendance as submitted
       alert("Attendance saved successfully!");
     }, 1000);
   };
@@ -67,22 +82,22 @@ export default function MarkAttendance() {
   ];
 
   const renderStatusIcon = (status) => {
-    switch (status) {
-      case "Present" || "present":
+    switch (status?.toLowerCase()) {
+      case "present":
         return (
           <FontAwesomeIcon
             icon={faCircleCheck}
             className="text-green-500 text-lg"
           />
         );
-      case "Absent" || "absent":
+      case "absent":
         return (
           <FontAwesomeIcon
             icon={faCircleXmark}
             className="text-red-500 text-lg"
           />
         );
-      case "Leave" || "leave":
+      case "leave":
         return (
           <FontAwesomeIcon
             icon={faClockRotateLeft}
@@ -106,15 +121,29 @@ export default function MarkAttendance() {
       return null;
     };
 
-    const date = new Date().getDate();
-    const month = new Date().toLocaleString("default", { month: "short" });
-    const dates = [
-      date - 5 + " " + month,
-      date - 4 + " " + month,
-      date - 3 + " " + month,
-      date - 2 + " " + month,
-      date - 1 + " " + month,
-    ];
+    // ✅ Dynamic Date Logic (depends on `submitted`)
+    const today = new Date();
+    const dates = [];
+
+    if (submitted) {
+      // include today + 4 previous days
+      for (let i = 4; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const day = d.getDate();
+        const month = d.toLocaleString("default", { month: "short" });
+        dates.push(`${day} ${month}`);
+      }
+    } else {
+      // show 5 days before today
+      for (let i = 5; i > 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const day = d.getDate();
+        const month = d.toLocaleString("default", { month: "short" });
+        dates.push(`${day} ${month}`);
+      }
+    }
 
     return (
       <div className="w-full overflow-x-auto bg-white dark:bg-gray-900 rounded-md">
@@ -153,7 +182,7 @@ export default function MarkAttendance() {
                     {row.studentName}
                   </td>
 
-                  {/* ✅ Previous 5 Days Stats with Icons (centered) */}
+                  {/* ✅ Previous 5 Days Stats with Icons */}
                   <td className="!px-6 !py-3 text-center flex justify-center items-center">
                     <table className="min-w-[350px] text-sm text-center mx-auto">
                       <thead>
@@ -203,7 +232,6 @@ export default function MarkAttendance() {
                       <option value="Present">Present</option>
                       <option value="Absent">Absent</option>
                       <option value="Leave">Leave</option>
-                      {/* <option value="Late">Late</option> */}
                     </select>
                   </td>
                 </tr>

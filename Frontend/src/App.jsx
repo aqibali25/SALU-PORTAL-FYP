@@ -16,6 +16,8 @@ import SubjectAllocation from "./components/SubAlocation/SubjectAllocation";
 import AssigningSubject from "./components/SubAlocation/AssigningSubject";
 import Attendance from "./components/Attendance/Attendance";
 import MarkAttendances from "./components/Attendance/MarkAttendance";
+import AddTestMarks from "./components/Admissions/AddTestMarks";
+import SelectedInMaritList from "./components/Admissions/SelectedInMaritList";
 
 function App() {
   const isLoggedIn = Cookies.get("isLoggedIn") === "true";
@@ -53,28 +55,48 @@ function App() {
               element={<Admissions />}
             />
             <Route
-              path="/SALU-PORTAL-FYP/Admissions/RecivedForms"
-              element={<FormsByStatus />}
-            />
-            <Route
               path="/SALU-PORTAL-FYP/Admissions/RecivedForms/ReviewForm"
               element={<ReviewForm />}
             />
             <Route
               path="/SALU-PORTAL-FYP/Admissions/ApprovedForms"
-              element={<FormsByStatus status="Approved" />}
+              element={<FormsByStatus heading="Approved" />}
             />
             <Route
               path="/SALU-PORTAL-FYP/Admissions/PendingForms"
-              element={<FormsByStatus status="Pending" />}
+              element={<FormsByStatus heading="Pending" />}
             />
             <Route
               path="/SALU-PORTAL-FYP/Admissions/RevertForms"
-              element={<FormsByStatus status="Revert" />}
+              element={<FormsByStatus heading="Revert" />}
             />
             <Route
               path="/SALU-PORTAL-FYP/Admissions/TrashForms"
-              element={<FormsByStatus status="Trash" />}
+              element={<FormsByStatus heading="Trash" />}
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Admissions/AppearedInTest"
+              element={<FormsByStatus heading="Appeared In Test" />}
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Admissions/AppearedInTest/AddTestMarks"
+              element={<AddTestMarks />}
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Admissions/PassedCandidates"
+              element={<FormsByStatus heading="Passed Candidates" />}
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Admissions/PassedCandidates/SelectedInMaritList"
+              element={<SelectedInMaritList />}
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Admissions/SelectedCandidates"
+              element={<FormsByStatus heading="Selected Candidates" />}
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Admissions/EnrolledCandidates"
+              element={<FormsByStatus heading="Enrolled Candidates" />}
             />
 
             <Route path="/SALU-PORTAL-FYP/Settings" element={<Settings />} />

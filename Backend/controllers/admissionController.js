@@ -150,7 +150,9 @@ export const getAdmissionById = async (req, res) => {
     );
 
     if (!rows.length) {
-      return res.status(404).json({ success: false, message: "Form not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Form not found" });
     }
 
     const row = rows[0];
@@ -262,7 +264,10 @@ export const getAcademicsById = async (req, res) => {
       `SELECT cnic FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
       { replacements: [id] }
     );
-    if (!pi) return res.status(404).json({ success: false, message: "Form not found" });
+    if (!pi)
+      return res
+        .status(404)
+        .json({ success: false, message: "Form not found" });
 
     const cnic = pi.cnic;
 
@@ -335,7 +340,10 @@ export const getDocumentsById = async (req, res) => {
       `SELECT cnic FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
       { replacements: [id] }
     );
-    if (!pi) return res.status(404).json({ success: false, message: "Form not found" });
+    if (!pi)
+      return res
+        .status(404)
+        .json({ success: false, message: "Form not found" });
 
     const cnic = pi.cnic;
 

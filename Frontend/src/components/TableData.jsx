@@ -19,6 +19,11 @@ export default function DataTable({
     return null;
   };
 
+  // ✅ Filter out null or undefined actions once
+  const validActions = Array.isArray(actions)
+    ? actions.filter((a) => a !== null && a !== undefined)
+    : [];
+
   return (
     <div className="w-full overflow-x-auto bg-white dark:bg-gray-900 rounded-md">
       <table className="w-full border-collapse table-auto">
@@ -36,7 +41,9 @@ export default function DataTable({
                 </div>
               </th>
             ))}
-            {actions.length > 0 && (
+
+            {/* ✅ Only render Actions header if valid actions exist */}
+            {validActions.length > 0 && (
               <th className="!px-6 !py-3 text-center text-lg font-medium tracking-wider whitespace-nowrap">
                 Actions
               </th>
@@ -60,15 +67,14 @@ export default function DataTable({
                   </td>
                 ))}
 
-                {actions.length > 0 && (
+                {/* ✅ Only render actions if valid ones exist */}
+                {validActions.length > 0 && (
                   <td className="!px-6 !py-3 whitespace-nowrap text-center">
                     <div className="flex justify-center items-center gap-4">
-                      {actions.map((action, idx) =>
+                      {validActions.map((action, idx) =>
                         action.render ? (
-                          // If the action provides a custom render function (like our Assign button)
                           <div key={idx}>{action.render(row)}</div>
                         ) : (
-                          // Otherwise render default button with icon or label
                           <button
                             key={idx}
                             type="button"
@@ -91,7 +97,7 @@ export default function DataTable({
         ) : (
           <tbody>
             <tr>
-              <td colSpan={columns.length + (actions.length > 0 ? 1 : 0)}>
+              <td colSpan={columns.length + (validActions.length > 0 ? 1 : 0)}>
                 <div className="w-full h-[30vh] flex items-center justify-center">
                   <h1 className="text-center text-gray-900 text-2xl dark:text-gray-100">
                     No data found.

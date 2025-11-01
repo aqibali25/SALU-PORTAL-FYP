@@ -9,6 +9,7 @@ const ReviewDocuments = () => {
   // ✅ Get uploaded documents from full form data
   const formData = location.state?.form?.data;
   const documents = formData?.uploaded_documents || [];
+  console.log("Form status updated to:", formData.status);
 
   const [previewImage, setPreviewImage] = useState(null);
   const handlePreview = (fileName) => {
@@ -18,9 +19,15 @@ const ReviewDocuments = () => {
     setPreviewImage(`${backendBaseUrl}/uploads/${fileName}`);
   };
   const closePreview = () => setPreviewImage(null);
-
+  const updateFormStatus = (status) => {
+    formData.status = status;
+    console.log("Form status updated to:", formData.status);
+  };
   const [activeMessage, setActiveMessage] = useState(null);
-  const closeMessage = () => setActiveMessage(null);
+  const closeMessage = () => {
+    updateFormStatus("Approved");
+    setActiveMessage(null);
+  };
 
   if (!documents.length) {
     return (

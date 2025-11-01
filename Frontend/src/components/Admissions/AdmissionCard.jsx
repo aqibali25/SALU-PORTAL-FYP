@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 const AdmissionCard = ({ title, bgColor, borderColor, iconBg, Icon, to }) => {
   return (
     <div
-      className="flex flex-col items-center justify-center gap-5 w-55 h-70 !p-6 rounded-lg shadow-sm"
+      className="flex flex-col items-center justify-center gap-5 w-65 h-75 !p-6 rounded-lg shadow-sm"
       style={{ backgroundColor: bgColor, border: `1px solid ${borderColor}` }}
     >
       {/* Icon Section */}
@@ -15,7 +15,7 @@ const AdmissionCard = ({ title, bgColor, borderColor, iconBg, Icon, to }) => {
       </div>
 
       {/* Title */}
-      <h2 className="text-gray-800 text-xl font-medium">{title}</h2>
+      <h2 className="text-gray-800 text-xl text-center font-medium">{title}</h2>
 
       {/* Button */}
       <Link

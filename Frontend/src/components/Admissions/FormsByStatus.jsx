@@ -5,8 +5,9 @@ import DataTable from "../TableData";
 import Pagination from "../Pagination";
 import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
+import { icon } from "@fortawesome/fontawesome-svg-core";
 
-export default function FormsByStatus({ status = "" }) {
+export default function FormsByStatus({ heading }) {
   const navigate = useNavigate();
 
   const [forms, setForms] = useState([]);
@@ -16,6 +17,7 @@ export default function FormsByStatus({ status = "" }) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  const status = heading.split(" ")[0];
 
   // Fetch all admissions
   useEffect(() => {
@@ -24,13 +26,9 @@ export default function FormsByStatus({ status = "" }) {
         setLoading(true);
         const token = localStorage.getItem("token");
 
-        console.log("🔄 Fetching admissions from backend...");
-
         const res = await axios.get("http://localhost:5000/api/admissions", {
           headers: { Authorization: `Bearer ${token}` },
         });
-
-        console.log("✅ Raw Admissions Data:", res.data);
 
         let fetchedData = Array.isArray(res.data.data) ? res.data.data : [];
 
@@ -40,10 +38,6 @@ export default function FormsByStatus({ status = "" }) {
             self.findIndex(
               (f) => f.cnic === form.cnic && f.form_id === form.form_id
             )
-        );
-
-        console.log(
-          `🧾 Total fetched: ${fetchedData.length}, Unique: ${uniqueForms.length}`
         );
 
         setForms(uniqueForms);
@@ -98,6 +92,7 @@ export default function FormsByStatus({ status = "" }) {
     { key: "father_name", label: "Father's Name" },
     { key: "department", label: "Department" },
     { key: "cnic", label: "CNIC" },
+    { key: "status", label: "Status" },
   ];
 
   if (!status || status.trim() === "") {
@@ -111,52 +106,133 @@ export default function FormsByStatus({ status = "" }) {
   }));
 
   // Actions
-  const actions = [
-    {
-      label: "View",
-      onClick: async (row) => {
-        try {
-          setLoadingForm(true);
-          const token = localStorage.getItem("token");
-          const res = await axios.get(
-            `http://localhost:5000/api/admissions/${row.form_id}`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
+  const [selectedStatus, setSelectedStatus] = useState({});
 
-          const formData = res.data;
+  const handleSelectChange = async (formId, value) => {
+    setSelectedStatus((prev) => ({ ...prev, [formId]: value }));
 
-          localStorage.removeItem("reviewFormStep");
-
-          navigate(
-            `/SALU-PORTAL-FYP/Admissions/RecivedForms/ReviewForm?${row.cnic}`,
-            { state: { form: formData } }
-          );
-        } catch (err) {
-          console.error("❌ Error fetching form by CNIC:", err);
-          alert(
-            err.response?.data?.message ||
-              "Failed to fetch form data. Please try again."
-          );
-        } finally {
-          setLoadingForm(false);
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `http://localhost:5000/api/admissions/${formId}`,
+        { appeared_status: value },
+        {
+          headers: { Authorization: `Bearer ${token}` },
         }
-      },
-      icon: (
-        <button
-          disabled={loadingForm}
-          className="!px-4 !py-1 border border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-white transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loadingForm ? "Loading..." : "View"}
-        </button>
-      ),
-    },
-  ];
+      );
+      alert(`Form marked as "${value}"`);
+    } catch (err) {
+      console.error("❌ Error updating status:", err);
+      alert("Failed to update status. Please try again.");
+    }
+  };
 
-  const heading = `${
-    status && status.trim() !== "" ? status : "Received"
-  } Forms`;
+  const actions = [
+    (() => {
+      switch (status) {
+        case "Approved":
+          return {
+            label: "Appeared Status",
+            render: (row) => (
+              <select
+                className="border-2 border-gray-400 dark:border-gray-600 !px-2 !py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none"
+                value={selectedStatus[row.form_id] || ""}
+                onChange={(e) =>
+                  handleSelectChange(row.form_id, e.target.value)
+                }
+              >
+                <option value="" disabled>
+                  Select Status
+                </option>
+                <option value="Appeared">Appeared</option>
+                <option value="Not Appeared">Not Appeared</option>
+              </select>
+            ),
+          };
+
+        case "Pending":
+          return {
+            label: "Review",
+            onClick: async (row) => {
+              try {
+                setLoadingForm(true);
+                const token = localStorage.getItem("token");
+                const res = await axios.get(
+                  `http://localhost:5000/api/admissions/${row.form_id}`,
+                  {
+                    headers: { Authorization: `Bearer ${token}` },
+                  }
+                );
+
+                const formData = res.data;
+                localStorage.removeItem("reviewFormStep");
+
+                navigate(
+                  `/SALU-PORTAL-FYP/Admissions/RecivedForms/ReviewForm?${row.cnic}`,
+                  { state: { form: formData } }
+                );
+              } catch (err) {
+                console.error("❌ Error fetching form by CNIC:", err);
+                alert(
+                  err.response?.data?.message ||
+                    "Failed to fetch form data. Please try again."
+                );
+              } finally {
+                setLoadingForm(false);
+              }
+            },
+            icon: (
+              <button
+                disabled={loadingForm}
+                className="!px-4 !py-1 border border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-white transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loadingForm ? "Loading..." : "Review"}
+              </button>
+            ),
+          };
+        case "Appeared":
+          return {
+            label: "Add Test Marks",
+            onClick: (row) => {
+              navigate(
+                `/SALU-PORTAL-FYP/Admissions/AppearedInTest/AddTestMarks?${row.cnic}`,
+                {
+                  state: { form: row },
+                }
+              );
+              // Optionally update status here or on the target page:
+              // updateStatus(row.form_id, "Passed");
+            },
+            icon: (
+              <button className="!px-4 !py-1 border border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition cursor-pointer">
+                Add Test Marks
+              </button>
+            ),
+          };
+        case "Passed":
+          return {
+            label: "Selected in Marit List",
+            onClick: (row) => {
+              navigate(
+                `/SALU-PORTAL-FYP/Admissions/PassedCandidates/SelectedInMaritList?${row.cnic}`,
+                {
+                  state: { form: row },
+                }
+              );
+              // Optionally update status here or on the target page:
+              // updateStatus(row.form_id, "Passed");
+            },
+            icon: (
+              <button className="!px-4 !py-1 border border-green-500 text-green-500 hover:bg-green-500 hover:text-white transition cursor-pointer">
+                Selected in Marit List
+              </button>
+            ),
+          };
+        default:
+          return null;
+      }
+    })(),
+  ];
 
   // Main loader
   if (loading) {
@@ -181,7 +257,7 @@ export default function FormsByStatus({ status = "" }) {
         <div className="flex justify-start items-center gap-3">
           <BackButton />
           <h1 className="text-2xl sm:text-3xl md:text-4xl !py-3 font-bold text-gray-900 dark:text-white">
-            {heading}
+            {heading} {heading.includes(" ") ? null : " Forms"}
           </h1>
         </div>
 

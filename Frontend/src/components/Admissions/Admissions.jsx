@@ -1,4 +1,11 @@
-import { LuFileText, LuRotateCcw, LuTrash2 } from "react-icons/lu";
+import {
+  LuRotateCcw,
+  LuTrash2,
+  LuAward,
+  LuUserCheck,
+  LuClipboardCheck,
+  LuGraduationCap,
+} from "react-icons/lu";
 import { AiOutlineClockCircle, AiOutlineCheckCircle } from "react-icons/ai";
 
 import Background from "../../assets/Background.png";
@@ -15,24 +22,6 @@ const ComputerOperator = () => {
   const cardData = [
     {
       id: 1,
-      title: "Recived Forms",
-      bgColor: "#EFF6FF",
-      borderColor: "#3B82F6",
-      iconBg: "#3B82F6",
-      Icon: LuFileText,
-      to: "Admissions/RecivedForms",
-    },
-    {
-      id: 2,
-      title: "Approved Forms",
-      bgColor: "#ECFDF5",
-      borderColor: "#22C55E",
-      iconBg: "#22C55E",
-      Icon: AiOutlineCheckCircle,
-      to: "Admissions/ApprovedForms",
-    },
-    {
-      id: 3,
       title: "Pending Forms",
       bgColor: "#FEFCE8",
       borderColor: "#FACC15",
@@ -41,7 +30,16 @@ const ComputerOperator = () => {
       to: "Admissions/PendingForms",
     },
     {
-      id: 4,
+      id: 2,
+      title: "Approved Forms",
+      bgColor: "#ECFDF5",
+      borderColor: "#1bde53",
+      iconBg: "#1bde53",
+      Icon: AiOutlineCheckCircle,
+      to: "Admissions/ApprovedForms",
+    },
+    {
+      id: 3,
       title: "Revert Forms",
       bgColor: "#ECFEFF",
       borderColor: "#06B6D4",
@@ -50,13 +48,49 @@ const ComputerOperator = () => {
       to: "Admissions/RevertForms",
     },
     {
-      id: 5,
+      id: 4,
       title: "Trash Forms",
       bgColor: "#FEF2F2",
       borderColor: "#EF4444",
       iconBg: "#EF4444",
       Icon: LuTrash2,
       to: "Admissions/TrashForms",
+    },
+    {
+      id: 5,
+      title: "Appeared In Test",
+      bgColor: "#EFF6FF",
+      borderColor: "#3B82F6",
+      iconBg: "#3B82F6",
+      Icon: LuClipboardCheck, // ✅ More relevant icon (represents test/attendance/checklist)
+      to: "Admissions/AppearedInTest",
+    },
+    {
+      id: 6,
+      title: "Passed Candidates",
+      bgColor: "#F0FDF4", // ✅ Light green success tone
+      borderColor: "#16A34A",
+      iconBg: "#16A34A",
+      Icon: LuAward, // ✅ Trophy-like icon for "Passed"
+      to: "Admissions/PassedCandidates",
+    },
+    {
+      id: 7,
+      title: "Selected Candidates",
+      bgColor: "#EEF2FF", // ✅ Soft purple/blue tone for distinction
+      borderColor: "#6366F1",
+      iconBg: "#6366F1",
+      Icon: LuUserCheck, // ✅ Person + check mark for "Selected"
+      to: "Admissions/SelectedCandidates",
+    },
+    {
+      id: 8,
+      title: "Enrolled Candidates",
+      bgColor: "#FFF7ED", // ✅ Warm tone for enrollment
+      borderColor: "#F97316",
+      iconBg: "#F97316",
+      Icon: LuGraduationCap, // ✅ Document icon for "Enrolled"
+      to: "Admissions/EnrolledCandidates",
     },
   ];
 
