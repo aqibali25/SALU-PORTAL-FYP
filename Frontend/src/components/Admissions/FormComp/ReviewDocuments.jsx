@@ -1,68 +1,40 @@
 import React, { useState } from "react";
 import { FaEye, FaRegFileAlt } from "react-icons/fa";
-import Background from "../../../assets/background.png";
-import Logo from "../../../assets/Logo.png";
-import Profile from "../../../assets/Profile.png";
-
-// your messages
+import { useLocation } from "react-router-dom";
 import ApprovedMessage from "../ApprovedMessage";
-// import RevertMessage from "../RevertMessage";
-// import TrashMessage from "../TrashMessage";
 
 const ReviewDocuments = () => {
-  const documents = [
-    {
-      docType: "photo",
-      docName: "Passport Size Photos",
-      file: Profile,
-      updatedDate: "07 May 2025",
-    },
-    {
-      docType: "cnic",
-      docName: "CNIC/B-Form",
-      file: Background,
-      updatedDate: "11 May 2025",
-    },
-    {
-      docType: "marks12",
-      docName: "12th Mark Sheet",
-      file: Logo,
-      updatedDate: "07 May 2025",
-    },
-    {
-      docType: "marks10",
-      docName: "10th Mark Sheet",
-      file: Logo,
-      updatedDate: "07 May 2025",
-    },
-    {
-      docType: "domicile",
-      docName: "Domicile (For Bachelors)",
-      file: Logo,
-      updatedDate: "10 May 2025",
-    },
-  ];
+  const location = useLocation();
+
+  // ✅ Get uploaded documents from full form data
+  const formData = location.state?.form?.data;
+  const documents = formData?.uploaded_documents || [];
 
   const [previewImage, setPreviewImage] = useState(null);
-  const handlePreview = (fileUrl) => setPreviewImage(fileUrl);
+  const handlePreview = (fileName) => {
+    // ✅ Use same backend origin dynamically, not hardcoded
+    const backendBaseUrl =
+      import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+    setPreviewImage(`${backendBaseUrl}/uploads/${fileName}`);
+  };
   const closePreview = () => setPreviewImage(null);
 
-  // 👇 state for showing messages
   const [activeMessage, setActiveMessage] = useState(null);
   const closeMessage = () => setActiveMessage(null);
 
+  if (!documents.length) {
+    return (
+      <p className="text-center text-gray-700 dark:text-gray-200 mt-10">
+        No uploaded documents found.
+      </p>
+    );
+  }
+
   return (
     <div className="w-full mx-auto !px-4 !py-6">
-      {/* table wrapper */}
+      {/* Table */}
       <div className="overflow-x-auto">
-        <table
-          className="
-            border-collapse 
-            w-full
-            min-w-[550px] 
-            md:min-w-[800px]
-          "
-        >
+        <table className="border-collapse w-full min-w-[550px] md:min-w-[800px]">
           <thead>
             <tr className="bg-gray-100 dark:bg-gray-800">
               <th className="text-left !p-4 text-gray-800 dark:text-gray-100 font-semibold w-1/2">
@@ -79,21 +51,21 @@ const ReviewDocuments = () => {
           <tbody>
             {documents.map((doc) => (
               <tr
-                key={doc.docType}
+                key={doc.id}
                 className="border-t border-gray-300 dark:border-gray-600"
               >
                 <td className="!p-4 flex items-center gap-3 text-gray-800 dark:text-gray-100">
                   <FaRegFileAlt className="text-2xl text-gray-700 dark:text-gray-200" />
-                  {doc.docName}
+                  {doc.docName || "Untitled Document"}
                 </td>
                 <td className="!p-4 text-gray-600 dark:text-gray-300 text-sm">
-                  {doc.updatedDate}
+                  {new Date(doc.uploadDate).toLocaleDateString()}
                 </td>
                 <td className="!p-4 text-right">
                   <FaEye
                     className="text-2xl text-gray-700 dark:text-gray-200 cursor-pointer hover:text-green-600 transition-colors inline-block"
                     title="View Document"
-                    onClick={() => handlePreview(doc.file)}
+                    onClick={() => handlePreview(doc.fileName)}
                   />
                 </td>
               </tr>
@@ -102,7 +74,7 @@ const ReviewDocuments = () => {
         </table>
       </div>
 
-      {/* image preview modal */}
+      {/* Image preview modal */}
       {previewImage && (
         <div
           className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 cursor-pointer"
@@ -110,7 +82,7 @@ const ReviewDocuments = () => {
         >
           <div
             className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden max-w-[90%] max-h-[90%] p-4"
-            onClick={(e) => e.stopPropagation()} // prevent close on inner click
+            onClick={(e) => e.stopPropagation()}
           >
             <img
               src={previewImage}
@@ -121,12 +93,10 @@ const ReviewDocuments = () => {
         </div>
       )}
 
-      {/* message modals */}
+      {/* Optional message modal */}
       {activeMessage === "approved" && (
         <ApprovedMessage onClose={closeMessage} />
       )}
-      {activeMessage === "revert" && <RevertMessage onClose={closeMessage} />}
-      {activeMessage === "trash" && <TrashMessage onClose={closeMessage} />}
     </div>
   );
 };

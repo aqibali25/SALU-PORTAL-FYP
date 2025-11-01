@@ -30,7 +30,7 @@ const Card = ({ isImg = false, Heading, Icon, color1, color2, link }) => {
           className="text-gray-800 dark:text-white "
         />
       )}
-      <h1 className="uppercase text-xl font-semibold !pt-2  text-gray-900 dark:text-white">
+      <h1 className="uppercase text-xl font-semibold !pt-2 text-center  text-gray-900 dark:text-white">
         {Heading}
       </h1>
     </Link>

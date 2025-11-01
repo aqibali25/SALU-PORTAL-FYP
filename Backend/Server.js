@@ -35,13 +35,11 @@ app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
 // server.js (backend)
 
-
 const corsOpts = {
-  origin: ["http://localhost:5173"],  // your Vite dev URL
+  origin: ["http://localhost:5173"], // your Vite dev URL
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 app.use(cors(corsOpts));
 app.options("*", cors(corsOpts));
-
