@@ -1,7 +1,5 @@
-import { useEffect } from "react";
-import useSubjectAllocation, {
-  initialAllocations,
-} from "../../Hooks/useSubjectAllocation";
+import { useEffect, useState } from "react";
+import useSubjectAllocation from "../../Hooks/useSubjectAllocation";
 import DataTable from "../TableData";
 import Pagination from "../Pagination";
 import Background from "../../assets/Background.png";
@@ -9,12 +7,32 @@ import BackButton from "../BackButton";
 import { Link } from "react-router-dom";
 
 export default function SubjectAllocation() {
+  const [subjectData, setSubjectData] = useState([]);
+  const [loading, setLoading] = useState(true); // ✅ Loading state added
+
   useEffect(() => {
     document.title = "SALU Portal | Subject Allocation";
+
+    const fetchData = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/subject-allocations"
+        );
+        const data = await response.json();
+        console.log("Fetched Subject Allocations:", data.data);
+        setSubjectData(data.data || []);
+      } catch (error) {
+        console.error("Error fetching subject allocations:", error);
+      } finally {
+        setLoading(false); // ✅ Stop loader after fetch completes
+      }
+    };
+
+    fetchData();
   }, []);
 
   const { rows, page, pageCount, setPage, query, setQuery, sorts, onSort } =
-    useSubjectAllocation({ initial: initialAllocations, pageSize: 10 });
+    useSubjectAllocation({ initial: subjectData, pageSize: 10 });
 
   const columns = [
     { key: "saId", label: "SA ID" },
@@ -40,6 +58,7 @@ export default function SubjectAllocation() {
             to={`/SALU-PORTAL-FYP/SubjectAllocation/${
               row.subName.replace(/\s+/g, "").toUpperCase() + "-" + row.saId
             }`}
+            state={{ subjectData: row }} // ✅ Send subject row data here
             type="button"
             className={`cursor-pointer relative overflow-hidden !px-[15px] !py-[5px]
             border-2 text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
@@ -49,7 +68,7 @@ export default function SubjectAllocation() {
           >
             <span className="relative z-10">{text}</span>
 
-            <style jsx>{`
+            <style jsx="true">{`
               .${buttonClass}::before {
                 background: ${borderColor} !important;
               }
@@ -59,6 +78,15 @@ export default function SubjectAllocation() {
       },
     },
   ];
+
+  // ✅ Show loader while fetching
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[calc(100vh-90px)] bg-white dark:bg-gray-900">
+        <div className="w-16 h-16 border-4 border-yellow-400 border-dashed rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div

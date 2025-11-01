@@ -30,7 +30,7 @@ export default function DataTable({
                 className="!px-6 !py-3 text-left text-lg font-medium tracking-wider cursor-pointer select-none whitespace-nowrap"
                 onClick={() => col.sortable !== false && onSort?.(col.key)}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex justify-center items-center gap-2">
                   <span>{col.label}</span>
                   <span className="text-xs">{chevron(col.key)}</span>
                 </div>
@@ -54,7 +54,7 @@ export default function DataTable({
                 {columns.map((col) => (
                   <td
                     key={col.key}
-                    className="!px-6 !py-3 text-md font-medium tracking-wider text-gray-900 dark:text-gray-100 whitespace-nowrap"
+                    className="!px-6 !py-3 text-md font-medium tracking-wider text-gray-900 text-center dark:text-gray-100 whitespace-nowrap"
                   >
                     {row[col.key]}
                   </td>

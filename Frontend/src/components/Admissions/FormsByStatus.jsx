@@ -197,28 +197,19 @@ export default function FormsByStatus({ status = "" }) {
           />
         </div>
 
-        {/* Table or No Data */}
-        {filteredForms.length === 0 ? (
-          <p className="text-center text-gray-700 dark:text-gray-200 mt-10">
-            No forms found.
-          </p>
-        ) : (
-          <>
-            <DataTable columns={columns} rows={rows} actions={actions} />
+        <DataTable columns={columns} rows={rows} actions={actions} />
 
-            {/* Pagination */}
-            <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
-              <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
-                Total Forms: {filteredForms.length}
-              </span>
-              <Pagination
-                totalPages={pageCount}
-                currentPage={page}
-                onPageChange={setPage}
-              />
-            </div>
-          </>
-        )}
+        {/* Pagination */}
+        <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
+          <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
+            Total Forms: {filteredForms.length}
+          </span>
+          <Pagination
+            totalPages={pageCount}
+            currentPage={page}
+            onPageChange={setPage}
+          />
+        </div>
       </div>
     </div>
   );

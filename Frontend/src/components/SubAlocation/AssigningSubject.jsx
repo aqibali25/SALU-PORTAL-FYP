@@ -1,19 +1,18 @@
 import { useEffect, useState } from "react";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
 import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
-import { Link, useParams } from "react-router-dom";
 import InputContainer from "../InputContainer";
-import useSubjectAllocation, {
-  initialAllocations,
-} from "../../Hooks/useSubjectAllocation";
 
 const AssigningSubject = () => {
   const { subjectId } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const subjectName = subjectId.replace(/-\d+$/, "");
 
-  const selectedSubject = initialAllocations.find(
-    (item) => item.subName.replace(/\s+/g, "").toUpperCase() === subjectName
-  );
+  const subjectFromState = location.state?.subjectData;
+  const selectedSubject = subjectFromState;
 
   const [formData, setFormData] = useState(
     selectedSubject || {
@@ -27,30 +26,71 @@ const AssigningSubject = () => {
     }
   );
 
+  const [teachers, setTeachers] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const teachers = Array.from(
-    new Set(initialAllocations.map((item) => item.teacherName))
-  );
+  useEffect(() => {
+    document.title = `SALU Portal | Subject Allocation ${subjectName}`;
 
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
+        const res = await axios.get("http://localhost:5000/api/users", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // ✅ Filter only teachers
+        const teacherUsers = res.data.filter(
+          (user) => user.role?.toLowerCase() === "teacher"
+        );
+
+        setTeachers(["Yet to assign", ...teacherUsers.map((t) => t.username)]);
+      } catch (err) {
+        console.error("❌ Error fetching teachers:", err);
+        alert("Error loading teachers: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, [subjectName]);
+
+  // ✅ Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  // ✅ Handle Assign / Update
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
 
-    setTimeout(() => {
-      console.log("📤 Saved Data:", formData);
-      setSubmitting(false);
-    }, 1000);
-  };
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.put(
+        `http://localhost:5000/api/subject-allocations/${formData.saId}`,
+        { teacherName: formData.teacherName },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-  useEffect(() => {
-    document.title = `SALU Portal | Subject Allocation ${subjectName}`;
-  }, [subjectName]);
+      console.log("✅ Subject Updated:", res.data);
+      alert("Teacher assigned successfully!");
+
+      // Redirect back to Subject Allocation page
+      navigate("/SALU-PORTAL-FYP/SubjectAllocation");
+    } catch (err) {
+      console.error("❌ Error updating subject:", err);
+      alert("Error assigning teacher: " + err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div
@@ -76,30 +116,22 @@ const AssigningSubject = () => {
           className="flex flex-col justify-center items-center gap-5 min-h-[60vh] w-full bg-white dark:bg-gray-900 rounded-md overflow-x-auto !p-6"
         >
           <InputContainer
-            placeholder="Enter Subjects Allocation ID"
             title="Subjects Allocation ID"
-            htmlFor="saId"
-            inputType="text"
             name="saId"
-            value={formData.saId}
-            onChange={handleChange}
-            required
-            disabled
-          />
-
-          <InputContainer
-            placeholder="Enter Subject Name"
-            title="Subject Name"
-            htmlFor="subName"
             inputType="text"
+            value={formData.saId}
+            disabled
+          />
+          <InputContainer
+            title="Subject Name"
             name="subName"
+            inputType="text"
             value={formData.subName}
-            onChange={handleChange}
-            required
             disabled
           />
 
-          <div className="flex w-full max-w-[800px] items-start md:items-center justify-start flex-col md:flex-row gap-[8px] md:gap-5 [@media(max-width:550px)]:gap-[5px]">
+          {/* Teacher Selection */}
+          <div className="flex w-full max-w-[800px] items-start md:items-center justify-start flex-col md:flex-row gap-[8px] md:gap-5">
             <label
               htmlFor="teacherName"
               className="w-auto md:w-1/4 text-start md:text-right text-gray-900 dark:text-white"
@@ -113,10 +145,11 @@ const AssigningSubject = () => {
               required
               value={formData.teacherName}
               onChange={handleChange}
+              disabled={loading}
               className="w-[40%] [@media(max-width:768px)]:!w-full min-w-0 !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
             >
               <option value="" disabled>
-                [Select a Teacher]
+                {loading ? "Loading teachers..." : "[Select a Teacher]"}
               </option>
               {teachers.map((teacher) => (
                 <option key={teacher} value={teacher}>
@@ -127,56 +160,37 @@ const AssigningSubject = () => {
           </div>
 
           <InputContainer
-            placeholder="Enter Department"
             title="Department"
-            htmlFor="department"
-            inputType="text"
             name="department"
+            inputType="text"
             value={formData.department}
-            onChange={handleChange}
-            required
             disabled
           />
-
           <InputContainer
-            placeholder="Enter Semester"
             title="Semester"
-            htmlFor="semester"
-            inputType="text"
             name="semester"
+            inputType="text"
             value={formData.semester}
-            onChange={handleChange}
-            required
             disabled
           />
-
           <InputContainer
-            placeholder="Enter Credit Hours"
             title="Credit Hours"
-            htmlFor="creditHours"
-            inputType="text"
             name="creditHours"
-            value={formData.creditHours}
-            onChange={handleChange}
-            required
-            disabled
-          />
-
-          <InputContainer
-            placeholder="Enter Year"
-            title="Year"
-            htmlFor="year"
             inputType="text"
+            value={formData.creditHours}
+            disabled
+          />
+          <InputContainer
+            title="Year"
             name="year"
+            inputType="text"
             value={formData.year}
-            onChange={handleChange}
-            required
             disabled
           />
 
-          <div className="w-full flex justify-end ">
-            <Link
-              to="/SALU-PORTAL-FYP/SubjectAllocation"
+          {/* ✅ Submit button */}
+          <div className="w-full flex justify-end">
+            <button
               type="submit"
               disabled={submitting}
               className="cursor-pointer relative overflow-hidden !px-[15px] !py-[5px] border-2 border-[#e5b300] text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
@@ -185,7 +199,7 @@ const AssigningSubject = () => {
               <span className="relative z-10">
                 {submitting ? "Saving..." : "Assign Subject"}
               </span>
-            </Link>
+            </button>
           </div>
         </form>
       </div>
