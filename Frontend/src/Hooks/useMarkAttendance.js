@@ -65,6 +65,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-001",
     studentName: "Ali Raza",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Present",
       "Absent",
@@ -108,6 +110,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-002",
     studentName: "Aqib Ali",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Present",
       "Present",
@@ -151,6 +155,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-003",
     studentName: "Hassan Ahmed",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Present",
       "Present",
@@ -194,6 +200,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-004",
     studentName: "Bilal Khan",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Present",
       "Absent",
@@ -237,6 +245,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-005",
     studentName: "Zain Shah",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Present",
       "Present",
@@ -280,6 +290,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-006",
     studentName: "Umair Sheikh",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Present",
       "Present",
@@ -323,6 +335,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-007",
     studentName: "Sana Tariq",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Present",
       "Absent",
@@ -366,6 +380,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-008",
     studentName: "Fatima Noor",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Absent",
       "Absent",
@@ -409,6 +425,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-009",
     studentName: "Hamza Yousuf",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Present",
       "Present",
@@ -452,6 +470,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-010",
     studentName: "Ayesha Khan",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Absent",
       "Present",
@@ -492,10 +512,12 @@ export const initialAttendance = [
       ).toFixed(1);
     },
   },
-  // 🟢 Remaining 20 students (BSCS-011 to BSCS-030)
+  // BSCS-011 to BSCS-030
   {
     rollNo: "BSCS-011",
     studentName: "Ahmed Ali",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Present",
       "Present",
@@ -539,6 +561,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-012",
     studentName: "Maria Iqbal",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Absent",
       "Present",
@@ -582,6 +606,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-013",
     studentName: "Shahid Mehmood",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Present",
       "Absent",
@@ -625,6 +651,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-014",
     studentName: "Eman Fatima",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Absent",
       "Present",
@@ -668,6 +696,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-015",
     studentName: "Noor Ahmed",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Present",
       "Present",
@@ -711,6 +741,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-016",
     studentName: "Ibrahim Khan",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Present",
       "Absent",
@@ -754,6 +786,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-017",
     studentName: "Rida Hasan",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Present",
       "Absent",
@@ -797,6 +831,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-018",
     studentName: "Hassan Raza",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Present",
       "Present",
@@ -840,6 +876,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-019",
     studentName: "Sara Naveed",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Absent",
       "Present",
@@ -883,6 +921,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-020",
     studentName: "Kamran Ali",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Present",
       "Absent",
@@ -926,6 +966,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-021",
     studentName: "Hina Fatima",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Present",
       "Present",
@@ -969,6 +1011,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-022",
     studentName: "Owais Sheikh",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Absent",
       "Present",
@@ -1012,6 +1056,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-023",
     studentName: "Mahnoor Tariq",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Absent",
       "Absent",
@@ -1055,6 +1101,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-024",
     studentName: "Adeel Rehman",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Present",
       "Present",
@@ -1098,6 +1146,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-025",
     studentName: "Fizza Imran",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Absent",
       "Present",
@@ -1141,6 +1191,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-026",
     studentName: "Shahzaib Khan",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Absent",
       "Absent",
@@ -1184,6 +1236,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-027",
     studentName: "Khadija Noor",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Absent",
       "Absent",
@@ -1227,6 +1281,8 @@ export const initialAttendance = [
   {
     rollNo: "BSCS-028",
     studentName: "Imran Qureshi",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
       "Absent",
       "Absent",
@@ -1269,22 +1325,12 @@ export const initialAttendance = [
   },
   {
     rollNo: "BSCS-029",
-    studentName: "Nimra Aslam",
+    studentName: "Naveed Ali",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
-      "Absent",
-      "Absent",
-      "Absent",
       "Present",
       "Absent",
-      "Absent",
-      "Absent",
-      "Absent",
-      "Absent",
-      "Present",
-      "Absent",
-      "Absent",
-      "Absent",
-      "Leave",
       "Present",
       "Absent",
       "Absent",
@@ -1292,6 +1338,20 @@ export const initialAttendance = [
       "Present",
       "Absent",
       "Absent",
+      "Present",
+      "Absent",
+      "Present",
+      "Absent",
+      "Absent",
+      "Present",
+      "Absent",
+      "Present",
+      "Absent",
+      "Present",
+      "Absent",
+      "Absent",
+      "Absent",
+      "Present",
       "Absent",
       "Absent",
       "Absent",
@@ -1299,8 +1359,6 @@ export const initialAttendance = [
       "Absent",
       "Absent",
       "Absent",
-      "Present",
-      "Leave",
     ],
     get percentage() {
       return (
@@ -1312,38 +1370,40 @@ export const initialAttendance = [
   },
   {
     rollNo: "BSCS-030",
-    studentName: "Faizan Malik",
+    studentName: "Laiba Shah",
+    department: "Computer Science",
+    academicYear: 2022,
     attendance: [
-      "Absent",
-      "Absent",
-      "Absent",
-      "Absent",
+      "Present",
       "Absent",
       "Absent",
       "Present",
       "Absent",
+      "Present",
       "Absent",
+      "Present",
       "Absent",
-      "Absent",
-      "Absent",
+      "Present",
       "Absent",
       "Present",
       "Absent",
       "Absent",
-      "Absent",
-      "Absent",
+      "Present",
       "Absent",
       "Present",
       "Absent",
       "Absent",
+      "Present",
       "Absent",
       "Present",
       "Absent",
-      "Absent",
-      "Absent",
+      "Present",
       "Absent",
       "Present",
       "Absent",
+      "Present",
+      "Absent",
+      "Present",
     ],
     get percentage() {
       return (

@@ -1,10 +1,11 @@
 import { FaClipboardCheck } from "react-icons/fa";
 import Background from "../../assets/Background.png";
-import SubjectCardsSection from "../SubjectCardsSection";
+import SubjectCardsLayout from "../SubjectCardsSection";
 
-const Attendance = () => {
+const Marking = () => {
   const subjectCards = [
     {
+      id: 1,
       title: "OOP",
       bgColor: "#FFFBEB",
       borderColor: "#FACC15",
@@ -12,6 +13,7 @@ const Attendance = () => {
       Icon: FaClipboardCheck,
     },
     {
+      id: 2,
       title: "DAA",
       bgColor: "#EFF6FF",
       borderColor: "#3B82F6",
@@ -19,6 +21,7 @@ const Attendance = () => {
       Icon: FaClipboardCheck,
     },
     {
+      id: 3,
       title: "FYP-II",
       bgColor: "#FEF2F2",
       borderColor: "#EF4444",
@@ -37,13 +40,13 @@ const Attendance = () => {
         backgroundPosition: "center",
       }}
     >
-      <SubjectCardsSection
+      <SubjectCardsLayout
         title="Dr. Shahid Ali Mahar"
         subjects={subjectCards}
-        routePrefix="Attendance"
+        routePrefix="EnterMarks/Subject"
       />
     </div>
   );
 };
 
-export default Attendance;
+export default Marking;

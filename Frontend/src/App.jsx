@@ -18,13 +18,15 @@ import Attendance from "./components/Attendance/Attendance";
 import MarkAttendances from "./components/Attendance/MarkAttendance";
 import AddTestMarks from "./components/Admissions/AddTestMarks";
 import SelectedInMaritList from "./components/Admissions/SelectedInMaritList";
+import Marking from "./components/Examinations/Marking";
+import ShowStudentsForMarking from "./components/Examinations/ShowStudentsForMarking";
+import EnterStdMarks from "./components/Examinations/EnterStdMarks";
 
 function App() {
   const isLoggedIn = Cookies.get("isLoggedIn") === "true";
   const location = useLocation();
   const navigate = useNavigate();
 
-  // ✅ Set page title and redirect if not logged in (except login page)
   useEffect(() => {
     if (!isLoggedIn && location.pathname !== "/SALU-PORTAL-FYP/login") {
       navigate("/SALU-PORTAL-FYP/login");
@@ -115,6 +117,17 @@ function App() {
             <Route
               path="/SALU-PORTAL-FYP/Attendance/:subjectId"
               element={<MarkAttendances />}
+            />
+            <Route path="/SALU-PORTAL-FYP/EnterMarks" element={<Marking />} />
+
+            {/* ✅ Updated Route */}
+            <Route
+              path="/SALU-PORTAL-FYP/EnterMarks/Subject/:subjectId"
+              element={<ShowStudentsForMarking />}
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/EnterMarks/Subject/:subjectId/EnterStdMarks"
+              element={<EnterStdMarks />}
             />
           </>
         )}

@@ -66,11 +66,29 @@ export default function Login() {
           password: formData.password,
         }
       );
-      const data = response.data;
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      const data = response.data;
+      const token = data.token;
+
+      // ✅ Save token to localStorage
+      localStorage.setItem("token", token);
       document.cookie = "isLoggedIn=true; path=/; max-age=86400";
+
+      // ✅ Fetch user role using the token
+      const userResponse = await axios.get(
+        "http://localhost:5000/api/users/me",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const user = userResponse.data;
+
+      // ✅ Save user info and role
+      localStorage.setItem("user", JSON.stringify(user));
+
+      // ✅ Set role in cookie for 1 day (86400 seconds)
+      document.cookie = `role=${user.role}; path=/; max-age=86400`;
 
       navigate("/SALU-PORTAL-FYP/");
     } catch (error) {
