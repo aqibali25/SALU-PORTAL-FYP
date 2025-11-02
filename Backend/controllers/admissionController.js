@@ -263,6 +263,10 @@ export const getAdmissionById = async (req, res) => {
    ============================================================================ */
 export const updateEntryTestMarks = async (req, res) => {
   try {
+    console.log("➡️ Received request to update entry test marks");
+    console.log("🟩 Params:", req.params);
+    console.log("🟦 Body:", req.body);
+
     const { form_id } = req.params;
     const {
       obtained_marks,
@@ -279,6 +283,7 @@ export const updateEntryTestMarks = async (req, res) => {
       `SELECT cnic FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
       { replacements: [form_id] }
     );
+
     if (!pi)
       return res
         .status(404)
@@ -291,15 +296,28 @@ export const updateEntryTestMarks = async (req, res) => {
       total > 0 ? Number(((obtained / total) * 100).toFixed(2)) : null;
     const finalPct =
       percentage != null ? Number(Number(percentage).toFixed(2)) : etPct;
-    const mappedFormStatus =
-      String(status).toLowerCase() === "passed"
-        ? "Approved"
-        : String(status).toLowerCase() === "failed"
-        ? "Rejected"
-        : "Pending";
     const passMarks = passing_marks != null ? Number(passing_marks) : null;
     const feeStatus = fee_status ?? "Unpaid";
 
+    const mappedFormStatus = (() => {
+      const lowerStatus = String(status).toLowerCase();
+      switch (lowerStatus) {
+        case "selected":
+          return "Selected";
+        case "approved":
+          return "Approved";
+        case "enrolled":
+          return "Enrolled";
+        case "passed":
+          return "Passed";
+        case "failed":
+          return "Failed";
+        default:
+          return "Pending";
+      }
+    })();
+
+    // Update or insert enroll record
     const [[existing]] = await sequelize.query(
       `SELECT enroll_id FROM \`${DB}\`.enroll_students WHERE cnic = ? LIMIT 1`,
       { replacements: [cnic] }
@@ -307,20 +325,10 @@ export const updateEntryTestMarks = async (req, res) => {
 
     if (existing) {
       await sequelize.query(
-        `
-        UPDATE \`${DB}\`.enroll_students
-        SET
-          form_status = ?,
-          entry_test_obtained_marks = ?,
-          entry_test_total_marks = ?,
-          entry_test_percentage = ?,
-          total_percentage = ?,
-          passing_marks = COALESCE(?, passing_marks),
-          merit_list = ?,
-          department = ?,
-          fee_status = ?
-        WHERE cnic = ?
-        `,
+        `UPDATE \`${DB}\`.enroll_students
+         SET form_status=?, entry_test_obtained_marks=?, entry_test_total_marks=?, entry_test_percentage=?,
+             total_percentage=?, passing_marks=COALESCE(?, passing_marks), merit_list=?, department=?, fee_status=?
+         WHERE cnic=?`,
         {
           replacements: [
             mappedFormStatus,
@@ -338,13 +346,10 @@ export const updateEntryTestMarks = async (req, res) => {
       );
     } else {
       await sequelize.query(
-        `
-        INSERT INTO \`${DB}\`.enroll_students
-          (cnic, form_status, entry_test_obtained_marks, entry_test_total_marks,
-           entry_test_percentage, total_percentage, passing_marks,
-           merit_list, department, fee_status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `,
+        `INSERT INTO \`${DB}\`.enroll_students
+         (cnic, form_status, entry_test_obtained_marks, entry_test_total_marks,
+          entry_test_percentage, total_percentage, passing_marks, merit_list, department, fee_status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         {
           replacements: [
             cnic,
@@ -368,19 +373,17 @@ export const updateEntryTestMarks = async (req, res) => {
     );
 
     const [[row]] = await sequelize.query(
-      `
-      SELECT enroll_id AS enrollId, cnic, form_status AS formStatus,
-             entry_test_obtained_marks AS entryTestObtained,
-             entry_test_total_marks AS entryTestTotal,
-             entry_test_percentage AS entryTestPercentage,
-             total_percentage AS totalPercentage,
-             passing_marks AS passingMarks,
-             merit_list AS meritList, department, fee_status AS feeStatus
-      FROM \`${DB}\`.enroll_students
-      WHERE cnic = ?
-      ORDER BY enroll_id DESC
-      LIMIT 1
-      `,
+      `SELECT enroll_id AS enrollId, cnic, form_status AS formStatus,
+              entry_test_obtained_marks AS entryTestObtained,
+              entry_test_total_marks AS entryTestTotal,
+              entry_test_percentage AS entryTestPercentage,
+              total_percentage AS totalPercentage,
+              passing_marks AS passingMarks,
+              merit_list AS meritList, department, fee_status AS feeStatus
+       FROM \`${DB}\`.enroll_students
+       WHERE cnic = ?
+       ORDER BY enroll_id DESC
+       LIMIT 1`,
       { replacements: [cnic] }
     );
 
@@ -390,7 +393,7 @@ export const updateEntryTestMarks = async (req, res) => {
       data: row,
     });
   } catch (err) {
-    console.error("updateEntryTestMarks error:", err);
+    console.error("❌ updateEntryTestMarks error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };

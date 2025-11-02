@@ -4,12 +4,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
 import InputContainer from "../InputContainer";
+import { toast } from "react-toastify";
 
 const AddTestMarks = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const formDataFromState = location.state?.form || {};
-  console.log(formDataFromState);
 
   const [formData, setFormData] = useState({
     name: formDataFromState.student_name || "",
@@ -27,7 +27,6 @@ const AddTestMarks = () => {
     document.title = `SALU Portal | Add Test Marks`;
   }, []);
 
-  // ✅ Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -50,8 +49,12 @@ const AddTestMarks = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.obtainedmarks.trim() || !formData.totalmarks.trim()) {
-      alert("Please enter obtained and total marks.");
+    if (
+      !formData.obtainedmarks.trim() ||
+      !formData.totalmarks.trim() ||
+      !formData.passingmarks.trim()
+    ) {
+      toast.error("Please enter obtained, total & passing marks.");
       return;
     }
 
@@ -60,22 +63,20 @@ const AddTestMarks = () => {
     const passing = Number(formData.passingmarks);
 
     if (isNaN(obtained) || obtained < 0 || obtained > total) {
-      alert(
-        "Please enter a valid obtained marks value between 0 and total marks."
+      toast.error(
+        "Please enter valid obtained marks between 0 and total marks."
       );
       return;
     }
 
     const percentage = ((obtained / total) * 100).toFixed(2);
-    const passStatus = obtained >= passing ? "Passed" : "Failed";
 
-    setFormData((prev) => ({ ...prev, percentage }));
+    const passStatus = obtained >= passing ? "Passed" : "Failed";
 
     setSubmitting(true);
     try {
       const token = localStorage.getItem("token");
 
-      // ✅ Include status as "Selected"
       const updatedData = {
         form_id: formDataFromState.form_id,
         obtained_marks: obtained,
@@ -86,8 +87,7 @@ const AddTestMarks = () => {
         selection_status: passStatus,
       };
 
-      console.log("📤 Sending marks data:", updatedData);
-
+      // ✅ 1. Update Marks
       await axios.put(
         `http://localhost:5000/api/admissions/updateMarks/${formDataFromState.form_id}`,
         updatedData,
@@ -96,11 +96,23 @@ const AddTestMarks = () => {
         }
       );
 
-      alert(`Marks added successfully! Candidate has ${passStatus}.`);
-      navigate("/SALU-PORTAL-FYP/Admissions/AppearedInTest");
+      // ✅ 2. Update Status in personalinfo Table
+      await axios.patch(
+        `http://localhost:5000/api/admissions/updateStatus/${formDataFromState.form_id}`,
+        { status: passStatus },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      toast.success(`Marks added successfully! Candidate has ${passStatus}.`);
+
+      setTimeout(() => {
+        navigate("/SALU-PORTAL-FYP/Admissions/AppearedInTest");
+      }, 1200);
     } catch (err) {
       console.error("❌ Error submitting marks:", err);
-      alert(
+      toast.error(
         err.response?.data?.message ||
           "Failed to submit marks. Please try again."
       );
@@ -190,7 +202,6 @@ const AddTestMarks = () => {
             name="percentage"
             inputType="text"
             value={formData.percentage}
-            required
             disabled
           />
 

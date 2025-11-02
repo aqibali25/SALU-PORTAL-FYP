@@ -25,6 +25,10 @@ import Subjects from "./components/Subjects/Subjects";
 import AddSubject from "./components/Subjects/AddSubject";
 import ViewSubject from "./components/Subjects/ViewSubject";
 
+// ✅ Toastify Import
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 function App() {
   const isLoggedIn = Cookies.get("isLoggedIn") === "true";
   const location = useLocation();
@@ -38,6 +42,9 @@ function App() {
 
   return (
     <>
+      {/* ✅ Toast Container */}
+      <ToastContainer position="top-center" autoClose={2000} />
+
       <Navbar />
       <Routes>
         <Route path="/SALU-PORTAL-FYP/login" element={<Login />} />
@@ -45,6 +52,7 @@ function App() {
           <>
             <Route path="/SALU-PORTAL-FYP/" element={<Home />} />
             <Route path="/SALU-PORTAL-FYP/profile" element={<Profile />} />
+
             <Route
               path="/SALU-PORTAL-FYP/adduser"
               element={<AddUser Title="Add User" />}
@@ -123,7 +131,6 @@ function App() {
             />
             <Route path="/SALU-PORTAL-FYP/EnterMarks" element={<Marking />} />
 
-            {/* ✅ Updated Route */}
             <Route
               path="/SALU-PORTAL-FYP/EnterMarks/Subject/:subjectId"
               element={<ShowStudentsForMarking />}

@@ -5,7 +5,8 @@ import DataTable from "../TableData";
 import Pagination from "../Pagination";
 import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
-import { icon } from "@fortawesome/fontawesome-svg-core";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function FormsByStatus({ heading }) {
   const navigate = useNavigate();
@@ -19,47 +20,49 @@ export default function FormsByStatus({ heading }) {
   const pageSize = 10;
   const status = heading.split(" ")[0];
 
-  // Fetch all admissions
+  const [selectedStatus, setSelectedStatus] = useState({});
+
+  /** ✅ Fetch All Admissions */
+  const fetchAdmissions = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await axios.get("http://localhost:5000/api/admissions", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      let fetchedData = Array.isArray(res.data.data) ? res.data.data : [];
+
+      const uniqueForms = fetchedData.filter(
+        (form, index, self) =>
+          index ===
+          self.findIndex(
+            (f) => f.cnic === form.cnic && f.form_id === form.form_id
+          )
+      );
+
+      setForms(uniqueForms);
+    } catch (err) {
+      console.error("❌ Error fetching admissions:", err);
+      toast.error(
+        err.response?.data?.message ||
+          "Failed to fetch admissions. Please check your token or try again.",
+        { position: "top-center" }
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchAdmissions = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem("token");
-
-        const res = await axios.get("http://localhost:5000/api/admissions", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        let fetchedData = Array.isArray(res.data.data) ? res.data.data : [];
-
-        const uniqueForms = fetchedData.filter(
-          (form, index, self) =>
-            index ===
-            self.findIndex(
-              (f) => f.cnic === form.cnic && f.form_id === form.form_id
-            )
-        );
-
-        setForms(uniqueForms);
-      } catch (err) {
-        console.error("❌ Error fetching admissions:", err);
-        alert(
-          err.response?.data?.message ||
-            "Failed to fetch admissions. Please check your token or try again."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAdmissions();
   }, []);
 
-  // Filter by status and search query
+  /** 🔍 Filter by status + search */
   useEffect(() => {
     let data = [...forms];
 
-    if (status && status.trim() !== "") {
+    if (status) {
       data = data.filter(
         (form) => form.status?.toLowerCase() === status.toLowerCase()
       );
@@ -80,12 +83,12 @@ export default function FormsByStatus({ heading }) {
     setPage(1);
   }, [forms, status, query]);
 
-  // Pagination logic
+  /** 📌 Pagination */
   const startIndex = (page - 1) * pageSize;
   const paginatedForms = filteredForms.slice(startIndex, startIndex + pageSize);
   const pageCount = Math.ceil(filteredForms.length / pageSize);
 
-  // Columns
+  /** 🧱 Columns */
   const columns = [
     { key: "serialNo", label: "Serial No." },
     { key: "student_name", label: "Student's Name" },
@@ -95,38 +98,51 @@ export default function FormsByStatus({ heading }) {
     { key: "status", label: "Status" },
   ];
 
-  if (!status || status.trim() === "") {
-    columns.push({ key: "status", label: "Status" });
-  }
-
-  // Add serial numbers
   const rows = paginatedForms.map((form, index) => ({
     ...form,
     serialNo: startIndex + index + 1,
   }));
 
-  // Actions
-  const [selectedStatus, setSelectedStatus] = useState({});
-
+  /** 🔄 Update Status + Toast */
   const handleSelectChange = async (formId, value) => {
     setSelectedStatus((prev) => ({ ...prev, [formId]: value }));
 
     try {
       const token = localStorage.getItem("token");
-      await axios.put(
-        `http://localhost:5000/api/admissions/${formId}`,
-        { appeared_status: value },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+
+      // ✅ Update main status
+      await axios.patch(
+        `http://localhost:5000/api/admissions/updateStatus/${formId}`,
+        { status: value },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert(`Form marked as "${value}"`);
+
+      // ✅ If Paid → Auto change to Enrolled
+      if (value === "Paid") {
+        await axios.patch(
+          `http://localhost:5000/api/admissions/updateStatus/${formId}`,
+          { status: "Enrolled" },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        toast.success("Status updated to Enrolled ✅", {
+          position: "top-center",
+        });
+      } else {
+        toast.success(`Status updated to "${value}"`, {
+          position: "top-center",
+        });
+      }
+
+      fetchAdmissions(); // Refresh UI
     } catch (err) {
       console.error("❌ Error updating status:", err);
-      alert("Failed to update status. Please try again.");
+      toast.error("Failed to update status. Please try again.", {
+        position: "top-center",
+      });
     }
   };
 
+  /** 🎯 Table Actions */
   const actions = [
     (() => {
       switch (status) {
@@ -159,24 +175,18 @@ export default function FormsByStatus({ heading }) {
                 const token = localStorage.getItem("token");
                 const res = await axios.get(
                   `http://localhost:5000/api/admissions/${row.form_id}`,
-                  {
-                    headers: { Authorization: `Bearer ${token}` },
-                  }
+                  { headers: { Authorization: `Bearer ${token}` } }
                 );
-
-                const formData = res.data;
-                localStorage.removeItem("reviewFormStep");
 
                 navigate(
                   `/SALU-PORTAL-FYP/Admissions/Pending/ReviewForm?${row.cnic}`,
-                  { state: { form: formData } }
+                  { state: { form: res.data } }
                 );
               } catch (err) {
-                console.error("❌ Error fetching form by CNIC:", err);
-                alert(
-                  err.response?.data?.message ||
-                    "Failed to fetch form data. Please try again."
-                );
+                console.error("❌ Error fetching form:", err);
+                toast.error("Failed to fetch form data. Please try again.", {
+                  position: "top-center",
+                });
               } finally {
                 setLoadingForm(false);
               }
@@ -190,18 +200,15 @@ export default function FormsByStatus({ heading }) {
               </button>
             ),
           };
+
         case "Appeared":
           return {
             label: "Add Test Marks",
             onClick: (row) => {
               navigate(
                 `/SALU-PORTAL-FYP/Admissions/AppearedInTest/AddTestMarks?${row.cnic}`,
-                {
-                  state: { form: row },
-                }
+                { state: { form: row } }
               );
-              // Optionally update status here or on the target page:
-              // updateStatus(row.form_id, "Passed");
             },
             icon: (
               <button className="!px-4 !py-1 border border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition cursor-pointer">
@@ -209,32 +216,50 @@ export default function FormsByStatus({ heading }) {
               </button>
             ),
           };
+
         case "Passed":
           return {
-            label: "Selected in Marit List",
+            label: "Selected in Merit List",
             onClick: (row) => {
               navigate(
                 `/SALU-PORTAL-FYP/Admissions/PassedCandidates/SelectedInMaritList?${row.cnic}`,
-                {
-                  state: { form: row },
-                }
+                { state: { form: row } }
               );
-              // Optionally update status here or on the target page:
-              // updateStatus(row.form_id, "Passed");
             },
             icon: (
               <button className="!px-4 !py-1 border border-green-500 text-green-500 hover:bg-green-500 hover:text-white transition cursor-pointer">
-                Selected in Marit List
+                Selected in Merit List
               </button>
             ),
           };
+
+        case "Selected":
+          return {
+            label: "Selected Status",
+            render: (row) => (
+              <select
+                className="border-2 border-gray-400 dark:border-gray-600 !px-2 !py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none"
+                value={selectedStatus[row.form_id] || ""}
+                onChange={(e) =>
+                  handleSelectChange(row.form_id, e.target.value)
+                }
+              >
+                <option value="" disabled>
+                  Select Status
+                </option>
+                <option value="Paid">Paid</option>
+                <option value="Un Paid">Un Paid</option>
+              </select>
+            ),
+          };
+
         default:
           return null;
       }
     })(),
   ];
 
-  // Main loader
+  /** ⏳ Loader */
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-90px)] bg-white dark:bg-gray-900">
@@ -245,7 +270,7 @@ export default function FormsByStatus({ heading }) {
 
   return (
     <div
-      className="sm:!px-[40px] md:!px-[80px] !px-5 !py-[20px] min-h-[calc(100vh-90px)] w-[100%] bg-white dark:bg-gray-900"
+      className="sm:!px-[40px] md:!px-[80px] !px-5 !py-[20px] min-h-[calc(100vh-90px)] w-full bg-white dark:bg-gray-900"
       style={{
         backgroundImage: `url(${Background})`,
         backgroundSize: "cover",
@@ -253,6 +278,20 @@ export default function FormsByStatus({ heading }) {
         backgroundPosition: "center",
       }}
     >
+      {/* ✅ ToastContainer at top level */}
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+
       <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
         <div className="flex justify-start items-center gap-3">
           <BackButton />
@@ -264,7 +303,7 @@ export default function FormsByStatus({ heading }) {
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 
         {/* Search */}
-        <div className="w-full flex justify-end overflow-hidden">
+        <div className="w-full flex justify-end overflow-hidden mb-2">
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}

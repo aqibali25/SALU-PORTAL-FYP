@@ -22,11 +22,19 @@ const ReviewForm = () => {
     document.title = "SALU Portal | Review Form";
   }, []);
 
+  // Step state
   const [step, setStep] = useState(() => {
+    // Retrieve saved step from localStorage if available
     const savedStep = localStorage.getItem("reviewFormStep");
     return savedStep ? Number(savedStep) : 1;
   });
 
+  // Force step to 1 only on initial mount/render
+  useEffect(() => {
+    setStep(1);
+  }, []);
+
+  // Persist step in localStorage
   useEffect(() => {
     localStorage.setItem("reviewFormStep", step);
   }, [step]);
@@ -71,7 +79,8 @@ const ReviewForm = () => {
 
   // Approve function
   const handleApprove = async () => {
-    setShowApproved(false); // close modal
+    setShowApproved(false); // close modal first
+
     const formData = location.state?.form?.data;
     if (!formData?.form_id) {
       toast.error("Form ID missing!", { position: "top-center" });
@@ -80,13 +89,20 @@ const ReviewForm = () => {
 
     const backendBaseUrl =
       import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
     try {
       await axios.patch(
         `${backendBaseUrl}/api/admissions/updateStatus/${formData.form_id}`,
         { status: "Approved" }
       );
+
+      // show success toast
       toast.success("Form approved successfully!", { position: "top-center" });
-      navigate("/SALU-PORTAL-FYP/Admissions/PendingForms");
+
+      // navigate after short delay so user sees the toast
+      setTimeout(() => {
+        navigate("/SALU-PORTAL-FYP/Admissions/PendingForms");
+      }, 1000);
     } catch (err) {
       console.error(err);
       toast.error("Failed to approve form", { position: "top-center" });
