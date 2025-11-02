@@ -1,20 +1,32 @@
-import express from "express";
+// Backend/routes/admissions.js
+import { Router } from "express";
 import {
   getAllAdmissions,
   getAdmissionById,
-  updateFormStatus,
+  getAcademicsById,
+  getDocumentsById,
   updateEntryTestMarks,
+  updateEntryTestMarksByEnroll,
   getAllEnrolledStudents,
+  updateFormStatus,
 } from "../controllers/admissionController.js";
-import { verifyToken } from "../middleware/authMiddleware.js";
 
-const router = express.Router();
+const router = Router();
 
-// Keep order strict — specific routes first
-router.get("/", verifyToken, getAllAdmissions);
-router.put("/updateMarks/:form_id", updateEntryTestMarks);
-router.patch("/updateStatus/:form_id", updateFormStatus);
+// lists & details
+router.get("/", getAllAdmissions);
+router.get("/:id", getAdmissionById);
+router.get("/:id/academics", getAcademicsById);
+router.get("/:id/documents", getDocumentsById);
+
+// marks upserts
+router.put("/updateMarks/:form_id", updateEntryTestMarks);             // expects personal_info.id
+router.put("/updateMarksByEnroll/:enroll_id", updateEntryTestMarksByEnroll); // accepts enroll_students.enroll_id
+
+// enroll_students listing
 router.get("/enrolled/list", getAllEnrolledStudents);
-router.get("/:id", verifyToken, getAdmissionById); // must be last!
+
+// status-only (personal_info)
+router.patch("/updateStatus/:form_id", updateFormStatus);
 
 export default router;
