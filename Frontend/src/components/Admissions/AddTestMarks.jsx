@@ -9,6 +9,7 @@ const AddTestMarks = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const formDataFromState = location.state?.form || {};
+  console.log(formDataFromState);
 
   const [formData, setFormData] = useState({
     name: formDataFromState.student_name || "",
@@ -17,7 +18,7 @@ const AddTestMarks = () => {
     obtainedmarks: "",
     totalmarks: "",
     passingmarks: "",
-    percentage: "", // ✅ lowercase for consistency
+    percentage: "",
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -30,11 +31,8 @@ const AddTestMarks = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // temporary update
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
-
-      // ✅ Auto-calculate percentage when total and obtained are filled
       const obtained = Number(updated.obtainedmarks);
       const total = Number(updated.totalmarks);
 
@@ -52,7 +50,6 @@ const AddTestMarks = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ Validate required fields
     if (!formData.obtainedmarks.trim() || !formData.totalmarks.trim()) {
       alert("Please enter obtained and total marks.");
       return;
@@ -69,41 +66,38 @@ const AddTestMarks = () => {
       return;
     }
 
-    // ✅ Calculate values
     const percentage = ((obtained / total) * 100).toFixed(2);
-    const status = obtained >= passing ? "Passed" : "Failed";
+    const passStatus = obtained >= passing ? "Passed" : "Failed";
 
-    // ✅ Update state so UI also reflects new percentage
     setFormData((prev) => ({ ...prev, percentage }));
 
     setSubmitting(true);
     try {
       const token = localStorage.getItem("token");
 
-      // ✅ include percentage in data
+      // ✅ Include status as "Selected"
       const updatedData = {
         form_id: formDataFromState.form_id,
         obtained_marks: obtained,
         total_marks: total,
         passing_marks: passing,
-        percentage: percentage,
-        status,
+        percentage,
+        status: passStatus,
+        selection_status: passStatus,
       };
 
       console.log("📤 Sending marks data:", updatedData);
 
-      // ✅ API call to update marks (you'll wire this later)
-      // await axios.put(
-      //   `http://localhost:5000/api/admissions/updateMarks/${formDataFromState.form_id}`,
-      //   updatedData,
-      //   {
-      //     headers: { Authorization: `Bearer ${token}` },
-      //   }
-      // );
+      await axios.put(
+        `http://localhost:5000/api/admissions/updateMarks/${formDataFromState.form_id}`,
+        updatedData,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-      alert(`Marks added successfully! Candidate has ${status}.`);
-
-      navigate("/SALU-PORTAL-FYP/Admissions/Forms/Appeared");
+      alert(`Marks added successfully! Candidate has ${passStatus}.`);
+      navigate("/SALU-PORTAL-FYP/Admissions/AppearedInTest");
     } catch (err) {
       console.error("❌ Error submitting marks:", err);
       alert(
@@ -191,16 +185,15 @@ const AddTestMarks = () => {
             required
           />
 
-          {/* ✅ Auto Calculated Percentage */}
           <InputContainer
             title="Percentage"
             name="percentage"
             inputType="text"
             value={formData.percentage}
+            required
             disabled
           />
 
-          {/* ✅ Submit button */}
           <div className="w-full flex justify-end">
             <button
               type="submit"

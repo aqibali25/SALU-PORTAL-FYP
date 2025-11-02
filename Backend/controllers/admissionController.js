@@ -135,7 +135,9 @@ export const getAdmissionById = async (req, res) => {
     );
 
     if (!rows.length)
-      return res.status(404).json({ success: false, message: "Form not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Form not found" });
 
     const row = rows[0];
 
@@ -241,12 +243,15 @@ export const updateEntryTestMarks = async (req, res) => {
       { replacements: [form_id] }
     );
     if (!pi)
-      return res.status(404).json({ success: false, message: "Form not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Form not found" });
 
     const cnic = pi.cnic;
     const obtained = Number(obtained_marks ?? 0);
     const total = Number(total_marks ?? 0);
-    const etPct = total > 0 ? Number(((obtained / total) * 100).toFixed(2)) : null;
+    const etPct =
+      total > 0 ? Number(((obtained / total) * 100).toFixed(2)) : null;
     const finalPct =
       percentage != null ? Number(Number(percentage).toFixed(2)) : etPct;
     const mappedFormStatus =

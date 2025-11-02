@@ -15,7 +15,7 @@ const SelectedInMaritList = () => {
     father_name: formDataFromState.father_name || "",
     cnic: formDataFromState.cnic || "",
     obtainedmarks: "",
-    totalmarks: "50",
+    totalmarks: "",
     percentage: "",
     merit_list: "",
     department: "",
@@ -28,16 +28,54 @@ const SelectedInMaritList = () => {
     "2nd Merit List",
     "3rd Merit List",
   ];
-
   const departmentOptions = [
     "Computer Science",
     "Business Administration",
     "English Language and Literature",
   ];
 
+  // ✅ Fetch candidate entry test data
   useEffect(() => {
-    document.title = `SALU Portal | Add Test Marks`;
-  }, []);
+    document.title = `SALU Portal | Select Merit List`;
+
+    const fetchAdmission = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await axios.get(
+          `http://localhost:5000/api/admissions/enrolled/list`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        // ✅ Assuming only one record for the candidate (first index)
+        const data = res.data?.data?.[0] || {};
+
+        console.log("📥 Fetched Admission Data:", data);
+
+        // ✅ Set fetched values to inputs
+        setFormData((prev) => ({
+          ...prev,
+          obtainedmarks: data.entryTestObtained || "",
+          totalmarks: data.entryTestTotal || "",
+          percentage: data.entryTestPercentage || "",
+          merit_list: data.meritList || "",
+          department: data.department || "",
+        }));
+      } catch (err) {
+        console.error("❌ Error fetching admission:", err);
+        alert(
+          err.response?.data?.message ||
+            "Failed to fetch admission details. Please try again."
+        );
+      }
+    };
+
+    if (formDataFromState.form_id) {
+      fetchAdmission();
+    }
+  }, [formDataFromState.form_id]);
 
   // ✅ Handle input changes
   const handleChange = (e) => {
@@ -49,6 +87,7 @@ const SelectedInMaritList = () => {
   };
 
   // ✅ Handle form submission
+  // ✅ Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -56,17 +95,21 @@ const SelectedInMaritList = () => {
     try {
       const token = localStorage.getItem("token");
 
+      // ✅ Send all form data to backend
       const updatedData = {
         form_id: formDataFromState.form_id,
-        obtained_marks: formData.obtainedmarks,
-        total_marks: formData.totalmarks,
+        student_name: formData.name,
+        father_name: formData.father_name,
+        cnic: formData.cnic,
+        obtainedmarks: formData.obtainedmarks,
+        totalmarks: formData.totalmarks,
         percentage: formData.percentage,
         merit_list: formData.merit_list,
         department: formData.department,
-        status: "Passed",
+        status: "Selected", // ✅ added here
       };
 
-      console.log("📤 Sending marks data:", updatedData);
+      console.log("📤 Sending full form data:", updatedData);
 
       const res = await axios.put(
         `http://localhost:5000/api/admissions/updateMarks/${formDataFromState.form_id}`,
@@ -77,13 +120,13 @@ const SelectedInMaritList = () => {
       );
 
       console.log("✅ Response:", res.data);
-      alert("Marks added and status updated to Passed successfully!");
-      navigate("/SALU-PORTAL-FYP/Admissions/Forms/Appeared");
+      alert("All details and status updated successfully!");
+      navigate("/SALU-PORTAL-FYP/Admissions/PassedCandidates");
     } catch (err) {
-      console.error("❌ Error submitting marks:", err);
+      console.error("❌ Error submitting merit list:", err);
       alert(
         err.response?.data?.message ||
-          "Failed to submit marks. Please try again."
+          "Failed to update merit list. Please try again."
       );
     } finally {
       setSubmitting(false);
@@ -104,7 +147,7 @@ const SelectedInMaritList = () => {
         <div className="flex justify-start items-center gap-3">
           <BackButton />
           <h1 className="text-2xl sm:text-3xl md:text-4xl py-3 font-bold text-gray-900 dark:text-white">
-            Select Marit List
+            Select Merit List
           </h1>
         </div>
 
@@ -143,7 +186,6 @@ const SelectedInMaritList = () => {
             name="obtainedmarks"
             inputType="text"
             value={formData.obtainedmarks}
-            onChange={handleChange}
             disabled
           />
           <InputContainer
@@ -158,8 +200,10 @@ const SelectedInMaritList = () => {
             name="percentage"
             inputType="text"
             value={formData.percentage}
-            onChange={handleChange}
+            disabled
           />
+
+          {/* Merit List Select */}
           <div className="flex w-full max-w-[800px] items-start md:items-center justify-start flex-col md:flex-row gap-[8px] md:gap-5 [@media(max-width:550px)]:gap-[5px]">
             <label
               htmlFor="merit_list"
@@ -170,10 +214,10 @@ const SelectedInMaritList = () => {
             </label>
             <select
               id="merit_list"
-              name="merit_list" // ✅ added
+              name="merit_list"
               required
               value={formData.merit_list}
-              onChange={handleChange} // ✅ works now
+              onChange={handleChange}
               className="w-[40%] [@media(max-width:768px)]:!w-full min-w-0 !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
             >
               <option value="" disabled>
@@ -187,6 +231,7 @@ const SelectedInMaritList = () => {
             </select>
           </div>
 
+          {/* Department Select */}
           <div className="flex w-full max-w-[800px] items-start md:items-center justify-start flex-col md:flex-row gap-[8px] md:gap-5 [@media(max-width:550px)]:gap-[5px]">
             <label
               htmlFor="department"
@@ -197,18 +242,18 @@ const SelectedInMaritList = () => {
             </label>
             <select
               id="department"
-              name="department" // ✅ added
+              name="department"
               required
               value={formData.department}
-              onChange={handleChange} // ✅ works now
+              onChange={handleChange}
               className="w-[40%] [@media(max-width:768px)]:!w-full min-w-0 !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
             >
               <option value="" disabled>
                 [Select an Option]
               </option>
-              {departmentOptions.map((role) => (
-                <option key={role} value={role}>
-                  {role}
+              {departmentOptions.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
                 </option>
               ))}
             </select>
