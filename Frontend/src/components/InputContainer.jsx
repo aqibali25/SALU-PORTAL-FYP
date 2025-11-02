@@ -4,6 +4,7 @@ const InputContainer = forwardRef(
   (
     {
       htmlFor,
+      name, // ✅ allow explicit name
       required,
       inputType = "text",
       title,
@@ -19,17 +20,17 @@ const InputContainer = forwardRef(
     ref
   ) => {
     const computedAC =
-      autoComplete ?? (inputType === "password" ? "new-password" : "off"); // default behavior
+      autoComplete ?? (inputType === "password" ? "new-password" : "off");
 
     return (
       <div
         className="
-        flex w-full max-w-[800px]
-        items-start md:items-center justify-start
-        flex-col md:flex-row
-        gap-[8px] md:gap-5
-        [@media(max-width:550px)]:gap-[5px]
-      "
+          flex w-full max-w-[800px]
+          items-start md:items-center justify-start
+          flex-col md:flex-row
+          gap-[8px] md:gap-5
+          [@media(max-width:550px)]:gap-[5px]
+        "
       >
         <label
           htmlFor={htmlFor}
@@ -46,6 +47,7 @@ const InputContainer = forwardRef(
         <input
           style={{ width }}
           ref={ref}
+          name={name || htmlFor} // ✅ critical fix here
           value={value}
           type={inputType}
           id={htmlFor}
@@ -58,8 +60,8 @@ const InputContainer = forwardRef(
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={spellCheck}
-          data-1p-ignore // hint for 1Password
-          data-lpignore="true" // hint for LastPass
+          data-1p-ignore
+          data-lpignore="true"
           className="
             w-full md:w-auto
             [@media(max-width:768px)]:!w-full

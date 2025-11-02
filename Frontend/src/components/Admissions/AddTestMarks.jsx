@@ -8,14 +8,16 @@ import InputContainer from "../InputContainer";
 const AddTestMarks = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const formDataFromState = location.state?.form || {}; // ✅ Data passed from previous page
+  const formDataFromState = location.state?.form || {};
 
   const [formData, setFormData] = useState({
     name: formDataFromState.student_name || "",
     father_name: formDataFromState.father_name || "",
     cnic: formDataFromState.cnic || "",
     obtainedmarks: "",
-    totalmarks: "50",
+    totalmarks: "",
+    passingmarks: "",
+    percentage: "", // ✅ lowercase for consistency
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -27,40 +29,80 @@ const AddTestMarks = () => {
   // ✅ Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // temporary update
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+
+      // ✅ Auto-calculate percentage when total and obtained are filled
+      const obtained = Number(updated.obtainedmarks);
+      const total = Number(updated.totalmarks);
+
+      if (!isNaN(obtained) && !isNaN(total) && total > 0) {
+        updated.percentage = ((obtained / total) * 100).toFixed(2);
+      } else {
+        updated.percentage = "";
+      }
+
+      return updated;
+    });
   };
 
   // ✅ Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
 
+    // ✅ Validate required fields
+    if (!formData.obtainedmarks.trim() || !formData.totalmarks.trim()) {
+      alert("Please enter obtained and total marks.");
+      return;
+    }
+
+    const obtained = Number(formData.obtainedmarks);
+    const total = Number(formData.totalmarks);
+    const passing = Number(formData.passingmarks);
+
+    if (isNaN(obtained) || obtained < 0 || obtained > total) {
+      alert(
+        "Please enter a valid obtained marks value between 0 and total marks."
+      );
+      return;
+    }
+
+    // ✅ Calculate values
+    const percentage = ((obtained / total) * 100).toFixed(2);
+    const status = obtained >= passing ? "Passed" : "Failed";
+
+    // ✅ Update state so UI also reflects new percentage
+    setFormData((prev) => ({ ...prev, percentage }));
+
+    setSubmitting(true);
     try {
       const token = localStorage.getItem("token");
 
-      // ✅ Prepare payload
+      // ✅ include percentage in data
       const updatedData = {
         form_id: formDataFromState.form_id,
-        obtained_marks: formData.obtainedmarks,
-        total_marks: formData.totalmarks,
-        status: "Passed",
+        obtained_marks: obtained,
+        total_marks: total,
+        passing_marks: passing,
+        percentage: percentage,
+        status,
       };
 
       console.log("📤 Sending marks data:", updatedData);
 
-      // ✅ API call to update marks and status
-      const res = await axios.put(
-        `http://localhost:5000/api/admissions/updateMarks/${formDataFromState.form_id}`,
-        updatedData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      // ✅ API call to update marks (you'll wire this later)
+      // await axios.put(
+      //   `http://localhost:5000/api/admissions/updateMarks/${formDataFromState.form_id}`,
+      //   updatedData,
+      //   {
+      //     headers: { Authorization: `Bearer ${token}` },
+      //   }
+      // );
 
-      console.log("✅ Response:", res.data);
-      alert("Marks added and status updated to Passed successfully!");
+      alert(`Marks added successfully! Candidate has ${status}.`);
 
-      // ✅ Redirect back to list
       navigate("/SALU-PORTAL-FYP/Admissions/Forms/Appeared");
     } catch (err) {
       console.error("❌ Error submitting marks:", err);
@@ -104,7 +146,6 @@ const AddTestMarks = () => {
             value={formData.name}
             disabled
           />
-
           <InputContainer
             title="Father's Name"
             name="father_name"
@@ -112,7 +153,6 @@ const AddTestMarks = () => {
             value={formData.father_name}
             disabled
           />
-
           <InputContainer
             title="Candidate CNIC"
             name="cnic"
@@ -122,18 +162,41 @@ const AddTestMarks = () => {
           />
 
           <InputContainer
-            title="Obtained Marks"
-            name="obtainedmarks"
-            inputType="text"
-            value={formData.obtainedmarks}
+            placeholder="Enter Passing Marks"
+            title="Passing Marks"
+            name="passingmarks"
+            inputType="number"
+            value={formData.passingmarks}
             onChange={handleChange}
+            required
           />
 
           <InputContainer
+            placeholder="Enter Obtained Marks"
+            title="Obtained Marks"
+            name="obtainedmarks"
+            inputType="number"
+            value={formData.obtainedmarks}
+            onChange={handleChange}
+            required
+          />
+
+          <InputContainer
+            placeholder="Enter Total Marks"
             title="Total Marks"
             name="totalmarks"
-            inputType="text"
+            inputType="number"
             value={formData.totalmarks}
+            onChange={handleChange}
+            required
+          />
+
+          {/* ✅ Auto Calculated Percentage */}
+          <InputContainer
+            title="Percentage"
+            name="percentage"
+            inputType="text"
+            value={formData.percentage}
             disabled
           />
 

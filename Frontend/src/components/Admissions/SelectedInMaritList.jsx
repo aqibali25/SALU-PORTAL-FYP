@@ -104,7 +104,7 @@ const SelectedInMaritList = () => {
         <div className="flex justify-start items-center gap-3">
           <BackButton />
           <h1 className="text-2xl sm:text-3xl md:text-4xl py-3 font-bold text-gray-900 dark:text-white">
-            Add Entry Test Marks
+            Select Marit List
           </h1>
         </div>
 
