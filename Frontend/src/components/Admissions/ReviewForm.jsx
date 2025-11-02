@@ -7,30 +7,34 @@ import ReviewPersonalInfo from "./FormComp/ReviewPersonalInfo";
 import ReviewFatherInfo from "./FormComp/ReviewFather&GuardianInfo";
 import ReviewAcademicInfo from "./FormComp/ReviewAcademicInfo";
 import ReviewDocuments from "./FormComp/ReviewDocuments";
-
 import ApprovedMessage from "./ApprovedMessage";
 import RevertAndTrashMessage from "./RevertAndTrashMessage";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-export const ReviewForm = () => {
+const ReviewForm = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   useEffect(() => {
-    document.title = "SALU Portal | Review Form ";
+    document.title = "SALU Portal | Review Form";
   }, []);
+
   const [step, setStep] = useState(() => {
     const savedStep = localStorage.getItem("reviewFormStep");
     return savedStep ? Number(savedStep) : 1;
   });
-  const navigate = useNavigate();
+
   useEffect(() => {
     localStorage.setItem("reviewFormStep", step);
   }, [step]);
 
-  // --- State for modals ---
   const [showApproved, setShowApproved] = useState(false);
   const [showRevert, setShowRevert] = useState(false);
   const [showTrash, setShowTrash] = useState(false);
 
-  // Step titles
   const stepTitles = {
     1: "Program of Study",
     2: "Personal Information",
@@ -46,15 +50,13 @@ export const ReviewForm = () => {
       case 2:
         return <ReviewPersonalInfo />;
       case 3:
-        return (
-          <>
-            <ReviewFatherInfo />
-          </>
-        );
+        return <ReviewFatherInfo />;
       case 4:
         return <ReviewAcademicInfo />;
       case 5:
         return <ReviewDocuments />;
+      default:
+        return null;
     }
   };
 
@@ -65,7 +67,30 @@ export const ReviewForm = () => {
 
   const handleNext = () => {
     if (step < Object.keys(stepTitles).length) setStep((prev) => prev + 1);
-    else console.log("Finished");
+  };
+
+  // Approve function
+  const handleApprove = async () => {
+    setShowApproved(false); // close modal
+    const formData = location.state?.form?.data;
+    if (!formData?.form_id) {
+      toast.error("Form ID missing!", { position: "top-center" });
+      return;
+    }
+
+    const backendBaseUrl =
+      import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+    try {
+      await axios.patch(
+        `${backendBaseUrl}/api/admissions/updateStatus/${formData.form_id}`,
+        { status: "Approved" }
+      );
+      toast.success("Form approved successfully!", { position: "top-center" });
+      navigate("/SALU-PORTAL-FYP/Admissions/PendingForms");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to approve form", { position: "top-center" });
+    }
   };
 
   return (
@@ -78,8 +103,8 @@ export const ReviewForm = () => {
         backgroundPosition: "center",
       }}
     >
+      <ToastContainer />
       <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
-        {/* Page heading */}
         <div className="flex justify-start items-center gap-3">
           <BackButton />
           <h1 className="text-[1.4rem] sm:text-3xl md:text-4xl !py-3 font-bold text-gray-900 dark:text-white">
@@ -88,9 +113,7 @@ export const ReviewForm = () => {
         </div>
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 
-        {/* Inner content */}
         <div className="relative flex flex-col justify-center items-center gap-5 min-h-[60vh] w-full md:!p-10 !pt-10 !p-3 bg-white dark:bg-gray-900 rounded-md overflow-hidden">
-          {/* Header bar */}
           <div className="flex justify-start items-center gap-3 absolute top-0 left-0 w-full text-[1rem] sm:text-2xl !px-5 !py-2 bg-[#D6D6D6] rounded-tl-md rounded-tr-md border-gray-500">
             <div
               className="flex justify-center items-center cursor-pointer"
@@ -103,7 +126,6 @@ export const ReviewForm = () => {
             <h1>{stepTitles[step]}</h1>
           </div>
 
-          {/* Step content */}
           {renderStepContent()}
 
           <div className="w-full flex justify-end mt-4">
@@ -117,6 +139,7 @@ export const ReviewForm = () => {
                 >
                   <span className="relative z-10">Approve</span>
                 </button>
+                {/* Revert / Trash buttons */}
                 <button
                   type="button"
                   onClick={() => setShowRevert(true)}
@@ -150,24 +173,23 @@ export const ReviewForm = () => {
       </div>
 
       {/* Modals */}
-      {/* Modals */}
       <ApprovedMessage
         open={showApproved}
-        onCancel={() => setShowApproved(false)} // ✅ hides modal
-        onClose={() => navigate("/SALU-PORTAL-FYP/Admissions/PendingForms")} // ✅ redirect
+        onClose={handleApprove}
+        onCancel={() => setShowApproved(false)}
       />
 
       <RevertAndTrashMessage
         open={showRevert}
-        onCancel={() => setShowRevert(false)} // ✅ hides modal
-        onClose={() => navigate("/SALU-PORTAL-FYP/Admissions/PendingForms")} // ✅ redirect
+        onCancel={() => setShowRevert(false)}
+        onClose={() => navigate("/SALU-PORTAL-FYP/Admissions/PendingForms")}
         type="revert"
       />
 
       <RevertAndTrashMessage
         open={showTrash}
-        onCancel={() => setShowTrash(false)} // ✅ hides modal
-        onClose={() => navigate("/SALU-PORTAL-FYP/Admissions/PendingForms")} // ✅ redirect
+        onCancel={() => setShowTrash(false)}
+        onClose={() => navigate("/SALU-PORTAL-FYP/Admissions/PendingForms")}
         type="trash"
       />
     </div>

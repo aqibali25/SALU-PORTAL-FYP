@@ -8,7 +8,7 @@ import Settings from "./components/settings/Settings";
 import ListUsers from "./components/ListUsers/ListUsers";
 import Admissions from "./components/Admissions/Admissions";
 import FormsByStatus from "./components/Admissions/FormsByStatus";
-import { ReviewForm } from "./components/Admissions/ReviewForm";
+import ReviewForm from "./components/Admissions/ReviewForm";
 import Login from "./components/Login/Login";
 import Cookies from "js-cookie";
 import { useEffect } from "react";

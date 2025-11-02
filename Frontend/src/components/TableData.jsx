@@ -75,7 +75,7 @@ export default function DataTable({
                         action.render ? (
                           <div key={idx}>{action.render(row)}</div>
                         ) : (
-                          <button
+                          <div
                             key={idx}
                             type="button"
                             onClick={() => action.onClick(row)}
@@ -85,7 +85,7 @@ export default function DataTable({
                             }`}
                           >
                             {action.icon || action.label}
-                          </button>
+                          </div>
                         )
                       )}
                     </div>

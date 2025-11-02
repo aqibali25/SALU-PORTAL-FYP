@@ -1,21 +1,20 @@
 import React, { useState } from "react";
 import { FaEye, FaRegFileAlt } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
-import axios from "axios";
 import ApprovedMessage from "../ApprovedMessage";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
 
 const ReviewDocuments = () => {
   const location = useLocation();
-
-  // ✅ Get uploaded documents and form details
   const formData = location.state?.form?.data;
   const documents = formData?.uploaded_documents || [];
-  const enrollmentId = formData?._id;
 
   const [previewImage, setPreviewImage] = useState(null);
-  const [activeMessage, setActiveMessage] = useState(false); // modal open/close
-  const [loading, setLoading] = useState(false);
+  const [showApproved, setShowApproved] = useState(false);
 
+  // Preview document
   const handlePreview = (fileName) => {
     const backendBaseUrl =
       import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
@@ -24,35 +23,29 @@ const ReviewDocuments = () => {
 
   const closePreview = () => setPreviewImage(null);
 
-  // ✅ Step 1: open confirmation modal
-  const handleApproveClick = () => {
-    setActiveMessage(true);
-  };
-
-  // ✅ Step 2: update form status after "Continue" click
-  const handleConfirmApproval = async () => {
-    if (!enrollmentId) {
-      console.error("No enrollment ID found in form data");
+  // Approve form function
+  const handleApprove = async () => {
+    setShowApproved(false); // close modal first
+    if (!formData?.form_id) {
+      toast.error("Form ID missing, cannot approve.", {
+        position: "top-center",
+      });
       return;
     }
 
+    const backendBaseUrl =
+      import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
     try {
-      setLoading(true);
-      const backendBaseUrl =
-        import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-
-      const response = await axios.patch(
-        `${backendBaseUrl}/api/enroll-students/${enrollmentId}/status`,
-        { status: "Approved" }
+      await axios.patch(
+        `${backendBaseUrl}/api/admissions/updateStatus/${formData.form_id}`,
+        {
+          status: "Approved",
+        }
       );
-
-      console.log("✅ Form status updated successfully:", response.data);
-      formData.status = "Approved";
-    } catch (error) {
-      console.error("❌ Error updating form status:", error);
-    } finally {
-      setLoading(false);
-      setActiveMessage(false);
+      toast.success("Form approved successfully!", { position: "top-center" });
+    } catch (err) {
+      console.error("Error updating form status:", err);
+      toast.error("Failed to approve form", { position: "top-center" });
     }
   };
 
@@ -66,6 +59,8 @@ const ReviewDocuments = () => {
 
   return (
     <div className="w-full mx-auto !px-4 !py-6">
+      <ToastContainer />
+
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="border-collapse w-full min-w-[550px] md:min-w-[800px]">
@@ -127,12 +122,14 @@ const ReviewDocuments = () => {
         </div>
       )}
 
-      {/* ✅ Success Modal */}
-      <ApprovedMessage
-        open={activeMessage}
-        onClose={handleConfirmApproval}
-        onCancel={() => setActiveMessage(false)}
-      />
+      {/* Approved message modal */}
+      {showApproved && (
+        <ApprovedMessage
+          open={showApproved}
+          onClose={handleApprove}
+          onCancel={() => setShowApproved(false)}
+        />
+      )}
     </div>
   );
 };

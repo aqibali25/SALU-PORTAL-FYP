@@ -6,16 +6,24 @@ const TABLE = `\`${DB}\`.subject_allocation`;
 
 // ---- Helpers ----
 const ALLOWED_SORTS = new Set([
-  "sa_id", "sub_name", "teacher_name", "department",
-  "semester", "credit_hours", "year", "created_at", "updated_at"
+  "sa_id",
+  "sub_name",
+  "teacher_name",
+  "department",
+  "semester",
+  "credit_hours",
+  "year",
+  "created_at",
+  "updated_at",
 ]);
 
-const toSnake = (k) => ({
-  saId: "sa_id",
-  subName: "sub_name",
-  teacherName: "teacher_name",
-  creditHours: "credit_hours",
-}[k] || k);
+const toSnake = (k) =>
+  ({
+    saId: "sa_id",
+    subName: "sub_name",
+    teacherName: "teacher_name",
+    creditHours: "credit_hours",
+  }[k] || k);
 
 // ----------------- LIST (with search, sort, pagination) -----------------
 /**
@@ -146,7 +154,9 @@ export const createSubjectAllocation = async (req, res) => {
     } = req.body;
 
     if (!subName || !department || !semester || !creditHours || !year) {
-      return res.status(400).json({ success: false, message: "Missing required fields" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
     }
 
     const [result] = await sequelize.query(
@@ -155,7 +165,16 @@ export const createSubjectAllocation = async (req, res) => {
         (sub_name, teacher_name, department, semester, credit_hours, year, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
       `,
-      { replacements: [subName, teacherName, department, semester, creditHours, year] }
+      {
+        replacements: [
+          subName,
+          teacherName,
+          department,
+          semester,
+          creditHours,
+          year,
+        ],
+      }
     );
 
     const saId = result.insertId;
@@ -175,7 +194,14 @@ export const createSubjectAllocation = async (req, res) => {
 export const updateSubjectAllocation = async (req, res) => {
   try {
     const { saId } = req.params;
-    const fields = ["subName", "teacherName", "department", "semester", "creditHours", "year"];
+    const fields = [
+      "subName",
+      "teacherName",
+      "department",
+      "semester",
+      "creditHours",
+      "year",
+    ];
     const updates = [];
     const params = [];
 
@@ -187,7 +213,9 @@ export const updateSubjectAllocation = async (req, res) => {
     });
 
     if (!updates.length) {
-      return res.status(400).json({ success: false, message: "No fields to update" });
+      return res
+        .status(400)
+        .json({ success: false, message: "No fields to update" });
     }
 
     params.push(saId);
