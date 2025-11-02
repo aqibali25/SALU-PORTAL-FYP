@@ -21,6 +21,9 @@ import SelectedInMaritList from "./components/Admissions/SelectedInMaritList";
 import Marking from "./components/Examinations/Marking";
 import ShowStudentsForMarking from "./components/Examinations/ShowStudentsForMarking";
 import EnterStdMarks from "./components/Examinations/EnterStdMarks";
+import Subjects from "./components/Subjects/Subjects";
+import AddSubject from "./components/Subjects/AddSubject";
+import ViewSubject from "./components/Subjects/ViewSubject";
 
 function App() {
   const isLoggedIn = Cookies.get("isLoggedIn") === "true";
@@ -128,6 +131,21 @@ function App() {
             <Route
               path="/SALU-PORTAL-FYP/EnterMarks/Subject/:subjectId/EnterStdMarks"
               element={<EnterStdMarks />}
+            />
+            <Route path="/SALU-PORTAL-FYP/Subjects" element={<Subjects />} />
+            <Route
+              path="/SALU-PORTAL-FYP/Subjects/AddSubject"
+              element={<AddSubject Title="Add Subject" />}
+            />
+
+            <Route
+              path="/SALU-PORTAL-FYP/Subjects/UpdateSubject/:subjectId"
+              element={<AddSubject Title="Update Subject" />}
+            />
+
+            <Route
+              path="/SALU-PORTAL-FYP/Subjects/ViewSubject"
+              element={<ViewSubject />}
             />
           </>
         )}

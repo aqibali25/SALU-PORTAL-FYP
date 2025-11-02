@@ -22,7 +22,7 @@ const SubjectCardsLayout = ({ title, subjects, routePrefix }) => {
             borderColor={card.borderColor}
             iconBg={card.iconBg}
             Icon={card.Icon}
-            to={`${routePrefix}/${card.title}`}
+            to={`${routePrefix}/${card.title.replace(/\s+/g, "")}`}
           />
         ))}
       </div>

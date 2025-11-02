@@ -6,6 +6,7 @@ import {
   faCalendarAlt,
   faPenFancy,
   faCog,
+  faBook, // ✅ Added new icon for Subjects
 } from "@fortawesome/free-solid-svg-icons";
 
 export const cards = [
@@ -80,7 +81,17 @@ export const cards = [
   },
   {
     id: 8,
-    Heading: "Settings",
+    Heading: "Subjects", // ✅ New card added here
+    link: "Subjects",
+    isImg: false,
+    Icon: faBook,
+    color1: "#F97316",
+    color2: "#FFF7ED",
+    roles: ["teacher", "admin"],
+  },
+  {
+    id: 9,
+    Heading: "Settings", // ✅ Moved to last
     link: "Settings",
     isImg: false,
     Icon: faCog,

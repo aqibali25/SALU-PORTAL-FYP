@@ -1,16 +1,7 @@
 import Card from "./Card";
-import {
-  faUserPlus,
-  faCog,
-  faUsers,
-  faComputer,
-  faBookOpen,
-  faCalendarAlt,
-  faPenFancy,
-} from "@fortawesome/free-solid-svg-icons";
 import Background from "../../assets/Background.png";
 import { useEffect } from "react";
-import { cards, rolesArray } from "../../Hooks/HomeCards";
+import { cards } from "../../Hooks/HomeCards";
 
 const Home = () => {
   useEffect(() => {
