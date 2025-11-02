@@ -15,6 +15,7 @@ const router = express.Router();
 // List forms (optionally filter by ?status=Pending|Approved|Rejected)
 router.get("/", verifyToken, getAllAdmissions);
 router.put("/updateMarks/:form_id", updateEntryTestMarks);
+router.patch("/updateStatus/:form_id", updateFormStatus);
 
 // Single form detail
 router.get("/:id", verifyToken, getAdmissionById);

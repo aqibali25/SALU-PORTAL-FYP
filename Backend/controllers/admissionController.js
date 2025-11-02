@@ -44,6 +44,53 @@ export const getAllAdmissions = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+/**
+ * PATCH /api/admissions/updateStatus/:form_id
+ * Updates ONLY the form_status in personal_info table
+ * Body: { status: "Approved" | "Rejected" | "Pending" }
+ */
+export const updateFormStatus = async (req, res) => {
+  try {
+    const { form_id } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing 'status' in request body.",
+      });
+    }
+
+    const DB = process.env.DB_NAME || "u291434058_SALU_GC";
+
+    // Ensure record exists first
+    const [[existing]] = await sequelize.query(
+      `SELECT id FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
+      { replacements: [form_id] }
+    );
+
+    if (!existing) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Form not found" });
+    }
+
+    // Update form_status
+    await sequelize.query(
+      `UPDATE \`${DB}\`.personal_info SET form_status = ?, updated_at = NOW() WHERE id = ?`,
+      { replacements: [status, form_id] }
+    );
+
+    res.json({
+      success: true,
+      message: `form_status updated successfully to '${status}'`,
+    });
+  } catch (err) {
+    console.error("updateFormStatus error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 
 /* ============================================================================
    GET /api/admissions/:id
