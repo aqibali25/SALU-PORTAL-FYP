@@ -56,8 +56,8 @@ export const getAdmissionById = async (req, res) => {
     const [rows] = await sequelize.query(
       `
       SELECT
-        p.id                                  AS form_id,
-        p.cnic                                AS cnic,
+        p.id AS form_id,
+        p.cnic AS cnic,
         p.first_name,
         p.last_name,
         p.gender,
@@ -73,44 +73,43 @@ export const getAdmissionById = async (req, res) => {
         p.permanent_address,
         p.form_status,
 
-        f.name                                AS father_name,
-        f.cnic_number                         AS father_cnic_number,
-        f.mobile_number                       AS father_mobile,
-        f.occupation                          AS father_occupation,
+        f.name AS father_name,
+        f.cnic_number AS father_cnic_number,
+        f.mobile_number AS father_mobile,
+        f.occupation AS father_occupation,
 
-        g.name                                AS guardian_name,
-        g.cnic_number                         AS guardian_cnic_number,
-        g.mobile_number                       AS guardian_mobile,
-        g.occupation                          AS guardian_occupation,
+        g.name AS guardian_name,
+        g.cnic_number AS guardian_cnic_number,
+        g.mobile_number AS guardian_mobile,
+        g.occupation AS guardian_occupation,
 
         pos.applied_department,
         pos.first_choice,
         pos.second_choice,
         pos.third_choice,
 
-        m.group_name                          AS matric_group_name,
-        m.degree_year                         AS matric_degree_year,
-        m.seat_no                             AS matric_seat_no,
-        m.institution_name                    AS matric_institution_name,
-        m.board                               AS matric_board,
-        m.total_marks                         AS matric_total_marks,
-        m.marks_obtained                      AS matric_marks_obtained,
-        m.percentage                          AS matric_percentage,
+        m.group_name AS matric_group_name,
+        m.degree_year AS matric_degree_year,
+        m.seat_no AS matric_seat_no,
+        m.institution_name AS matric_institution_name,
+        m.board AS matric_board,
+        m.total_marks AS matric_total_marks,
+        m.marks_obtained AS matric_marks_obtained,
+        m.percentage AS matric_percentage,
 
-        i.group_name                          AS inter_group_name,
-        i.degree_year                         AS inter_degree_year,
-        i.seat_no                             AS inter_seat_no,
-        i.institution_name                    AS inter_institution_name,
-        i.board                               AS inter_board,
-        i.total_marks                         AS inter_total_marks,
-        i.marks_obtained                      AS inter_marks_obtained,
-        i.percentage                          AS inter_percentage
+        i.group_name AS inter_group_name,
+        i.degree_year AS inter_degree_year,
+        i.seat_no AS inter_seat_no,
+        i.institution_name AS inter_institution_name,
+        i.board AS inter_board,
+        i.total_marks AS inter_total_marks,
+        i.marks_obtained AS inter_marks_obtained,
+        i.percentage AS inter_percentage
 
-      FROM \`${DB}\`.personal_info       p
-      LEFT JOIN \`${DB}\`.father_info        f   ON f.cnic  = p.cnic
-      LEFT JOIN \`${DB}\`.guardian_info      g   ON g.cnic  = p.cnic
-      LEFT JOIN \`${DB}\`.program_of_study   pos ON pos.cnic = p.cnic
-
+      FROM \`${DB}\`.personal_info p
+      LEFT JOIN \`${DB}\`.father_info f ON f.cnic = p.cnic
+      LEFT JOIN \`${DB}\`.guardian_info g ON g.cnic = p.cnic
+      LEFT JOIN \`${DB}\`.program_of_study pos ON pos.cnic = p.cnic
       LEFT JOIN (
         SELECT m.*
         FROM \`${DB}\`.matriculation m
@@ -120,7 +119,6 @@ export const getAdmissionById = async (req, res) => {
           GROUP BY cnic
         ) t ON t.cnic = m.cnic AND t.max_id = m.id
       ) m ON m.cnic = p.cnic
-
       LEFT JOIN (
         SELECT i.*
         FROM \`${DB}\`.intermediate i
@@ -130,7 +128,6 @@ export const getAdmissionById = async (req, res) => {
           GROUP BY cnic
         ) t ON t.cnic = i.cnic AND t.max_id = i.id
       ) i ON i.cnic = p.cnic
-
       WHERE p.id = ?
       LIMIT 1
       `,
@@ -357,84 +354,33 @@ export const updateEntryTestMarks = async (req, res) => {
 };
 
 /* ============================================================================
-   GET /api/admissions/:id/academics
+   GET /api/enrolled-students
+   Fetch all enrolled students from enroll_students table
    ============================================================================ */
-export const getAcademicsById = async (req, res) => {
+export const getAllEnrolledStudents = async (req, res) => {
   try {
-    const { id } = req.params;
-    const [[pi]] = await sequelize.query(
-      `SELECT cnic FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
-      { replacements: [id] }
-    );
-    if (!pi)
-      return res.status(404).json({ success: false, message: "Form not found" });
-    const cnic = pi.cnic;
-
-    const [matricRows] = await sequelize.query(
+    const [rows] = await sequelize.query(
       `
-      SELECT id, group_name, degree_year, seat_no,
-             institution_name, board, total_marks,
-             marks_obtained, percentage
-      FROM \`${DB}\`.matriculation
-      WHERE cnic = ?
-      ORDER BY id DESC LIMIT 1
-      `,
-      { replacements: [cnic] }
-    );
-
-    const [interRows] = await sequelize.query(
-      `
-      SELECT id, group_name, degree_year, seat_no,
-             institution_name, board, total_marks,
-             marks_obtained, percentage
-      FROM \`${DB}\`.intermediate
-      WHERE cnic = ?
-      ORDER BY id DESC LIMIT 1
-      `,
-      { replacements: [cnic] }
-    );
-
-    res.json({
-      success: true,
-      data: {
+      SELECT
+        enroll_id AS enrollId,
         cnic,
-        matriculation: matricRows[0] || null,
-        intermediate: interRows[0] || null,
-      },
-    });
-  } catch (err) {
-    console.error("getAcademicsById error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-};
-
-/* ============================================================================
-   GET /api/admissions/:id/documents
-   ============================================================================ */
-export const getDocumentsById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [[pi]] = await sequelize.query(
-      `SELECT cnic FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
-      { replacements: [id] }
-    );
-    if (!pi)
-      return res.status(404).json({ success: false, message: "Form not found" });
-
-    const [docs] = await sequelize.query(
+        form_status AS formStatus,
+        entry_test_obtained_marks AS entryTestObtained,
+        entry_test_total_marks AS entryTestTotal,
+        entry_test_percentage AS entryTestPercentage,
+        total_percentage AS totalPercentage,
+        passing_marks AS passingMarks,
+        merit_list AS meritList,
+        department,
+        fee_status AS feeStatus
+      FROM \`${DB}\`.enroll_students
+      ORDER BY enroll_id DESC
       `
-      SELECT d.id, d.cnic, d.docType, d.docName,
-             d.fileName, d.fileSize, d.mimeType, d.uploadDate
-      FROM \`${DB}\`.uploaded_docs d
-      WHERE d.cnic = ?
-      ORDER BY d.uploadDate DESC, d.id DESC
-      `,
-      { replacements: [pi.cnic] }
     );
 
-    res.json({ success: true, data: { cnic: pi.cnic, documents: docs } });
+    res.json({ success: true, total: rows.length, data: rows });
   } catch (err) {
-    console.error("getDocumentsById error:", err);
+    console.error("getAllEnrolledStudents error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
