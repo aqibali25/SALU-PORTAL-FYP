@@ -1,32 +1,59 @@
 import React, { useState } from "react";
 import { FaEye, FaRegFileAlt } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
+import axios from "axios";
 import ApprovedMessage from "../ApprovedMessage";
 
 const ReviewDocuments = () => {
   const location = useLocation();
 
-  // ✅ Get uploaded documents from full form data
+  // ✅ Get uploaded documents and form details
   const formData = location.state?.form?.data;
   const documents = formData?.uploaded_documents || [];
-  console.log("Form status updated to:", formData.status);
+  const enrollmentId = formData?._id;
 
   const [previewImage, setPreviewImage] = useState(null);
+  const [activeMessage, setActiveMessage] = useState(false); // modal open/close
+  const [loading, setLoading] = useState(false);
+
   const handlePreview = (fileName) => {
-    // ✅ Use same backend origin dynamically, not hardcoded
     const backendBaseUrl =
       import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
     setPreviewImage(`${backendBaseUrl}/uploads/${fileName}`);
   };
+
   const closePreview = () => setPreviewImage(null);
-  const updateFormStatus = (status) => {
-    formData.status = status;
-    console.log("Form status updated to:", formData.status);
+
+  // ✅ Step 1: open confirmation modal
+  const handleApproveClick = () => {
+    setActiveMessage(true);
   };
-  const [activeMessage, setActiveMessage] = useState(null);
-  const closeMessage = () => {
-    updateFormStatus("Approved");
-    setActiveMessage(null);
+
+  // ✅ Step 2: update form status after "Continue" click
+  const handleConfirmApproval = async () => {
+    if (!enrollmentId) {
+      console.error("No enrollment ID found in form data");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const backendBaseUrl =
+        import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
+      const response = await axios.patch(
+        `${backendBaseUrl}/api/enroll-students/${enrollmentId}/status`,
+        { status: "Approved" }
+      );
+
+      console.log("✅ Form status updated successfully:", response.data);
+      formData.status = "Approved";
+    } catch (error) {
+      console.error("❌ Error updating form status:", error);
+    } finally {
+      setLoading(false);
+      setActiveMessage(false);
+    }
   };
 
   if (!documents.length) {
@@ -100,10 +127,12 @@ const ReviewDocuments = () => {
         </div>
       )}
 
-      {/* Optional message modal */}
-      {activeMessage === "approved" && (
-        <ApprovedMessage onClose={closeMessage} />
-      )}
+      {/* ✅ Success Modal */}
+      <ApprovedMessage
+        open={activeMessage}
+        onClose={handleConfirmApproval}
+        onCancel={() => setActiveMessage(false)}
+      />
     </div>
   );
 };

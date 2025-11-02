@@ -1,5 +1,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import BackButton from "../BackButton";
 import Background from "../../assets/Background.png";
 import InputContainer from "../InputContainer";
@@ -8,20 +11,31 @@ const EnterStdMarks = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // ✅ Get full student row data from previous page
+  // ✅ Get student data passed from previous page
   const studentData = location.state?.row || {};
 
   // ✅ Form states
   const [sessional, setSessional] = useState("");
   const [mid, setMid] = useState("");
   const [finalMarks, setFinalMarks] = useState("");
-  const [submitting, setSubmitting] = useState(false); // <-- ✅ now defined
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // ✅ Validation: Check if any field has a value
+    if (!sessional && !mid && !finalMarks) {
+      toast.error("⚠️ Please enter at least one section mark to update!", {
+        position: "top-right",
+        autoClose: 3000,
+        theme: "colored",
+      });
+      return;
+    }
+
     setSubmitting(true);
 
-    // ✅ Prepare data for database
+    // ✅ Prepare data
     const marksData = {
       rollNo: studentData.rollNo,
       studentName: studentData.studentName,
@@ -35,12 +49,28 @@ const EnterStdMarks = () => {
 
     console.log("📘 Marks Data Ready to Save:", marksData);
 
-    // TODO: Send this marksData to backend (API)
-    // await axios.post('/api/marks/save', marksData)
+    try {
+      // ✅ Send marks data to backend API
+      // Uncomment this when backend is ready
+      // await axios.post("/api/enroll-students/marks", marksData);
 
-    alert("Marks saved successfully (Static Mode)");
-    setSubmitting(false);
-    // navigate(-1);
+      toast.success("✅ Marks saved successfully!", {
+        position: "top-right",
+        autoClose: 2500,
+        theme: "colored",
+      });
+
+      // navigate(-1); // Go back if needed
+    } catch (error) {
+      toast.error("❌ Failed to save marks. Please try again.", {
+        position: "top-right",
+        autoClose: 3000,
+        theme: "colored",
+      });
+      console.error("Error saving marks:", error);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -53,6 +83,8 @@ const EnterStdMarks = () => {
         backgroundPosition: "center",
       }}
     >
+      <ToastContainer />
+
       <form
         onSubmit={handleSubmit}
         className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5"
@@ -75,7 +107,6 @@ const EnterStdMarks = () => {
             value={studentData.studentName || ""}
             readOnly={true}
           />
-
           <InputContainer
             title="Student Roll No."
             htmlFor="rollNo"
@@ -83,7 +114,6 @@ const EnterStdMarks = () => {
             value={studentData.rollNo || ""}
             readOnly={true}
           />
-
           <InputContainer
             title="Department"
             htmlFor="department"
@@ -91,7 +121,6 @@ const EnterStdMarks = () => {
             value={studentData.department || ""}
             readOnly={true}
           />
-
           <InputContainer
             title="Semester"
             htmlFor="semester"
@@ -99,7 +128,6 @@ const EnterStdMarks = () => {
             value={studentData.semester || ""}
             readOnly={true}
           />
-
           <InputContainer
             title="Subject"
             htmlFor="subject"
@@ -117,7 +145,6 @@ const EnterStdMarks = () => {
             value={sessional}
             onChange={(e) => setSessional(e.target.value)}
           />
-
           <InputContainer
             placeholder="Enter Mid Term Marks"
             title="Mid Term Marks"
@@ -126,7 +153,6 @@ const EnterStdMarks = () => {
             value={mid}
             onChange={(e) => setMid(e.target.value)}
           />
-
           <InputContainer
             placeholder="Enter Final Term Marks"
             title="Final Term Marks"

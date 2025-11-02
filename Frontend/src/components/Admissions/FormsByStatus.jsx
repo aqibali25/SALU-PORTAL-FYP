@@ -168,7 +168,7 @@ export default function FormsByStatus({ heading }) {
                 localStorage.removeItem("reviewFormStep");
 
                 navigate(
-                  `/SALU-PORTAL-FYP/Admissions/RecivedForms/ReviewForm?${row.cnic}`,
+                  `/SALU-PORTAL-FYP/Admissions/Pending/ReviewForm?${row.cnic}`,
                   { state: { form: formData } }
                 );
               } catch (err) {

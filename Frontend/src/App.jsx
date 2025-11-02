@@ -60,7 +60,7 @@ function App() {
               element={<Admissions />}
             />
             <Route
-              path="/SALU-PORTAL-FYP/Admissions/RecivedForms/ReviewForm"
+              path="/SALU-PORTAL-FYP/Admissions/Pending/ReviewForm"
               element={<ReviewForm />}
             />
             <Route

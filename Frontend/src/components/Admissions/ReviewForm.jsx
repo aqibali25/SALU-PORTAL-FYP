@@ -154,20 +154,20 @@ export const ReviewForm = () => {
       <ApprovedMessage
         open={showApproved}
         onCancel={() => setShowApproved(false)} // ✅ hides modal
-        onClose={() => navigate("/SALU-PORTAL-FYP/Admissions/RecivedForms")} // ✅ redirect
+        onClose={() => navigate("/SALU-PORTAL-FYP/Admissions/PendingForms")} // ✅ redirect
       />
 
       <RevertAndTrashMessage
         open={showRevert}
         onCancel={() => setShowRevert(false)} // ✅ hides modal
-        onClose={() => navigate("/SALU-PORTAL-FYP/Admissions/RecivedForms")} // ✅ redirect
+        onClose={() => navigate("/SALU-PORTAL-FYP/Admissions/PendingForms")} // ✅ redirect
         type="revert"
       />
 
       <RevertAndTrashMessage
         open={showTrash}
         onCancel={() => setShowTrash(false)} // ✅ hides modal
-        onClose={() => navigate("/SALU-PORTAL-FYP/Admissions/RecivedForms")} // ✅ redirect
+        onClose={() => navigate("/SALU-PORTAL-FYP/Admissions/PendingForms")} // ✅ redirect
         type="trash"
       />
     </div>

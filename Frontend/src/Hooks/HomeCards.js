@@ -6,7 +6,7 @@ import {
   faCalendarAlt,
   faPenFancy,
   faCog,
-  faBook, // ✅ Added new icon for Subjects
+  faBook,
 } from "@fortawesome/free-solid-svg-icons";
 
 export const cards = [
@@ -17,7 +17,7 @@ export const cards = [
     isImg: true,
     color1: "#4F1A60",
     color2: "#f5f5f5",
-    roles: ["admin", "teacher", "student"],
+    roles: ["admin", "teacher"],
   },
   {
     id: 2,
@@ -47,7 +47,7 @@ export const cards = [
     Icon: faComputer,
     color1: "#22b508",
     color2: "#f5f5f5",
-    roles: ["admin", "teacher"],
+    roles: ["admin", "clerk"],
   },
   {
     id: 5,
@@ -57,7 +57,7 @@ export const cards = [
     Icon: faBookOpen,
     color1: "#CA4DFF",
     color2: "#f5f5f5",
-    roles: ["admin"],
+    roles: ["hod"],
   },
   {
     id: 6,
@@ -81,23 +81,23 @@ export const cards = [
   },
   {
     id: 8,
-    Heading: "Subjects", // ✅ New card added here
+    Heading: "Subjects",
     link: "Subjects",
     isImg: false,
     Icon: faBook,
     color1: "#F97316",
     color2: "#FFF7ED",
-    roles: ["teacher", "admin"],
+    roles: ["hod"],
   },
   {
     id: 9,
-    Heading: "Settings", // ✅ Moved to last
+    Heading: "Settings",
     link: "Settings",
     isImg: false,
     Icon: faCog,
     color1: "#09FDEE",
     color2: "#f5f5f5",
-    roles: ["admin", "teacher", "student"],
+    roles: ["admin", "teacher"],
   },
 ];
 
