@@ -9,7 +9,6 @@ import userRoutes from "./routes/user.js";
 //import userRoutesGet from "./routes/userRoutesGet.js";
 import admissionsRoutes from "./routes/admissions.js";
 import subjectAllocationRoutes from "./routes/subjectAllocation.js";
-import enrollStudentsRoutes from "./routes/enrollStudents.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -25,7 +24,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/admissions", admissionsRoutes);
 app.use("/api/subject-allocations", subjectAllocationRoutes);
-app.use("/api/enroll-students", enrollStudentsRoutes);
 // Error handler
 app.use((err, _req, res, _next) => {
   console.error(err);

@@ -7,11 +7,11 @@ import { sequelize } from "../db.js";
  */
 const DB = process.env.DB_NAME || "u291434058_SALU_GC";
 
-/**
- * GET /api/admissions
- * List all received forms (joined by CNIC).
- * Optional: ?status=Pending|Approved|Rejected
- */
+/* ============================================================================
+   GET /api/admissions
+   List all received forms (joined by CNIC).
+   Optional: ?status=Pending|Approved|Rejected
+   ============================================================================ */
 export const getAllAdmissions = async (req, res) => {
   try {
     const { status } = req.query;
@@ -25,7 +25,6 @@ export const getAllAdmissions = async (req, res) => {
         CONCAT(p.first_name, ' ', p.last_name) AS student_name,
         p.cnic AS cnic,
         p.form_status AS status,
-        -- father/guardian names (if present)
         f.name AS father_name,
         g.name AS guardian_name,
         pos.applied_department AS department
@@ -46,13 +45,10 @@ export const getAllAdmissions = async (req, res) => {
   }
 };
 
-/**
- * GET /api/admissions/:id
- * Fetch ONE application’s full info for the Review pages.
- * :id corresponds to personal_info.id
- * - Latest matriculation + intermediate rows per CNIC
- * - All uploaded documents metadata for that CNIC (no fileData BLOB)
- */
+/* ============================================================================
+   GET /api/admissions/:id
+   Fetch ONE application’s full info (father/guardian, latest matric/inter, docs)
+   ============================================================================ */
 export const getAdmissionById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -60,7 +56,6 @@ export const getAdmissionById = async (req, res) => {
     const [rows] = await sequelize.query(
       `
       SELECT
-        /* personal_info */
         p.id                                  AS form_id,
         p.cnic                                AS cnic,
         p.first_name,
@@ -78,25 +73,21 @@ export const getAdmissionById = async (req, res) => {
         p.permanent_address,
         p.form_status,
 
-        /* father_info (join by student's CNIC) */
         f.name                                AS father_name,
         f.cnic_number                         AS father_cnic_number,
         f.mobile_number                       AS father_mobile,
         f.occupation                          AS father_occupation,
 
-        /* guardian_info (join by student's CNIC) */
         g.name                                AS guardian_name,
         g.cnic_number                         AS guardian_cnic_number,
         g.mobile_number                       AS guardian_mobile,
         g.occupation                          AS guardian_occupation,
 
-        /* program_of_study */
         pos.applied_department,
         pos.first_choice,
         pos.second_choice,
         pos.third_choice,
 
-        /* matriculation (latest row for this CNIC) */
         m.group_name                          AS matric_group_name,
         m.degree_year                         AS matric_degree_year,
         m.seat_no                             AS matric_seat_no,
@@ -106,7 +97,6 @@ export const getAdmissionById = async (req, res) => {
         m.marks_obtained                      AS matric_marks_obtained,
         m.percentage                          AS matric_percentage,
 
-        /* intermediate (latest row for this CNIC) */
         i.group_name                          AS inter_group_name,
         i.degree_year                         AS inter_degree_year,
         i.seat_no                             AS inter_seat_no,
@@ -121,7 +111,6 @@ export const getAdmissionById = async (req, res) => {
       LEFT JOIN \`${DB}\`.guardian_info      g   ON g.cnic  = p.cnic
       LEFT JOIN \`${DB}\`.program_of_study   pos ON pos.cnic = p.cnic
 
-      /* Latest MATRICULATION row per CNIC (MySQL 5.7+ friendly) */
       LEFT JOIN (
         SELECT m.*
         FROM \`${DB}\`.matriculation m
@@ -132,7 +121,6 @@ export const getAdmissionById = async (req, res) => {
         ) t ON t.cnic = m.cnic AND t.max_id = m.id
       ) m ON m.cnic = p.cnic
 
-      /* Latest INTERMEDIATE row per CNIC */
       LEFT JOIN (
         SELECT i.*
         FROM \`${DB}\`.intermediate i
@@ -149,26 +137,15 @@ export const getAdmissionById = async (req, res) => {
       { replacements: [id] }
     );
 
-    if (!rows.length) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Form not found" });
-    }
+    if (!rows.length)
+      return res.status(404).json({ success: false, message: "Form not found" });
 
     const row = rows[0];
 
-    // All uploaded docs metadata for this CNIC (exclude fileData BLOB)
     const [docs] = await sequelize.query(
       `
-      SELECT
-        d.id,
-        d.cnic,
-        d.docType,
-        d.docName,
-        d.fileName,
-        d.fileSize,
-        d.mimeType,
-        d.uploadDate
+      SELECT d.id, d.cnic, d.docType, d.docName,
+             d.fileName, d.fileSize, d.mimeType, d.uploadDate
       FROM \`${DB}\`.uploaded_docs d
       WHERE d.cnic = ?
       ORDER BY d.uploadDate DESC, d.id DESC
@@ -176,139 +153,243 @@ export const getAdmissionById = async (req, res) => {
       { replacements: [row.cnic] }
     );
 
-    // Build response
-    const payload = {
-      form_id: row.form_id,
-      cnic: row.cnic,
-      status: row.form_status,
-
-      personal_info: {
-        first_name: row.first_name,
-        last_name: row.last_name,
-        gender: row.gender,
-        dob: row.dob,
-        religion: row.religion,
-        disability: row.disability,
-        disability_description: row.disability_description,
-        native_language: row.native_language,
-        blood_group: row.blood_group,
-        province: row.province,
-        city: row.city,
-        postal_address: row.postal_address,
-        permanent_address: row.permanent_address,
+    res.json({
+      success: true,
+      data: {
+        form_id: row.form_id,
+        cnic: row.cnic,
+        status: row.form_status,
+        personal_info: {
+          first_name: row.first_name,
+          last_name: row.last_name,
+          gender: row.gender,
+          dob: row.dob,
+          religion: row.religion,
+          disability: row.disability,
+          disability_description: row.disability_description,
+          native_language: row.native_language,
+          blood_group: row.blood_group,
+          province: row.province,
+          city: row.city,
+          postal_address: row.postal_address,
+          permanent_address: row.permanent_address,
+        },
+        father_info: {
+          name: row.father_name,
+          cnic_number: row.father_cnic_number,
+          mobile_number: row.father_mobile,
+          occupation: row.father_occupation,
+        },
+        guardian_info: {
+          name: row.guardian_name,
+          cnic_number: row.guardian_cnic_number,
+          mobile_number: row.guardian_mobile,
+          occupation: row.guardian_occupation,
+        },
+        program_of_study: {
+          applied_department: row.applied_department,
+          first_choice: row.first_choice,
+          second_choice: row.second_choice,
+          third_choice: row.third_choice,
+        },
+        matriculation_latest: {
+          group_name: row.matric_group_name,
+          degree_year: row.matric_degree_year,
+          seat_no: row.matric_seat_no,
+          institution_name: row.matric_institution_name,
+          board: row.matric_board,
+          total_marks: row.matric_total_marks,
+          marks_obtained: row.matric_marks_obtained,
+          percentage: row.matric_percentage,
+        },
+        intermediate_latest: {
+          group_name: row.inter_group_name,
+          degree_year: row.inter_degree_year,
+          seat_no: row.inter_seat_no,
+          institution_name: row.inter_institution_name,
+          board: row.inter_board,
+          total_marks: row.inter_total_marks,
+          marks_obtained: row.inter_marks_obtained,
+          percentage: row.inter_percentage,
+        },
+        uploaded_documents: docs,
       },
-
-      father_info: {
-        name: row.father_name,
-        cnic_number: row.father_cnic_number,
-        mobile_number: row.father_mobile,
-        occupation: row.father_occupation,
-      },
-
-      guardian_info: {
-        name: row.guardian_name,
-        cnic_number: row.guardian_cnic_number,
-        mobile_number: row.guardian_mobile,
-        occupation: row.guardian_occupation,
-      },
-
-      program_of_study: {
-        applied_department: row.applied_department,
-        first_choice: row.first_choice,
-        second_choice: row.second_choice,
-        third_choice: row.third_choice,
-      },
-
-      matriculation_latest: {
-        group_name: row.matric_group_name,
-        degree_year: row.matric_degree_year,
-        seat_no: row.matric_seat_no,
-        institution_name: row.matric_institution_name,
-        board: row.matric_board,
-        total_marks: row.matric_total_marks,
-        marks_obtained: row.matric_marks_obtained,
-        percentage: row.matric_percentage,
-      },
-
-      intermediate_latest: {
-        group_name: row.inter_group_name,
-        degree_year: row.inter_degree_year,
-        seat_no: row.inter_seat_no,
-        institution_name: row.inter_institution_name,
-        board: row.inter_board,
-        total_marks: row.inter_total_marks,
-        marks_obtained: row.inter_marks_obtained,
-        percentage: row.inter_percentage,
-      },
-
-      uploaded_documents: docs, // array (no fileData)
-    };
-
-    res.json({ success: true, data: payload });
+    });
   } catch (err) {
     console.error("getAdmissionById error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-/**
- * GET /api/admissions/:id/academics
- * Returns matriculation and intermediate (latest per CNIC)
- */
-export const getAcademicsById = async (req, res) => {
+/* ============================================================================
+   PUT /api/admissions/updateMarks/:form_id
+   Save entry test marks, merit list, department, etc.
+   ============================================================================ */
+export const updateEntryTestMarks = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { form_id } = req.params;
+    const {
+      obtained_marks,
+      total_marks,
+      percentage,
+      merit_list,
+      department,
+      status,
+      passing_marks,
+      fee_status,
+    } = req.body;
 
-    // Resolve CNIC from personal_info.id
     const [[pi]] = await sequelize.query(
       `SELECT cnic FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
-      { replacements: [id] }
+      { replacements: [form_id] }
     );
     if (!pi)
-      return res
-        .status(404)
-        .json({ success: false, message: "Form not found" });
+      return res.status(404).json({ success: false, message: "Form not found" });
 
     const cnic = pi.cnic;
+    const obtained = Number(obtained_marks ?? 0);
+    const total = Number(total_marks ?? 0);
+    const etPct = total > 0 ? Number(((obtained / total) * 100).toFixed(2)) : null;
+    const finalPct =
+      percentage != null ? Number(Number(percentage).toFixed(2)) : etPct;
+    const mappedFormStatus =
+      String(status).toLowerCase() === "passed"
+        ? "Approved"
+        : String(status).toLowerCase() === "failed"
+        ? "Rejected"
+        : "Pending";
+    const passMarks = passing_marks != null ? Number(passing_marks) : null;
+    const feeStatus = fee_status ?? "Unpaid";
 
-    // Latest Matriculation
-    const [matricRows] = await sequelize.query(
+    const [[existing]] = await sequelize.query(
+      `SELECT enroll_id FROM \`${DB}\`.enroll_students WHERE cnic = ? LIMIT 1`,
+      { replacements: [cnic] }
+    );
+
+    if (existing) {
+      await sequelize.query(
+        `
+        UPDATE \`${DB}\`.enroll_students
+        SET
+          form_status = ?,
+          entry_test_obtained_marks = ?,
+          entry_test_total_marks = ?,
+          entry_test_percentage = ?,
+          total_percentage = ?,
+          passing_marks = COALESCE(?, passing_marks),
+          merit_list = ?,
+          department = ?,
+          fee_status = ?
+        WHERE cnic = ?
+        `,
+        {
+          replacements: [
+            mappedFormStatus,
+            obtained,
+            total,
+            etPct,
+            finalPct,
+            passMarks,
+            merit_list || "",
+            department || "",
+            feeStatus,
+            cnic,
+          ],
+        }
+      );
+    } else {
+      await sequelize.query(
+        `
+        INSERT INTO \`${DB}\`.enroll_students
+          (cnic, form_status, entry_test_obtained_marks, entry_test_total_marks,
+           entry_test_percentage, total_percentage, passing_marks,
+           merit_list, department, fee_status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        {
+          replacements: [
+            cnic,
+            mappedFormStatus,
+            obtained,
+            total,
+            etPct,
+            finalPct,
+            passMarks ?? 0,
+            merit_list || "",
+            department || "",
+            feeStatus,
+          ],
+        }
+      );
+    }
+
+    await sequelize.query(
+      `UPDATE \`${DB}\`.personal_info SET form_status = ? WHERE id = ?`,
+      { replacements: [mappedFormStatus, form_id] }
+    );
+
+    const [[row]] = await sequelize.query(
       `
-      SELECT
-        m.id,
-        m.group_name        AS group_name,
-        m.degree_year       AS degree_year,
-        m.seat_no           AS seat_no,
-        m.institution_name  AS institution_name,
-        m.board             AS board,
-        m.total_marks       AS total_marks,
-        m.marks_obtained    AS marks_obtained,
-        m.percentage        AS percentage
-      FROM \`${DB}\`.matriculation m
-      WHERE m.cnic = ?
-      ORDER BY m.id DESC
+      SELECT enroll_id AS enrollId, cnic, form_status AS formStatus,
+             entry_test_obtained_marks AS entryTestObtained,
+             entry_test_total_marks AS entryTestTotal,
+             entry_test_percentage AS entryTestPercentage,
+             total_percentage AS totalPercentage,
+             passing_marks AS passingMarks,
+             merit_list AS meritList, department, fee_status AS feeStatus
+      FROM \`${DB}\`.enroll_students
+      WHERE cnic = ?
+      ORDER BY enroll_id DESC
       LIMIT 1
       `,
       { replacements: [cnic] }
     );
 
-    // Latest Intermediate
+    res.json({
+      success: true,
+      message: "Entry test marks saved and status updated.",
+      data: row,
+    });
+  } catch (err) {
+    console.error("updateEntryTestMarks error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+/* ============================================================================
+   GET /api/admissions/:id/academics
+   ============================================================================ */
+export const getAcademicsById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [[pi]] = await sequelize.query(
+      `SELECT cnic FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
+      { replacements: [id] }
+    );
+    if (!pi)
+      return res.status(404).json({ success: false, message: "Form not found" });
+    const cnic = pi.cnic;
+
+    const [matricRows] = await sequelize.query(
+      `
+      SELECT id, group_name, degree_year, seat_no,
+             institution_name, board, total_marks,
+             marks_obtained, percentage
+      FROM \`${DB}\`.matriculation
+      WHERE cnic = ?
+      ORDER BY id DESC LIMIT 1
+      `,
+      { replacements: [cnic] }
+    );
+
     const [interRows] = await sequelize.query(
       `
-      SELECT
-        i.id,
-        i.group_name        AS group_name,
-        i.degree_year       AS degree_year,
-        i.seat_no           AS seat_no,
-        i.institution_name  AS institution_name,
-        i.board             AS board,
-        i.total_marks       AS total_marks,
-        i.marks_obtained    AS marks_obtained,
-        i.percentage        AS percentage
-      FROM \`${DB}\`.intermediate i
-      WHERE i.cnic = ?
-      ORDER BY i.id DESC
-      LIMIT 1
+      SELECT id, group_name, degree_year, seat_no,
+             institution_name, board, total_marks,
+             marks_obtained, percentage
+      FROM \`${DB}\`.intermediate
+      WHERE cnic = ?
+      ORDER BY id DESC LIMIT 1
       `,
       { replacements: [cnic] }
     );
@@ -327,49 +408,31 @@ export const getAcademicsById = async (req, res) => {
   }
 };
 
-/**
- * GET /api/admissions/:id/documents
- * Returns uploaded documents (metadata only) for the application (by personal_info.id)
- */
+/* ============================================================================
+   GET /api/admissions/:id/documents
+   ============================================================================ */
 export const getDocumentsById = async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Resolve CNIC from personal_info.id
     const [[pi]] = await sequelize.query(
       `SELECT cnic FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
       { replacements: [id] }
     );
     if (!pi)
-      return res
-        .status(404)
-        .json({ success: false, message: "Form not found" });
+      return res.status(404).json({ success: false, message: "Form not found" });
 
-    const cnic = pi.cnic;
-
-    // All uploaded docs metadata (no BLOB)
     const [docs] = await sequelize.query(
       `
-      SELECT
-        d.id,
-        d.cnic,
-        d.docType,
-        d.docName,
-        d.fileName,
-        d.fileSize,
-        d.mimeType,
-        d.uploadDate
+      SELECT d.id, d.cnic, d.docType, d.docName,
+             d.fileName, d.fileSize, d.mimeType, d.uploadDate
       FROM \`${DB}\`.uploaded_docs d
       WHERE d.cnic = ?
       ORDER BY d.uploadDate DESC, d.id DESC
       `,
-      { replacements: [cnic] }
+      { replacements: [pi.cnic] }
     );
 
-    res.json({
-      success: true,
-      data: { cnic, documents: docs },
-    });
+    res.json({ success: true, data: { cnic: pi.cnic, documents: docs } });
   } catch (err) {
     console.error("getDocumentsById error:", err);
     res.status(500).json({ success: false, message: "Server error" });
