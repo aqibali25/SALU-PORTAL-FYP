@@ -110,7 +110,7 @@ export const getSubjectAllocation = async (req, res) => {
       `
       SELECT
         sa_id        AS saId,
-        sub_name     AS subName,
+        subject_name     AS subName,
         teacher_name AS teacherName,
         department,
         semester,
