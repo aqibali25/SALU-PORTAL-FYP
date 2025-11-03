@@ -122,15 +122,7 @@ export default function ViewSubject() {
   // ✅ Loader
   if (loading) {
     return (
-      <div
-        className="flex justify-center items-center min-h-[calc(100vh-90px)] bg-white dark:bg-gray-900"
-        style={{
-          backgroundImage: `url(${Background})`,
-          backgroundSize: "cover",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "center",
-        }}
-      >
+      <div className="flex justify-center items-center min-h-[calc(100vh-90px)] bg-white dark:bg-gray-900">
         <div className="w-16 h-16 border-4 border-yellow-400 border-dashed rounded-full animate-spin"></div>
       </div>
     );

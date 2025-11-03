@@ -62,12 +62,18 @@ const AddSubject = ({ Title }) => {
     e.preventDefault();
     try {
       setSubmitting(true);
+
       const token = localStorage.getItem("token");
       const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
       const payload = { ...form };
 
-      if (!payload.subjectId) delete payload.subjectId;
+      // ✅ Generate Final Subject Name only on submit
+      payload.subjectName = `${form.subjectName}${
+        form.subjectType ? " - " + form.subjectType : ""
+      }`;
+
+      if (Title === "Add Subject") delete payload.subjectId;
 
       await axios.post(`${API}/api/subjects/upsert`, payload, {
         headers: {
@@ -76,6 +82,8 @@ const AddSubject = ({ Title }) => {
         },
         withCredentials: true,
       });
+
+      console.log("Final Payload:", payload);
 
       toast.success(
         editingSubject
@@ -86,7 +94,7 @@ const AddSubject = ({ Title }) => {
 
       setTimeout(() => {
         navigate("/SALU-PORTAL-FYP/Subjects");
-      }, 1200); // ⏳ wait for toast to show
+      }, 1200);
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.message || "❌ Error saving subject", {
@@ -129,16 +137,20 @@ const AddSubject = ({ Title }) => {
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 
         <div className="flex flex-col justify-center items-center gap-5 min-h-[60vh] w-full !p-5 bg-white dark:bg-gray-900 rounded-md">
-          {/* Subject ID */}
-          <InputContainer
-            placeholder="Enter Subject ID"
-            title="Subject ID"
-            htmlFor="subjectId"
-            inputType="text"
-            required
-            value={form.subjectId}
-            onChange={onChange("subjectId")}
-          />
+          {Title !== "Add Subject" && (
+            <>
+              {/* Subject ID */}
+              <InputContainer
+                placeholder="Enter Subject ID"
+                title="Subject ID"
+                htmlFor="subjectId"
+                inputType="text"
+                required
+                value={form.subjectId}
+                onChange={onChange("subjectId")}
+              />
+            </>
+          )}
 
           {/* Subject Name */}
           <InputContainer

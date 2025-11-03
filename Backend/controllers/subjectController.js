@@ -80,7 +80,7 @@ export const listSubjects = async (req, res) => {
     });
   } catch (err) {
     console.error("listSubjects error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: "Duplictate Entry" });
   }
 };
 

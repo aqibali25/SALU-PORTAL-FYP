@@ -7,7 +7,7 @@ const SubjectCardsLayout = ({ title, subjects, routePrefix }) => {
       <div className="flex justify-start items-center gap-3">
         <BackButton />
         <h1 className="text-2xl sm:text-3xl md:text-4xl py-3 font-bold text-gray-900 dark:text-white">
-          {title}
+          Subjects
         </h1>
       </div>
 
