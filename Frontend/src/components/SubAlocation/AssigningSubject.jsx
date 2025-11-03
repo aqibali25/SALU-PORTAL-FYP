@@ -30,6 +30,11 @@ const AssigningSubject = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // Check if this is an update (already assigned) or create (new assignment)
+  const isUpdate =
+    subjectFromState && subjectFromState.teacherName !== "Yet to assign";
+  const isNewAssignment = !isUpdate;
+
   // Fetch teachers
   useEffect(() => {
     document.title = `SALU Portal | Subject Allocation ${subjectName}`;
@@ -109,23 +114,71 @@ const AssigningSubject = () => {
       };
 
       console.log("Payload being sent:", payload);
+      console.log("Operation:", isUpdate ? "UPDATE" : "CREATE");
 
-      // Send POST request to backend
-      const res = await axios.post(
-        `http://localhost:5000/api/subject-allocations`,
-        payload,
+      let res;
+
+      if (isUpdate) {
+        // UPDATE operation - use PUT request
+        if (!formData.saId) {
+          alert("Subject Allocation ID is required for update.");
+          setSubmitting(false);
+          return;
+        }
+
+        res = await axios.put(
+          `http://localhost:5000/api/subject-allocations/${formData.saId}`,
+          payload,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        console.log("Subject updated:", res.data);
+        alert("Teacher reassigned successfully!");
+      } else {
+        // CREATE operation - use POST request
+        res = await axios.post(
+          `http://localhost:5000/api/subject-allocations`,
+          payload,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        console.log("Subject assigned:", res.data);
+        alert("Teacher assigned successfully!");
+      }
+
+      navigate("/SALU-PORTAL-FYP/SubjectAllocation");
+    } catch (err) {
+      console.error("Error in subject allocation:", err);
+      const msg = err.response?.data?.message || err.message || "Unknown error";
+      alert(`Error ${isUpdate ? "reassigning" : "assigning"} teacher: ${msg}`);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle unassign/delete
+  const handleUnassign = async () => {
+    if (!isUpdate || !formData.saId) {
+      alert("No subject allocation to unassign.");
+      return;
+    }
+
+    if (!window.confirm("Are you sure you want to unassign this teacher?")) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+
+      await axios.delete(
+        `http://localhost:5000/api/subject-allocations/${formData.saId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      console.log("Subject updated:", res.data);
-      alert("Teacher assigned successfully!");
+      alert("Teacher unassigned successfully!");
       navigate("/SALU-PORTAL-FYP/SubjectAllocation");
     } catch (err) {
-      console.error("Error assigning teacher:", err);
+      console.error("Error unassigning teacher:", err);
       const msg = err.response?.data?.message || err.message || "Unknown error";
-      alert("Error assigning teacher: " + msg);
-    } finally {
-      setSubmitting(false);
+      alert("Error unassigning teacher: " + msg);
     }
   };
 
@@ -143,7 +196,7 @@ const AssigningSubject = () => {
         <div className="flex justify-start items-center gap-3">
           <BackButton />
           <h1 className="text-2xl sm:text-3xl md:text-4xl py-3 font-bold text-gray-900 dark:text-white">
-            Subject Allocation - {subjectName}
+            {isUpdate ? "Reassign Subject" : "Assign Subject"} - {subjectName}
           </h1>
         </div>
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
@@ -225,7 +278,23 @@ const AssigningSubject = () => {
             disabled
           />
 
-          <div className="w-full flex justify-end">
+          <div className="w-full flex justify-end gap-4">
+            {/* Unassign button - only show for update operations */}
+            {isUpdate && (
+              <button
+                type="button"
+                onClick={handleUnassign}
+                disabled={submitting}
+                className="cursor-pointer relative overflow-hidden !px-[15px] !py-[5px] border-2 border-[#ef4444] text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
+                         before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#ef4444] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60"
+              >
+                <span className="relative z-10">
+                  {submitting ? "Processing..." : "Unassign"}
+                </span>
+              </button>
+            )}
+
+            {/* Submit button */}
             <button
               type="submit"
               disabled={submitting}
@@ -233,7 +302,11 @@ const AssigningSubject = () => {
                          before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#e5b300] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60"
             >
               <span className="relative z-10">
-                {submitting ? "Saving..." : "Assign Subject"}
+                {submitting
+                  ? "Saving..."
+                  : isUpdate
+                  ? "Reassign Subject"
+                  : "Assign Subject"}
               </span>
             </button>
           </div>
