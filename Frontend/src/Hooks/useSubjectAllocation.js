@@ -10,38 +10,123 @@ export default function useSubjectAllocation({ pageSize = 10 }) {
 
   const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-  // ✅ Fetch subjects from backend
+  // ✅ Fetch both subject allocations and subjects from backend
   useEffect(() => {
-    const fetchSubjects = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem("token");
 
-        const res = await axios.get(`${API}/api/subjects`, {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        });
-        console.log(res.data);
-        // Add teacherName if missing
-        const withTeacher = (res.data.data || []).map((sub, index) => ({
-          saId: sub.subjectId, // auto-generate allocation ID
-          subName: sub.subjectName,
-          teacherName: sub.teacherName || "Yet to assign",
-          department: sub.department,
-          semester: sub.semester,
-          creditHours: sub.creditHours,
-          year: sub.year,
-        }));
+        // Fetch both subject allocations and subjects in parallel
+        const [allocationsRes, subjectsRes] = await Promise.all([
+          axios.get(`${API}/api/subject-allocations`, {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+          }),
+          axios.get(`${API}/api/subjects`, {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+          }),
+        ]);
 
-        setSubjects(withTeacher);
+        console.log("Subject Allocations:", allocationsRes.data.data);
+        console.log("Subjects:", subjectsRes.data.data);
+
+        // Create a map of subjectId/subjectName to teacherName from allocations
+        const allocationMap = new Map();
+        (allocationsRes.data.data || []).forEach((allocation) => {
+          if (allocation.subjectId && allocation.teacherName) {
+            allocationMap.set(allocation.subjectId, allocation.teacherName);
+          }
+          // Also map by subject name as fallback
+          if (allocation.subName && allocation.teacherName) {
+            allocationMap.set(allocation.subName, allocation.teacherName);
+          }
+          if (allocation.subjectName && allocation.teacherName) {
+            allocationMap.set(allocation.subjectName, allocation.teacherName);
+          }
+        });
+
+        // Process subjects data and combine with allocations
+        const subjectsData = subjectsRes.data.data || subjectsRes.data || [];
+        const allocationsData = allocationsRes.data.data || [];
+
+        // Create a set of subjects that are already allocated to avoid duplicates
+        const allocatedSubjectIds = new Set();
+        (allocationsData || []).forEach((allocation) => {
+          if (allocation.subjectId)
+            allocatedSubjectIds.add(allocation.subjectId);
+          if (allocation.subName) allocatedSubjectIds.add(allocation.subName);
+          if (allocation.subjectName)
+            allocatedSubjectIds.add(allocation.subjectName);
+        });
+
+        // Transform allocations data
+        const allocationsTransformed = (allocationsData || []).map(
+          (allocation, index) => ({
+            saId: allocation.saId || allocation.subjectId || `alloc-${index}`,
+            subName:
+              allocation.subName || allocation.subjectName || "Unknown Subject",
+            teacherName: allocation.teacherName || "Yet to assign",
+            department: allocation.department,
+            semester: allocation.semester,
+            creditHours: allocation.creditHours,
+            year: allocation.year,
+            createdAt: allocation.createdAt,
+            updatedAt: allocation.updatedAt,
+            source: "allocation",
+          })
+        );
+
+        // Transform subjects data that are not already in allocations
+        const subjectsTransformed = subjectsData
+          .filter((subject) => {
+            const subjectId = subject.subjectId || subject._id;
+            const subjectName = subject.subjectName || subject.name;
+            return (
+              !allocatedSubjectIds.has(subjectId) &&
+              !allocatedSubjectIds.has(subjectName)
+            );
+          })
+          .map((subject, index) => {
+            // Check if this subject has an allocation
+            const teacherName =
+              allocationMap.get(subject.subjectId) ||
+              allocationMap.get(subject.subjectName) ||
+              allocationMap.get(subject.name) ||
+              subject.teacherName ||
+              "Yet to assign";
+
+            return {
+              saId: subject.subjectId || subject._id || `sub-${index}`,
+              subName: subject.subjectName || subject.name || "Unknown Subject",
+              teacherName: teacherName,
+              department: subject.department,
+              semester: subject.semester,
+              creditHours: subject.creditHours,
+              year: subject.year,
+              createdAt: subject.createdAt,
+              updatedAt: subject.updatedAt,
+              source: "subject",
+            };
+          });
+
+        // Combine both arrays
+        const combinedData = [
+          ...allocationsTransformed,
+          ...subjectsTransformed,
+        ];
+
+        console.log("Combined Data:", combinedData);
+        setSubjects(combinedData);
       } catch (error) {
-        console.error("Error fetching subjects:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSubjects();
+    fetchData();
   }, []);
 
   // ✅ Filter + Sort
