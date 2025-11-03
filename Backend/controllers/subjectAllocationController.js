@@ -1,13 +1,12 @@
 // Backend/controllers/subjectAllocationController.js
 import { sequelize } from "../db.js";
-
 const DB = process.env.DB_NAME || "u291434058_SALU_GC";
 const TABLE = `\`${DB}\`.subject_allocation`;
 
 // ---- Helpers ----
 const ALLOWED_SORTS = new Set([
   "sa_id",
-  "sub_name",
+  "subject_name",
   "teacher_name",
   "department",
   "semester",
@@ -20,21 +19,12 @@ const ALLOWED_SORTS = new Set([
 const toSnake = (k) =>
   ({
     saId: "sa_id",
-    subName: "sub_name",
+    subName: "subject_name",
     teacherName: "teacher_name",
     creditHours: "credit_hours",
   }[k] || k);
 
-// ----------------- LIST (with search, sort, pagination) -----------------
-/**
- * GET /api/subject-allocations
- * Query params:
- *  - search: string (matches sub_name, teacher_name, department, semester, year)
- *  - sortBy: one of sa_id, sub_name, teacher_name, department, semester, credit_hours, year, created_at, updated_at
- *  - sortDir: ASC|DESC (default DESC for created_at, else ASC)
- *  - page: 1-based (default 1)
- *  - pageSize: default 10
- */
+// ----------------- LIST -----------------
 export const listSubjectAllocations = async (req, res) => {
   try {
     const {
@@ -53,35 +43,30 @@ export const listSubjectAllocations = async (req, res) => {
     const offset = (p - 1) * ps;
 
     const where = search
-      ? `WHERE (sub_name LIKE ? OR teacher_name LIKE ? OR department LIKE ? OR semester LIKE ? OR CAST(year AS CHAR) LIKE ?)`
+      ? `WHERE (subject_name LIKE ? OR teacher_name LIKE ? OR department LIKE ? OR semester LIKE ? OR CAST(year AS CHAR) LIKE ?)`
       : "";
-
     const params = search ? Array(5).fill(`%${search}%`) : [];
 
-    // Count
     const [[{ total }]] = await sequelize.query(
       `SELECT COUNT(*) AS total FROM ${TABLE} ${where}`,
       { replacements: params }
     );
 
-    // Rows
     const [rows] = await sequelize.query(
-      `
-      SELECT
-        sa_id        AS saId,
-        subject_name     AS subName,
-        teacher_name AS teacherName,
-        department,
-        semester,
-        credit_hours AS creditHours,
-        year,
-        created_at   AS createdAt,
-        updated_at   AS updatedAt
-      FROM ${TABLE}
-      ${where}
-      ORDER BY ${sortCol} ${dir}
-      LIMIT ? OFFSET ?
-      `,
+      `SELECT
+         sa_id        AS saId,
+         subject_name AS subName,
+         teacher_name AS teacherName,
+         department,
+         semester,
+         credit_hours AS creditHours,
+         year,
+         created_at   AS createdAt,
+         updated_at   AS updatedAt
+       FROM ${TABLE}
+       ${where}
+       ORDER BY ${sortCol} ${dir}
+       LIMIT ? OFFSET ?`,
       { replacements: [...params, ps, offset] }
     );
 
@@ -100,28 +85,28 @@ export const listSubjectAllocations = async (req, res) => {
 };
 
 // ----------------- GET ONE -----------------
-/**
- * GET /api/subject-allocations/:saId
- */
 export const getSubjectAllocation = async (req, res) => {
   try {
     const { saId } = req.params;
+    if (!saId)
+      return res
+        .status(400)
+        .json({ success: false, message: "saId is required" });
+
     const [rows] = await sequelize.query(
-      `
-      SELECT
-        sa_id        AS saId,
-        subject_name     AS subName,
-        teacher_name AS teacherName,
-        department,
-        semester,
-        credit_hours AS creditHours,
-        year,
-        created_at   AS createdAt,
-        updated_at   AS updatedAt
-      FROM ${TABLE}
-      WHERE sa_id = ?
-      LIMIT 1
-      `,
+      `SELECT
+         sa_id        AS saId,
+         subject_name AS subName,
+         teacher_name AS teacherName,
+         department,
+         semester,
+         credit_hours AS creditHours,
+         year,
+         created_at   AS createdAt,
+         updated_at   AS updatedAt
+       FROM ${TABLE}
+       WHERE sa_id = ?
+       LIMIT 1`,
       { replacements: [saId] }
     );
 
@@ -137,63 +122,87 @@ export const getSubjectAllocation = async (req, res) => {
 };
 
 // ----------------- CREATE -----------------
-/**
- * POST /api/subject-allocations
- * Body: { subName, teacherName, department, semester, creditHours, year }
- * Note: `teacherName` can be "Yet to assign" initially to match UI.
- */
 export const createSubjectAllocation = async (req, res) => {
   try {
-    const {
-      subName,
-      teacherName = "Yet to assign",
-      department,
-      semester,
-      creditHours,
-      year,
-    } = req.body;
+    const { subName, teacherName, department, semester, creditHours, year } =
+      req.body;
 
     if (!subName || !department || !semester || !creditHours || !year) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide all required fields.",
+      });
+    }
+
+    const creditHoursNum = Number(creditHours);
+    const yearNum = Number(year);
+
+    if (isNaN(creditHoursNum) || creditHoursNum <= 0) {
       return res
         .status(400)
-        .json({ success: false, message: "Missing required fields" });
+        .json({
+          success: false,
+          message: "Credit Hours must be a valid number.",
+        });
+    }
+    if (isNaN(yearNum) || yearNum <= 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Year must be a valid number." });
     }
 
     const [result] = await sequelize.query(
-      `
-      INSERT INTO ${TABLE}
-        (sub_name, teacher_name, department, semester, credit_hours, year, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
-      `,
+      `INSERT INTO ${TABLE} 
+       (subject_name, teacher_name, department, semester, credit_hours, year, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       {
         replacements: [
           subName,
-          teacherName,
+          teacherName || "",
           department,
           semester,
-          creditHours,
-          year,
+          creditHoursNum,
+          yearNum,
         ],
       }
     );
 
-    const saId = result.insertId;
-    return getSubjectAllocation({ params: { saId } }, res); // reuse reader
+    const saId = result?.insertId || null;
+
+    res.status(200).json({
+      success: true,
+      message: "Subject allocated successfully.",
+      data: {
+        saId,
+        subName,
+        teacherName: teacherName || "",
+        department,
+        semester,
+        creditHours: creditHoursNum,
+        year: yearNum,
+      },
+    });
   } catch (err) {
-    console.error("createSubjectAllocation error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("❌ Error in createSubjectAllocation:", err);
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Internal Server Error while allocating subject.",
+        error: err.message,
+      });
   }
 };
 
-// ----------------- UPDATE (Assign/Reassign Teacher or any field) -----------------
-/**
- * PUT /api/subject-allocations/:saId
- * Body may include any of:
- *  { subName, teacherName, department, semester, creditHours, year }
- */
+// ----------------- UPDATE -----------------
 export const updateSubjectAllocation = async (req, res) => {
   try {
     const { saId } = req.params;
+    if (!saId)
+      return res
+        .status(400)
+        .json({ success: false, message: "saId is required" });
+
     const fields = [
       "subName",
       "teacherName",
@@ -207,29 +216,45 @@ export const updateSubjectAllocation = async (req, res) => {
 
     fields.forEach((k) => {
       if (req.body[k] !== undefined) {
+        if (k === "creditHours" || k === "year")
+          params.push(Number(req.body[k]));
+        else params.push(req.body[k]);
         updates.push(`${toSnake(k)} = ?`);
-        params.push(req.body[k]);
       }
     });
 
-    if (!updates.length) {
+    if (!updates.length)
       return res
         .status(400)
         .json({ success: false, message: "No fields to update" });
-    }
 
     params.push(saId);
 
     await sequelize.query(
-      `
-      UPDATE ${TABLE}
-      SET ${updates.join(", ")}, updated_at = NOW()
-      WHERE sa_id = ?
-      `,
+      `UPDATE ${TABLE} SET ${updates.join(
+        ", "
+      )}, updated_at = NOW() WHERE sa_id = ?`,
       { replacements: params }
     );
 
-    return getSubjectAllocation({ params: { saId } }, res);
+    const [rows] = await sequelize.query(
+      `SELECT
+         sa_id        AS saId,
+         subject_name AS subName,
+         teacher_name AS teacherName,
+         department,
+         semester,
+         credit_hours AS creditHours,
+         year,
+         created_at   AS createdAt,
+         updated_at   AS updatedAt
+       FROM ${TABLE}
+       WHERE sa_id = ?
+       LIMIT 1`,
+      { replacements: [saId] }
+    );
+
+    res.json({ success: true, data: rows[0] });
   } catch (err) {
     console.error("updateSubjectAllocation error:", err);
     res.status(500).json({ success: false, message: "Server error" });
@@ -237,9 +262,6 @@ export const updateSubjectAllocation = async (req, res) => {
 };
 
 // ----------------- DELETE -----------------
-/**
- * DELETE /api/subject-allocations/:saId
- */
 export const deleteSubjectAllocation = async (req, res) => {
   try {
     const { saId } = req.params;

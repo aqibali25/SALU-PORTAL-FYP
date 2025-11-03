@@ -24,7 +24,7 @@ export default function useSubjectAllocation({ pageSize = 10 }) {
         console.log(res.data);
         // Add teacherName if missing
         const withTeacher = (res.data.data || []).map((sub, index) => ({
-          saId: index + 1, // auto-generate allocation ID
+          saId: sub.subjectId, // auto-generate allocation ID
           subName: sub.subjectName,
           teacherName: sub.teacherName || "Yet to assign",
           department: sub.department,

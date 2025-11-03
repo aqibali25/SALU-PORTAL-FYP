@@ -9,13 +9,13 @@ const AssigningSubject = () => {
   const { subjectId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const subjectName = subjectId.replace(/-\d+$/, "");
 
+  // Extract the name from subjectId (remove trailing numbers if any)
+  const subjectName = subjectId.replace(/-\d+$/, "");
   const subjectFromState = location.state?.subjectData;
-  const selectedSubject = subjectFromState;
 
   const [formData, setFormData] = useState(
-    selectedSubject || {
+    subjectFromState || {
       saId: "",
       subName: subjectName,
       teacherName: "",
@@ -30,10 +30,11 @@ const AssigningSubject = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // Fetch teachers
   useEffect(() => {
     document.title = `SALU Portal | Subject Allocation ${subjectName}`;
 
-    const fetchUsers = async () => {
+    const fetchTeachers = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem("token");
@@ -41,52 +42,88 @@ const AssigningSubject = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // ✅ Filter only teachers
         const teacherUsers = res.data.filter(
           (user) => user.role?.toLowerCase() === "teacher"
         );
 
         setTeachers(["Yet to assign", ...teacherUsers.map((t) => t.username)]);
       } catch (err) {
-        console.error("❌ Error fetching teachers:", err);
+        console.error("Error fetching teachers:", err);
         alert("Error loading teachers: " + err.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUsers();
+    fetchTeachers();
   }, [subjectName]);
 
-  // ✅ Handle input change
+  // Handle form input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Handle Assign / Update
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
 
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.put(
-        `http://localhost:5000/api/subject-allocations/${formData.saId}`,
-        { teacherName: formData.teacherName },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+
+      // Convert numeric fields
+      const creditHoursNum = Number(formData.creditHours);
+      const yearNum = Number(formData.year);
+
+      // Validate fields
+      if (!formData.subName || !formData.department || !formData.semester) {
+        alert("Please fill in all required fields.");
+        setSubmitting(false);
+        return;
+      }
+
+      if (isNaN(creditHoursNum) || creditHoursNum <= 0) {
+        alert("Credit Hours must be a valid number.");
+        setSubmitting(false);
+        return;
+      }
+
+      if (isNaN(yearNum) || yearNum <= 0) {
+        alert("Year must be a valid number.");
+        setSubmitting(false);
+        return;
+      }
+
+      // Prepare payload
+      const payload = {
+        subName: formData.subName,
+        teacherName:
+          formData.teacherName && formData.teacherName !== "Yet to assign"
+            ? formData.teacherName
+            : "",
+        department: formData.department,
+        semester: formData.semester,
+        creditHours: creditHoursNum,
+        year: yearNum,
+      };
+
+      console.log("Payload being sent:", payload);
+
+      // Send POST request to backend
+      const res = await axios.post(
+        `http://localhost:5000/api/subject-allocations`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      console.log("✅ Subject Updated:", res.data);
+      console.log("Subject updated:", res.data);
       alert("Teacher assigned successfully!");
-
-      // Redirect back to Subject Allocation page
       navigate("/SALU-PORTAL-FYP/SubjectAllocation");
     } catch (err) {
-      console.error("❌ Error updating subject:", err);
-      alert("Error assigning teacher: " + err.message);
+      console.error("Error assigning teacher:", err);
+      const msg = err.response?.data?.message || err.message || "Unknown error";
+      alert("Error assigning teacher: " + msg);
     } finally {
       setSubmitting(false);
     }
@@ -188,7 +225,6 @@ const AssigningSubject = () => {
             disabled
           />
 
-          {/* ✅ Submit button */}
           <div className="w-full flex justify-end">
             <button
               type="submit"

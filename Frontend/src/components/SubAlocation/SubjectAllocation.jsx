@@ -50,7 +50,7 @@ export default function SubjectAllocation() {
       render: (row) => {
         // ✅ Safe values with fallback
         const subNameSafe = row.subName
-          ? row.subName.replace(/\s+/g, "").toUpperCase()
+          ? row.subName.replace(/\s+/g, "")
           : "UNKNOWN";
         const saIdSafe = row.saId || "0";
 

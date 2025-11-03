@@ -230,10 +230,18 @@ const AddSubject = ({ Title }) => {
             placeholder="Enter Credit Hours"
             title="Credit Hours"
             htmlFor="creditHours"
-            inputType="text"
+            inputType="number" // use number type
             required
             value={form.creditHours}
-            onChange={onChange("creditHours")}
+            onChange={(e) => {
+              const val = e.target.value;
+              // Only allow single-digit number
+              if (/^\d?$/.test(val)) {
+                onChange("creditHours")(e);
+              }
+            }}
+            min={0} // optional: min value
+            max={1} // optional: max value
           />
 
           {/* Year */}
@@ -241,10 +249,18 @@ const AddSubject = ({ Title }) => {
             placeholder="Enter Year"
             title="Year"
             htmlFor="year"
-            inputType="text"
+            inputType="number"
             required
             value={form.year}
-            onChange={onChange("year")}
+            onChange={(e) => {
+              const val = e.target.value;
+              // Allow only up to 4 digits
+              if (/^\d{0,4}$/.test(val)) {
+                onChange("year")(e);
+              }
+            }}
+            min={1000} // optional: minimum year
+            max={9999} // optional: maximum year
           />
 
           {/* Submit Button */}
