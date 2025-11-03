@@ -84,7 +84,7 @@ export default function FormsByStatus({ heading }) {
     setPage(1);
   }, [forms, status, query]);
 
-  /** ✅ Handle Status Change for Approved Forms */
+  /** ✅ Handle Status Change for All Forms */
   const handleSelectChange = async (formId, currentStatus, newStatus) => {
     // Don't update if the status is the same
     if (currentStatus === newStatus) {
@@ -247,17 +247,30 @@ export default function FormsByStatus({ heading }) {
 
         case "Selected":
           return {
-            label: "Process Enrollment",
-            onClick: (row) => {
-              navigate(
-                `/SALU-PORTAL-FYP/Admissions/Selected/ProcessEnrollment?${row.cnic}`,
-                { state: { form: row } }
-              );
-            },
-            icon: (
-              <button className="!px-4 !py-1 border border-purple-500 text-purple-500 hover:bg-purple-500 hover:text-white transition cursor-pointer">
-                Process Enrollment
-              </button>
+            label: "Enrollment Status",
+            render: (row) => (
+              <select
+                className="border-2 border-gray-400 dark:border-gray-600 !px-2 !py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none"
+                value={
+                  row.status === "Enrolled" || row.status === "Not Enrolled"
+                    ? row.status
+                    : ""
+                }
+                onChange={(e) => {
+                  if (e.target.value) {
+                    handleSelectChange(row.form_id, row.status, e.target.value);
+                  }
+                }}
+                disabled={updatingStatus[row.form_id]}
+              >
+                <option value="" disabled>
+                  {updatingStatus[row.form_id]
+                    ? "Updating..."
+                    : "Select Status"}
+                </option>
+                <option value="Enrolled">Enrolled</option>
+                <option value="Not Enrolled">Not Enrolled</option>
+              </select>
             ),
           };
 
