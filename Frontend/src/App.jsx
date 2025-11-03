@@ -17,7 +17,7 @@ import AssigningSubject from "./components/SubAlocation/AssigningSubject";
 import Attendance from "./components/Attendance/Attendance";
 import MarkAttendances from "./components/Attendance/MarkAttendance";
 import AddTestMarks from "./components/Admissions/AddTestMarks";
-import SelectedInMaritList from "./components/Admissions/SelectedInMaritList";
+import SelectedInMaritList from "./components/Admissions/SelectedInMeritList";
 import Marking from "./components/Examinations/Marking";
 import ShowStudentsForMarking from "./components/Examinations/ShowStudentsForMarking";
 import EnterStdMarks from "./components/Examinations/EnterStdMarks";
@@ -100,7 +100,7 @@ function App() {
               element={<FormsByStatus heading="Passed Candidates" />}
             />
             <Route
-              path="/SALU-PORTAL-FYP/Admissions/PassedCandidates/SelectedInMaritList"
+              path="/SALU-PORTAL-FYP/Admissions/PassedCandidates/SelectedInMeritList"
               element={<SelectedInMaritList />}
             />
             <Route

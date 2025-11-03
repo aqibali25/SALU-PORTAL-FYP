@@ -389,7 +389,6 @@ export const getAllEnrolledStudents = async (req, res) => {
       SELECT
         enroll_id AS enrollId,
         cnic,
-        form_status AS formStatus,
         entry_test_obtained_marks AS entryTestObtained,
         entry_test_total_marks AS entryTestTotal,
         entry_test_percentage AS entryTestPercentage,
