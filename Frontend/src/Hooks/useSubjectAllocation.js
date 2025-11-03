@@ -1,161 +1,60 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import axios from "axios";
 
-// 🧩 Example data for demo/testing
-export const initialAllocations = [
-  {
-    saId: "001",
-    subName: "OOP",
-    teacherName: "Dr. Shahid Mahar",
-    department: "Computer Science",
-    semester: "First",
-    creditHours: "3+1",
-    year: new Date().getFullYear(),
-  },
-  {
-    saId: "002",
-    subName: "I & CP",
-    teacherName: "Yet to assign",
-    department: "Computer Science",
-    semester: "First",
-    creditHours: "3",
-    year: new Date().getFullYear(),
-  },
-  {
-    saId: "003",
-    subName: "E. W",
-    teacherName: "Mr. Ahmed",
-    department: "Computer Science",
-    semester: "First",
-    creditHours: "3",
-    year: new Date().getFullYear(),
-  },
-  {
-    saId: "004",
-    subName: "B. E",
-    teacherName: "Ms. Saima",
-    department: "Computer Science",
-    semester: "First",
-    creditHours: "3",
-    year: new Date().getFullYear(),
-  },
-  {
-    saId: "005",
-    subName: "M. C",
-    teacherName: "Mr. Irfan Ali Memon",
-    department: "Computer Science",
-    semester: "First",
-    creditHours: "3",
-    year: new Date().getFullYear(),
-  },
-  {
-    saId: "006",
-    subName: "I. M",
-    teacherName: "Mr. Rashid Ali Ghotto",
-    department: "Computer Science",
-    semester: "First",
-    creditHours: "3",
-    year: new Date().getFullYear(),
-  },
-  {
-    saId: "007",
-    subName: "DBS",
-    teacherName: "Yet to assign",
-    department: "Computer Science",
-    semester: "Second",
-    creditHours: "3+1",
-    year: new Date().getFullYear(),
-  },
-  {
-    saId: "008",
-    subName: "O. S",
-    teacherName: "Mr. Imran Mushtaque",
-    department: "Computer Science",
-    semester: "Second",
-    creditHours: "3+1",
-    year: new Date().getFullYear(),
-  },
-  {
-    saId: "009",
-    subName: "P & S",
-    teacherName: "Yet to assign",
-    department: "Computer Science",
-    semester: "Second",
-    creditHours: "3",
-    year: new Date().getFullYear(),
-  },
-  {
-    saId: "010",
-    subName: "C. C & N",
-    teacherName: "Mr. Shamsuddin",
-    department: "Computer Science",
-    semester: "Second",
-    creditHours: "3",
-    year: new Date().getFullYear(),
-  },
-  {
-    saId: "011",
-    subName: "I. S",
-    teacherName: "Mr. Shamsuddin",
-    department: "Computer Science",
-    semester: "Second",
-    creditHours: "3",
-    year: new Date().getFullYear(),
-  },
-  {
-    saId: "012",
-    subName: "B. E",
-    teacherName: "Mr. Irfan Ali Memon",
-    department: "Computer Science",
-    semester: "Third",
-    creditHours: "3",
-    year: new Date().getFullYear(),
-  },
-  {
-    saId: "013",
-    subName: "DAA",
-    teacherName: "Dr. Shahid Mahar",
-    department: "Computer Science",
-    semester: "Third",
-    creditHours: "3",
-    year: new Date().getFullYear(),
-  },
-  {
-    saId: "014",
-    subName: "CC",
-    teacherName: "Mr. Imran Mushtaque",
-    department: "Computer Science",
-    semester: "Third",
-    creditHours: "3",
-    year: new Date().getFullYear(),
-  },
-  {
-    saId: "015",
-    subName: "CA",
-    teacherName: "Ms. Saima",
-    department: "Computer Science",
-    semester: "Third",
-    creditHours: "3",
-    year: new Date().getFullYear(),
-  },
-];
-
-export default function useSubjectAllocation({ initial = [], pageSize = 10 }) {
+export default function useSubjectAllocation({ pageSize = 10 }) {
+  const [subjects, setSubjects] = useState([]);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [sorts, setSorts] = useState([]); // [{ key, dir }]
+  const [loading, setLoading] = useState(true);
 
+  const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+  // ✅ Fetch subjects from backend
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
+
+        const res = await axios.get(`${API}/api/subjects`, {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        });
+        console.log(res.data);
+        // Add teacherName if missing
+        const withTeacher = (res.data.data || []).map((sub, index) => ({
+          saId: index + 1, // auto-generate allocation ID
+          subName: sub.subjectName,
+          teacherName: sub.teacherName || "Yet to assign",
+          department: sub.department,
+          semester: sub.semester,
+          creditHours: sub.creditHours,
+          year: sub.year,
+        }));
+
+        setSubjects(withTeacher);
+      } catch (error) {
+        console.error("Error fetching subjects:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSubjects();
+  }, []);
+
+  // ✅ Filter + Sort
   const filtered = useMemo(() => {
-    let data = [...initial];
+    let data = [...subjects];
 
-    // 🔎 Filter by search query
     if (query) {
-      const lowerQuery = query.toLowerCase();
+      const lower = query.toLowerCase();
       data = data.filter((item) =>
-        Object.values(item).join(" ").toLowerCase().includes(lowerQuery)
+        Object.values(item).join(" ").toLowerCase().includes(lower)
       );
     }
 
-    // 🔄 Multi-column sorting
     if (sorts.length > 0) {
       data.sort((a, b) => {
         for (const { key, dir } of sorts) {
@@ -169,7 +68,7 @@ export default function useSubjectAllocation({ initial = [], pageSize = 10 }) {
     }
 
     return data;
-  }, [initial, query, sorts]);
+  }, [subjects, query, sorts]);
 
   const pageCount = Math.ceil(filtered.length / pageSize) || 1;
   const rows = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -189,5 +88,15 @@ export default function useSubjectAllocation({ initial = [], pageSize = 10 }) {
     });
   };
 
-  return { rows, page, pageCount, setPage, query, setQuery, sorts, onSort };
+  return {
+    loading,
+    rows,
+    page,
+    pageCount,
+    setPage,
+    query,
+    setQuery,
+    sorts,
+    onSort,
+  };
 }

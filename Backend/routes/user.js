@@ -1,7 +1,12 @@
 // Backend/routes/user.js
 import express from "express";
 import { verifyToken } from "../middleware/authMiddleware.js";
-import { upsertUser, getMe, getAllUsers, deleteUser } from "../controllers/userController.js";
+import {
+  upsertUser,
+  getMe,
+  getAllUsers,
+  deleteUser,
+} from "../controllers/userController.js";
 
 const router = express.Router();
 
