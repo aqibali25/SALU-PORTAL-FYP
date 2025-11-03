@@ -48,6 +48,12 @@ export default function SubjectAllocation() {
     {
       label: "Action",
       render: (row) => {
+        // ✅ Safe values with fallback
+        const subNameSafe = row.subName
+          ? row.subName.replace(/\s+/g, "").toUpperCase()
+          : "UNKNOWN";
+        const saIdSafe = row.saId || "0";
+
         const isAssign = row.teacherName === "Yet to assign";
         const borderColor = isAssign ? "#22c55e" : "#ef4444";
         const text = isAssign ? "Assign" : "Reassign";
@@ -55,15 +61,13 @@ export default function SubjectAllocation() {
 
         return (
           <Link
-            to={`/SALU-PORTAL-FYP/SubjectAllocation/${
-              row.subName.replace(/\s+/g, "").toUpperCase() + "-" + row.saId
-            }`}
+            to={`/SALU-PORTAL-FYP/SubjectAllocation/${subNameSafe}-${saIdSafe}`}
             state={{ subjectData: row }} // ✅ Send subject row data here
             type="button"
             className={`cursor-pointer relative overflow-hidden !px-[15px] !py-[5px]
-            border-2 text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
-            before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full
-            before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60 ${buttonClass}`}
+          border-2 text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
+          before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full
+          before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60 ${buttonClass}`}
             style={{ borderColor }}
           >
             <span className="relative z-10">{text}</span>
