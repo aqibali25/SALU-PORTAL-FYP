@@ -17,7 +17,7 @@ export const cards = [
     isImg: true,
     color1: "#4F1A60",
     color2: "#f5f5f5",
-    roles: ["admin", "teacher"],
+    roles: ["superadmin", "admin", "teacher"],
   },
   {
     id: 2,
@@ -27,7 +27,7 @@ export const cards = [
     Icon: faUserPlus,
     color1: "#FDDE09",
     color2: "#f5f5f5",
-    roles: ["admin"],
+    roles: ["superadmin", "admin"],
   },
   {
     id: 3,
@@ -37,7 +37,7 @@ export const cards = [
     Icon: faUsers,
     color1: "#E40070",
     color2: "#f5f5f5",
-    roles: ["admin"],
+    roles: ["superadmin", "admin"],
   },
   {
     id: 4,
@@ -47,7 +47,7 @@ export const cards = [
     Icon: faComputer,
     color1: "#22b508",
     color2: "#f5f5f5",
-    roles: ["admin", "clerk"],
+    roles: ["superadmin", "admin", "clerk"],
   },
   {
     id: 5,
@@ -57,7 +57,7 @@ export const cards = [
     Icon: faBookOpen,
     color1: "#CA4DFF",
     color2: "#f5f5f5",
-    roles: ["hod"],
+    roles: ["superadmin", "hod"],
   },
   {
     id: 6,
@@ -67,7 +67,7 @@ export const cards = [
     Icon: faCalendarAlt,
     color1: "#007BFF",
     color2: "#f5f5f5",
-    roles: ["teacher"],
+    roles: ["superadmin", "teacher"],
   },
   {
     id: 7,
@@ -77,7 +77,7 @@ export const cards = [
     Icon: faPenFancy,
     color1: "#6A0DAD",
     color2: "#F3E8FF",
-    roles: ["teacher"],
+    roles: ["superadmin", "teacher"],
   },
   {
     id: 8,
@@ -87,7 +87,7 @@ export const cards = [
     Icon: faBook,
     color1: "#F97316",
     color2: "#FFF7ED",
-    roles: ["hod"],
+    roles: ["superadmin", "hod"],
   },
   {
     id: 9,
@@ -97,7 +97,7 @@ export const cards = [
     Icon: faCog,
     color1: "#09FDEE",
     color2: "#f5f5f5",
-    roles: ["admin", "teacher"],
+    roles: ["superadmin", "admin", "teacher"],
   },
 ];
 

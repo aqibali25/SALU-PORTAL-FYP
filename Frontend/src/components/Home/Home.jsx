@@ -2,11 +2,17 @@ import Card from "./Card";
 import Background from "../../assets/Background.png";
 import { useEffect } from "react";
 import { cards } from "../../Hooks/HomeCards";
+import Cookies from "js-cookie";
 
 const Home = () => {
   useEffect(() => {
     document.title = "SALU Portal | Home ";
   });
+
+  const userRole = Cookies.get("role")?.toLowerCase(); // Convert to lowercase
+
+  // Filter cards based on lowercase user role
+  const filteredCards = cards.filter((card) => card.roles.includes(userRole));
 
   return (
     <div
@@ -27,7 +33,7 @@ const Home = () => {
         backgroundPosition: "center",
       }}
     >
-      {cards.map((card) => (
+      {filteredCards.map((card) => (
         <div
           key={card.id}
           className="
@@ -44,6 +50,7 @@ const Home = () => {
             Icon={card.Icon}
             color1={card.color1}
             color2={card.color2}
+            roles={card.roles}
           />
         </div>
       ))}

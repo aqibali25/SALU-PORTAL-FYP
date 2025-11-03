@@ -24,10 +24,25 @@ import EnterStdMarks from "./components/Examinations/EnterStdMarks";
 import Subjects from "./components/Subjects/Subjects";
 import AddSubject from "./components/Subjects/AddSubject";
 import ViewSubject from "./components/Subjects/ViewSubject";
+import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
+import { cards } from "./Hooks/HomeCards";
 
 // ✅ Toastify Import
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+// Helper function to get roles for a specific route
+const getRolesForRoute = (routePath) => {
+  // Remove the base path and leading/trailing slashes
+  const cleanPath = routePath.replace("/SALU-PORTAL-FYP/", "").replace("/", "");
+
+  // Find the card that matches this route
+  const card = cards.find(
+    (c) => c.link.toLowerCase() === cleanPath.toLowerCase()
+  );
+
+  return card ? card.roles : [];
+};
 
 function App() {
   const isLoggedIn = Cookies.get("isLoggedIn") === "true";
@@ -53,106 +68,230 @@ function App() {
             <Route path="/SALU-PORTAL-FYP/" element={<Home />} />
             <Route path="/SALU-PORTAL-FYP/profile" element={<Profile />} />
 
+            {/* Dynamically protected routes using card roles */}
             <Route
               path="/SALU-PORTAL-FYP/adduser"
-              element={<AddUser Title="Add User" />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("adduser")}>
+                  <AddUser Title="Add User" />
+                </ProtectedRoute>
+              }
             />
-            <Route path="/SALU-PORTAL-FYP/ListUsers" element={<ListUsers />} />
+            <Route
+              path="/SALU-PORTAL-FYP/ListUsers"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("listusers")}>
+                  <ListUsers />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/SALU-PORTAL-FYP/UpdateUser/:userCnic"
-              element={<AddUser Title="Update User" />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("adduser")}>
+                  <AddUser Title="Update User" />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/SALU-PORTAL-FYP/Admissions"
-              element={<Admissions />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("admissions")}>
+                  <Admissions />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/SALU-PORTAL-FYP/Admissions/Pending/ReviewForm"
-              element={<ReviewForm />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("admissions")}>
+                  <ReviewForm />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/SALU-PORTAL-FYP/Admissions/ApprovedForms"
-              element={<FormsByStatus heading="Approved" />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("admissions")}>
+                  <FormsByStatus heading="Approved" />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/SALU-PORTAL-FYP/Admissions/PendingForms"
-              element={<FormsByStatus heading="Pending" />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("admissions")}>
+                  <FormsByStatus heading="Pending" />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/SALU-PORTAL-FYP/Admissions/RevertForms"
-              element={<FormsByStatus heading="Revert" />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("admissions")}>
+                  <FormsByStatus heading="Revert" />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/SALU-PORTAL-FYP/Admissions/TrashForms"
-              element={<FormsByStatus heading="Trash" />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("admissions")}>
+                  <FormsByStatus heading="Trash" />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/SALU-PORTAL-FYP/Admissions/AppearedInTest"
-              element={<FormsByStatus heading="Appeared In Test" />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("admissions")}>
+                  <FormsByStatus heading="Appeared In Test" />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/SALU-PORTAL-FYP/Admissions/AppearedInTest/AddTestMarks"
-              element={<AddTestMarks />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("admissions")}>
+                  <AddTestMarks />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/SALU-PORTAL-FYP/Admissions/PassedCandidates"
-              element={<FormsByStatus heading="Passed Candidates" />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("admissions")}>
+                  <FormsByStatus heading="Passed Candidates" />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/SALU-PORTAL-FYP/Admissions/PassedCandidates/SelectedInMeritList"
-              element={<SelectedInMaritList />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("admissions")}>
+                  <SelectedInMaritList />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/SALU-PORTAL-FYP/Admissions/SelectedCandidates"
-              element={<FormsByStatus heading="Selected Candidates" />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("admissions")}>
+                  <FormsByStatus heading="Selected Candidates" />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/SALU-PORTAL-FYP/Admissions/EnrolledCandidates"
-              element={<FormsByStatus heading="Enrolled Candidates" />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("admissions")}>
+                  <FormsByStatus heading="Enrolled Candidates" />
+                </ProtectedRoute>
+              }
             />
 
-            <Route path="/SALU-PORTAL-FYP/Settings" element={<Settings />} />
             <Route
               path="/SALU-PORTAL-FYP/SubjectAllocation"
-              element={<SubjectAllocation />}
+              element={
+                <ProtectedRoute
+                  allowedRoles={getRolesForRoute("subjectallocation")}
+                >
+                  <SubjectAllocation />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/SALU-PORTAL-FYP/SubjectAllocation/:subjectId"
-              element={<AssigningSubject />}
+              element={
+                <ProtectedRoute
+                  allowedRoles={getRolesForRoute("subjectallocation")}
+                >
+                  <AssigningSubject />
+                </ProtectedRoute>
+              }
             />
             <Route
+              path="/SALU-PORTAL-FYP/Subjects"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("subjects")}>
+                  <Subjects />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Subjects/AddSubject"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("subjects")}>
+                  <AddSubject Title="Add Subject" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Subjects/UpdateSubject/:subjectId"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("subjects")}>
+                  <AddSubject Title="Update Subject" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Subjects/ViewSubject"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("subjects")}>
+                  <ViewSubject />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/SALU-PORTAL-FYP/Attendance"
-              element={<Attendance />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("attendance")}>
+                  <Attendance />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/SALU-PORTAL-FYP/Attendance/:subjectId"
-              element={<MarkAttendances />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("attendance")}>
+                  <MarkAttendances />
+                </ProtectedRoute>
+              }
             />
-            <Route path="/SALU-PORTAL-FYP/EnterMarks" element={<Marking />} />
-
+            <Route
+              path="/SALU-PORTAL-FYP/EnterMarks"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("entermarks")}>
+                  <Marking />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/SALU-PORTAL-FYP/EnterMarks/Subject/:subjectId"
-              element={<ShowStudentsForMarking />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("entermarks")}>
+                  <ShowStudentsForMarking />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/SALU-PORTAL-FYP/EnterMarks/Subject/:subjectId/EnterStdMarks"
-              element={<EnterStdMarks />}
-            />
-            <Route path="/SALU-PORTAL-FYP/Subjects" element={<Subjects />} />
-            <Route
-              path="/SALU-PORTAL-FYP/Subjects/AddSubject"
-              element={<AddSubject Title="Add Subject" />}
-            />
-
-            <Route
-              path="/SALU-PORTAL-FYP/Subjects/UpdateSubject/:subjectId"
-              element={<AddSubject Title="Update Subject" />}
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("entermarks")}>
+                  <EnterStdMarks />
+                </ProtectedRoute>
+              }
             />
 
             <Route
-              path="/SALU-PORTAL-FYP/Subjects/ViewSubject"
-              element={<ViewSubject />}
+              path="/SALU-PORTAL-FYP/Settings"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("settings")}>
+                  <Settings />
+                </ProtectedRoute>
+              }
             />
           </>
         )}
