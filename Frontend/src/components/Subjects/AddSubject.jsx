@@ -79,8 +79,8 @@ const AddSubject = ({ Title }) => {
 
       toast.success(
         editingSubject
-          ? "✅ Subject updated successfully!"
-          : "✅ Subject added successfully!",
+          ? "Subject updated successfully!"
+          : "Subject added successfully!",
         { position: "top-right" }
       );
 

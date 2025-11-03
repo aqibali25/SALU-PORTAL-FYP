@@ -8,79 +8,39 @@ import { useNavigate } from "react-router-dom";
 import BackButton from "../BackButton";
 
 export default function ViewSubject() {
-  const [subjects, setSubjects] = useState([
-    {
-      subjectId: "SUB-101",
-      subjectName: "Object Oriented Programming",
-      subjectType: "Practical",
-      department: "Computer Science",
-      semester: "3rd",
-      creditHours: "3 + 1",
-      year: "2024",
-    },
-    {
-      subjectId: "SUB-102",
-      subjectName: "Data Structures and Algorithms",
-      subjectType: "Practical",
-      department: "Computer Science",
-      semester: "4th",
-      creditHours: 3,
-      year: "2024",
-    },
-    {
-      subjectId: "SUB-103",
-      subjectName: "Database Management Systems",
-      subjectType: "Practical",
-      department: "Business Administration",
-      semester: "5th",
-      creditHours: 3,
-      year: "2025",
-    },
-    {
-      subjectId: "SUB-104",
-      subjectName: "Software Engineering",
-      subjectType: "Theory",
-      department: "Business Administration",
-      semester: "6th",
-      creditHours: 3,
-      year: "2025",
-    },
-    {
-      subjectId: "SUB-105",
-      subjectName: "Artificial Intelligence",
-      subjectType: "Theory",
-      department: "English Language And Literature",
-      semester: "7th",
-      creditHours: 3,
-      year: "2025",
-    },
-  ]);
+  const [subjects, setSubjects] = useState([]);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  //   const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const pageSize = 10;
   const navigate = useNavigate();
 
-  //   // ✅ Fetch subjects from backend
-  //   useEffect(() => {
-  //     const fetchSubjects = async () => {
-  //       try {
-  //         setLoading(true);
-  //         const token = localStorage.getItem("token");
-  //         const res = await axios.get("http://localhost:5000/api/subjects", {
-  //           headers: { Authorization: `Bearer ${token}` },
-  //         });
-  //         setSubjects(res.data);
-  //         console.log("✅ Subjects fetched:", res.data);
-  //       } catch (err) {
-  //         console.error(err);
-  //         alert("Error loading subjects: " + err.message);
-  //       } finally {
-  //         setLoading(false);
-  //       }
-  //     };
-  //     fetchSubjects();
-  //   }, []);
+  const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+  // ✅ Fetch subjects from backend
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
+
+        const res = await axios.get(`${API}/api/subjects`, {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        });
+
+        // res.data.data because backend sends { success, total, data }
+        setSubjects(res.data.data || []);
+      } catch (err) {
+        console.error(err);
+        alert("Error loading subjects: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSubjects();
+  }, []);
 
   // ✅ Filter subjects by search query
   const filteredSubjects = subjects.filter((s) =>
@@ -121,15 +81,9 @@ export default function ViewSubject() {
     {
       label: "Edit",
       onClick: (row) => {
-        navigate(
-          `/SALU-PORTAL-FYP/Subjects/UpdateSubject/${row.subjectName.replace(
-            /\s+/g,
-            ""
-          )}`,
-          {
-            state: { subject: row },
-          }
-        );
+        navigate(`/SALU-PORTAL-FYP/Subjects/UpdateSubject/${row.subjectId}`, {
+          state: { subject: row },
+        });
       },
       icon: (
         <FaEdit
@@ -145,12 +99,12 @@ export default function ViewSubject() {
         try {
           setLoading(true);
           const token = localStorage.getItem("token");
-          await axios.delete(
-            `http://localhost:5000/api/subjects/${row.subjectId}`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
+
+          await axios.delete(`${API}/api/subjects/${row.subjectId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+          });
+
           setSubjects((prev) =>
             prev.filter((s) => s.subjectId !== row.subjectId)
           );
@@ -166,13 +120,21 @@ export default function ViewSubject() {
   ];
 
   // ✅ Loader
-  //   if (loading) {
-  //     return (
-  //       <div className="flex justify-center items-center min-h-[calc(100vh-90px)] bg-white dark:bg-gray-900">
-  //         <div className="w-16 h-16 border-4 border-yellow-400 border-dashed rounded-full animate-spin"></div>
-  //       </div>
-  //     );
-  //   }
+  if (loading) {
+    return (
+      <div
+        className="flex justify-center items-center min-h-[calc(100vh-90px)] bg-white dark:bg-gray-900"
+        style={{
+          backgroundImage: `url(${Background})`,
+          backgroundSize: "cover",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="w-16 h-16 border-4 border-yellow-400 border-dashed rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -187,7 +149,7 @@ export default function ViewSubject() {
       <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
         <div className="flex justify-start items-center gap-3">
           <BackButton />
-          <h1 className="text-2xl sm:text-3xl md:text!-4xl !py-3 font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl !py-3 font-bold text-gray-900 dark:text-white">
             Subjects List
           </h1>
         </div>
