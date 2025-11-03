@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { toast } from "react-toastify"; // ✅ Import Toastify
 import Background from "../../assets/Background.png";
 import InputContainer from "../InputContainer";
 import BackButton from "../BackButton";
@@ -66,6 +67,8 @@ const AddSubject = ({ Title }) => {
 
       const payload = { ...form };
 
+      if (!payload.subjectId) delete payload.subjectId;
+
       await axios.post(`${API}/api/subjects/upsert`, payload, {
         headers: {
           "Content-Type": "application/json",
@@ -74,15 +77,21 @@ const AddSubject = ({ Title }) => {
         withCredentials: true,
       });
 
-      alert(
-        Title === "Update Subject"
-          ? "Subject updated successfully!"
-          : "Subject added successfully!"
+      toast.success(
+        editingSubject
+          ? "✅ Subject updated successfully!"
+          : "✅ Subject added successfully!",
+        { position: "top-right" }
       );
-      navigate("/SALU-PORTAL-FYP/Subjects");
+
+      setTimeout(() => {
+        navigate("/SALU-PORTAL-FYP/Subjects");
+      }, 1200); // ⏳ wait for toast to show
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Error saving subject");
+      toast.error(err.response?.data?.message || "❌ Error saving subject", {
+        position: "top-right",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -232,7 +241,7 @@ const AddSubject = ({ Title }) => {
               type="submit"
               disabled={submitting}
               className="cursor-pointer relative overflow-hidden !px-[15px] !py-[5px] border-2 border-[#e5b300] text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
-                         before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#e5b300] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60"
+                   before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#e5b300] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60"
             >
               <span className="relative z-10">
                 {submitting ? "Saving..." : "Save & Proceed"}

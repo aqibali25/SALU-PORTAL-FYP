@@ -6,8 +6,13 @@ const TABLE = `\`${DB}\`.subjects`;
 
 // allowed sort columns (DB names)
 const ALLOWED_SORTS = new Set([
-  "subject_allocation_id", "subject_name", "department",
-  "semester", "credit_hours", "year", "subject_type"
+  "subject_allocation_id",
+  "subject_name",
+  "department",
+  "semester",
+  "credit_hours",
+  "year",
+  "subject_type",
 ]);
 
 /**
@@ -103,7 +108,9 @@ export const getSubjectById = async (req, res) => {
     );
 
     if (!rows.length) {
-      return res.status(404).json({ success: false, message: "Subject not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Subject not found" });
     }
 
     res.json({ success: true, data: rows[0] });
@@ -122,67 +129,83 @@ export const getSubjectById = async (req, res) => {
  * }
  * If subjectId exists -> UPDATE, else INSERT
  */
+// POST: /api/subjects/upsert
+// POST: /api/subjects/upsert
 export const upsertSubject = async (req, res) => {
   try {
     const {
-      subjectId,        // maps to subject_allocation_id
+      subjectId,
       subjectName,
-      subjectType,      // 'Theory' | 'Practical'
+      subjectType,
       department,
       semester,
-      creditHours,
-      year,
+      creditHours, // keep string
+      year, // keep string
     } = req.body;
 
-    // Basic validation
-    if (!subjectName || !subjectType || !department || !semester || !creditHours || !year) {
-      return res.status(400).json({ success: false, message: "Missing required fields" });
+    if (
+      !subjectName ||
+      !subjectType ||
+      !department ||
+      !semester ||
+      !creditHours ||
+      !year
+    ) {
+      return res.status(400).json({ message: "All fields are required" });
     }
 
+    // ✅ UPDATE
     if (subjectId) {
-      // UPDATE
       await sequelize.query(
         `
         UPDATE ${TABLE}
-        SET subject_name = ?,
-            subject_type = ?,
-            department   = ?,
-            semester     = ?,
-            credit_hours = ?,
-            year         = ?
+        SET 
+          subject_name = ?,
+          subject_type = ?,
+          department = ?,
+          semester = ?,
+          credit_hours = ?, 
+          year = ?
         WHERE subject_allocation_id = ?
         `,
         {
           replacements: [
-            subjectName, subjectType, department, semester,
-            Number(creditHours), Number(year), Number(subjectId),
+            subjectName,
+            subjectType,
+            department,
+            semester,
+            creditHours,
+            year,
+            subjectId,
           ],
         }
       );
-      // return the saved row
-      return getSubjectById({ params: { id: subjectId } }, res);
+
+      return res.status(200).json({ message: "Subject updated successfully" });
     }
 
-    // INSERT
-    const [result] = await sequelize.query(
+    // ✅ INSERT
+    await sequelize.query(
       `
-      INSERT INTO ${TABLE}
-        (subject_name, subject_type, department, semester, credit_hours, year)
+      INSERT INTO ${TABLE} (subject_name, subject_type, department, semester, credit_hours, year)
       VALUES (?, ?, ?, ?, ?, ?)
       `,
       {
         replacements: [
-          subjectName, subjectType, department, semester,
-          Number(creditHours), Number(year),
+          subjectName,
+          subjectType,
+          department,
+          semester,
+          creditHours,
+          year,
         ],
       }
     );
 
-    const newId = result.insertId;
-    return getSubjectById({ params: { id: newId } }, res);
-  } catch (err) {
-    console.error("upsertSubject error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(201).json({ message: "Subject added successfully" });
+  } catch (error) {
+    console.error("upsertSubject error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
