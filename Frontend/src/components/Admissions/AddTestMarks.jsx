@@ -69,41 +69,56 @@ const AddTestMarks = () => {
       return;
     }
 
-    const percentage = ((obtained / total) * 100).toFixed(2);
+    if (isNaN(passing) || passing < 0 || passing > total) {
+      toast.error(
+        "Please enter valid passing marks between 0 and total marks."
+      );
+      return;
+    }
 
+    const percentage = ((obtained / total) * 100).toFixed(2);
     const passStatus = obtained >= passing ? "Passed" : "Failed";
 
     setSubmitting(true);
     try {
       const token = localStorage.getItem("token");
 
-      const updatedData = {
-        form_id: formDataFromState.form_id,
+      // ✅ 1. Prepare marks data for the marks API
+      const marksData = {
         obtained_marks: obtained,
         total_marks: total,
+        percentage: percentage,
         passing_marks: passing,
-        percentage,
-        status: passStatus,
-        selection_status: passStatus,
+        merit_list: "",
+        department: "",
       };
 
-      // ✅ 1. Update Marks
-      await axios.put(
+      console.log("Sending marks data:", marksData);
+
+      // ✅ 2. Send marks data to updateMarks API endpoint
+      const marksResponse = await axios.put(
         `http://localhost:5000/api/admissions/updateMarks/${formDataFromState.form_id}`,
-        updatedData,
+        marksData,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      // ✅ 2. Update Status in personalinfo Table
-      await axios.patch(
+      console.log("Marks API Response:", marksResponse.data);
+
+      // ✅ 3. Update status separately using the status API
+      const statusResponse = await axios.patch(
         `http://localhost:5000/api/admissions/updateStatus/${formDataFromState.form_id}`,
         { status: passStatus },
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
       );
+
+      console.log("Status API Response:", statusResponse.data);
 
       toast.success(`Marks added successfully! Candidate has ${passStatus}.`);
 
@@ -112,10 +127,11 @@ const AddTestMarks = () => {
       }, 1200);
     } catch (err) {
       console.error("❌ Error submitting marks:", err);
-      toast.error(
+      const errorMessage =
         err.response?.data?.message ||
-          "Failed to submit marks. Please try again."
-      );
+        err.message ||
+        "Failed to submit marks. Please try again.";
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -166,25 +182,12 @@ const AddTestMarks = () => {
             value={formData.cnic}
             disabled
           />
-
           <InputContainer
-            placeholder="Enter Passing Marks"
-            title="Passing Marks"
-            name="passingmarks"
-            inputType="number"
-            value={formData.passingmarks}
-            onChange={handleChange}
-            required
-          />
-
-          <InputContainer
-            placeholder="Enter Obtained Marks"
-            title="Obtained Marks"
-            name="obtainedmarks"
-            inputType="number"
-            value={formData.obtainedmarks}
-            onChange={handleChange}
-            required
+            title="Department"
+            name="department"
+            inputType="text"
+            value={formDataFromState.department || ""}
+            disabled
           />
 
           <InputContainer
@@ -195,13 +198,36 @@ const AddTestMarks = () => {
             value={formData.totalmarks}
             onChange={handleChange}
             required
+            min="1"
+          />
+
+          <InputContainer
+            placeholder="Enter Passing Marks"
+            title="Passing Marks"
+            name="passingmarks"
+            inputType="number"
+            value={formData.passingmarks}
+            onChange={handleChange}
+            required
+            min="0"
+          />
+
+          <InputContainer
+            placeholder="Enter Obtained Marks"
+            title="Obtained Marks"
+            name="obtainedmarks"
+            inputType="number"
+            value={formData.obtainedmarks}
+            onChange={handleChange}
+            required
+            min="0"
           />
 
           <InputContainer
             title="Percentage"
             name="percentage"
             inputType="text"
-            value={formData.percentage}
+            value={formData.percentage ? `${formData.percentage}%` : ""}
             disabled
           />
 
@@ -213,7 +239,7 @@ const AddTestMarks = () => {
                          before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#e5b300] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60"
             >
               <span className="relative z-10">
-                {submitting ? "Saving..." : "Save"}
+                {submitting ? "Saving..." : "Save Marks"}
               </span>
             </button>
           </div>

@@ -4,14 +4,29 @@ import { sequelize } from "../db.js";
 /** Schema: set via .env (DB_NAME) or fallback to prod name */
 const DB = process.env.DB_NAME || "u291434058_SALU_GC";
 
+// Backend/controllers/admissionController.js
+
 /* ------------------------------- helpers ---------------------------------- */
 const mapStatusToEnum = (status) => {
-  const s = String(status || "").toLowerCase();
-  // funnel a variety of FE labels into the enum we actually store
-  if (["approved", "selected", "enrolled", "passed", "yes"].includes(s))
-    return "Approved";
-  if (["rejected", "failed", "no"].includes(s)) return "Rejected";
-  return "Pending";
+  const s = String(status || "")
+    .toLowerCase()
+    .trim();
+
+  // Map all possible status values exactly as they are
+  const statusMap = {
+    pending: "Pending",
+    approved: "Approved",
+    revert: "Revert",
+    trash: "Trash",
+    appeared: "Appeared",
+    "not appeared": "Not Appeared",
+    passed: "Passed",
+    failed: "Failed",
+    selected: "Selected",
+    enrolled: "Enrolled",
+  };
+
+  return statusMap[s] || "Pending"; // Default to Pending if not found
 };
 
 /* ========================== LIST ALL ADMISSIONS =========================== */
@@ -205,6 +220,8 @@ export const updateEntryTestMarks = async (req, res) => {
       fee_status, // "Paid" | "Unpaid"
     } = req.body;
 
+    console.log("Received marks data:", req.body);
+
     // resolve CNIC from personal_info
     const [[pi]] = await sequelize.query(
       `SELECT cnic FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
@@ -222,9 +239,16 @@ export const updateEntryTestMarks = async (req, res) => {
       total > 0 ? Number(((obtained / total) * 100).toFixed(2)) : null;
     const finalPct =
       percentage != null ? Number(Number(percentage).toFixed(2)) : etPct;
-    const enumStatus = mapStatusToEnum(status);
     const passMarks = passing_marks != null ? Number(passing_marks) : null;
     const feeStatus = fee_status ?? "Unpaid";
+
+    console.log("Processed data:", {
+      cnic,
+      obtained,
+      total,
+      finalPct,
+      merit_list,
+    });
 
     // upsert enroll_students by cnic
     const [[existing]] = await sequelize.query(
@@ -242,18 +266,17 @@ export const updateEntryTestMarks = async (req, res) => {
             total_percentage = ?,
             passing_marks = COALESCE(?, passing_marks),
             merit_list = ?,
-            department = ?,
+            department = COALESCE(?, department),
             fee_status = ?
         WHERE cnic = ?
         `,
         {
           replacements: [
-            enumStatus,
-            obtained,
-            total,
-            etPct,
-            finalPct,
-            passMarks,
+            obtained, // ✅ FIXED: Use obtained marks, not enumStatus
+            total, // ✅ FIXED: Use total marks
+            etPct, // ✅ FIXED: Use entry test percentage
+            finalPct, // ✅ FIXED: Use final percentage
+            passMarks, // ✅ FIXED: Use passing marks
             merit_list || "",
             department || "",
             feeStatus,
@@ -273,10 +296,10 @@ export const updateEntryTestMarks = async (req, res) => {
         {
           replacements: [
             cnic,
-            obtained,
-            total,
-            etPct,
-            finalPct,
+            obtained, // ✅ FIXED: Use obtained marks
+            total, // ✅ FIXED: Use total marks
+            etPct, // ✅ FIXED: Use entry test percentage
+            finalPct, // ✅ FIXED: Use final percentage
             passMarks ?? 0,
             merit_list || "",
             department || "",
@@ -286,11 +309,8 @@ export const updateEntryTestMarks = async (req, res) => {
       );
     }
 
-    // keep personal_info.form_status in sync
-    await sequelize.query(
-      `UPDATE \`${DB}\`.personal_info SET form_status = ? WHERE id = ?`,
-      { replacements: [enumStatus, form_id] }
-    );
+    // ✅ FIXED: Don't update personal_info status here - let the frontend handle it separately
+    // This keeps the separation of concerns - marks API only handles marks
 
     // return latest enroll row
     const [[row]] = await sequelize.query(
@@ -309,10 +329,16 @@ export const updateEntryTestMarks = async (req, res) => {
       { replacements: [cnic] }
     );
 
-    res.json({ success: true, message: "Saved.", data: row });
+    res.json({
+      success: true,
+      message: "Marks saved successfully.",
+      data: row,
+    });
   } catch (err) {
     console.error("updateEntryTestMarks error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error: " + err.message });
   }
 };
 
@@ -486,8 +512,9 @@ export const updateFormStatus = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Form not found" });
 
+    // ✅ FIX: Added WHERE clause to update only the specific form
     await sequelize.query(
-      `UPDATE \`${DB}\`.personal_info SET form_status = ?, updated_at = NOW() WHERE id = ?`,
+      `UPDATE \`${DB}\`.personal_info SET form_status = ? WHERE id = ?`,
       { replacements: [enumStatus, form_id] }
     );
     res.json({

@@ -17,17 +17,19 @@ export default function FormsByStatus({ heading }) {
   const [loadingForm, setLoadingForm] = useState(false);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [updatingStatus, setUpdatingStatus] = useState({}); // Track which forms are being updated
   const pageSize = 10;
   const status = heading.split(" ")[0];
 
-  const [selectedStatus, setSelectedStatus] = useState({});
+  const backendBaseUrl =
+    import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
   /** ✅ Fetch All Admissions */
   const fetchAdmissions = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const res = await axios.get("http://localhost:5000/api/admissions", {
+      const res = await axios.get(`${backendBaseUrl}/api/admissions`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -46,8 +48,7 @@ export default function FormsByStatus({ heading }) {
       console.error("❌ Error fetching admissions:", err);
       toast.error(
         err.response?.data?.message ||
-          "Failed to fetch admissions. Please check your token or try again.",
-        { position: "top-center" }
+          "Failed to fetch admissions. Please check your token or try again."
       );
     } finally {
       setLoading(false);
@@ -83,6 +84,49 @@ export default function FormsByStatus({ heading }) {
     setPage(1);
   }, [forms, status, query]);
 
+  /** ✅ Handle Status Change for Approved Forms */
+  const handleSelectChange = async (formId, currentStatus, newStatus) => {
+    // Don't update if the status is the same
+    if (currentStatus === newStatus) {
+      return;
+    }
+
+    try {
+      setUpdatingStatus((prev) => ({ ...prev, [formId]: true }));
+
+      const token = localStorage.getItem("token");
+
+      // Update the status in the backend using your API endpoint
+      await axios.patch(
+        `${backendBaseUrl}/api/admissions/updateStatus/${formId}`,
+        { status: newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // Update forms array
+      setForms((prevForms) =>
+        prevForms.map((form) =>
+          form.form_id === formId ? { ...form, status: newStatus } : form
+        )
+      );
+
+      toast.success(`Status updated to ${newStatus} successfully!`);
+    } catch (err) {
+      console.error("❌ Error updating status:", err);
+      toast.error(
+        err.response?.data?.message ||
+          "Failed to update status. Please try again."
+      );
+    } finally {
+      setUpdatingStatus((prev) => ({ ...prev, [formId]: false }));
+    }
+  };
+
   /** 📌 Pagination */
   const startIndex = (page - 1) * pageSize;
   const paginatedForms = filteredForms.slice(startIndex, startIndex + pageSize);
@@ -103,45 +147,6 @@ export default function FormsByStatus({ heading }) {
     serialNo: startIndex + index + 1,
   }));
 
-  /** 🔄 Update Status + Toast */
-  const handleSelectChange = async (formId, value) => {
-    setSelectedStatus((prev) => ({ ...prev, [formId]: value }));
-
-    try {
-      const token = localStorage.getItem("token");
-
-      // ✅ Update main status
-      await axios.patch(
-        `http://localhost:5000/api/admissions/updateStatus/${formId}`,
-        { status: value },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // ✅ If Paid → Auto change to Enrolled
-      if (value === "Paid") {
-        await axios.patch(
-          `http://localhost:5000/api/admissions/updateStatus/${formId}`,
-          { status: "Enrolled" },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        toast.success("Status updated to Enrolled ✅", {
-          position: "top-center",
-        });
-      } else {
-        toast.success(`Status updated to "${value}"`, {
-          position: "top-center",
-        });
-      }
-
-      fetchAdmissions(); // Refresh UI
-    } catch (err) {
-      console.error("❌ Error updating status:", err);
-      toast.error("Failed to update status. Please try again.", {
-        position: "top-center",
-      });
-    }
-  };
-
   /** 🎯 Table Actions */
   const actions = [
     (() => {
@@ -152,13 +157,22 @@ export default function FormsByStatus({ heading }) {
             render: (row) => (
               <select
                 className="border-2 border-gray-400 dark:border-gray-600 !px-2 !py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none"
-                value={selectedStatus[row.form_id] || ""}
-                onChange={(e) =>
-                  handleSelectChange(row.form_id, e.target.value)
+                value={
+                  row.status === "Appeared" || row.status === "Not Appeared"
+                    ? row.status
+                    : ""
                 }
+                onChange={(e) => {
+                  if (e.target.value) {
+                    handleSelectChange(row.form_id, row.status, e.target.value);
+                  }
+                }}
+                disabled={updatingStatus[row.form_id]}
               >
                 <option value="" disabled>
-                  Select Status
+                  {updatingStatus[row.form_id]
+                    ? "Updating..."
+                    : "Select Status"}
                 </option>
                 <option value="Appeared">Appeared</option>
                 <option value="Not Appeared">Not Appeared</option>
@@ -174,7 +188,7 @@ export default function FormsByStatus({ heading }) {
                 setLoadingForm(true);
                 const token = localStorage.getItem("token");
                 const res = await axios.get(
-                  `http://localhost:5000/api/admissions/${row.form_id}`,
+                  `${backendBaseUrl}/api/admissions/${row.form_id}`,
                   { headers: { Authorization: `Bearer ${token}` } }
                 );
 
@@ -184,9 +198,7 @@ export default function FormsByStatus({ heading }) {
                 );
               } catch (err) {
                 console.error("❌ Error fetching form:", err);
-                toast.error("Failed to fetch form data. Please try again.", {
-                  position: "top-center",
-                });
+                toast.error("Failed to fetch form data. Please try again.");
               } finally {
                 setLoadingForm(false);
               }
@@ -219,37 +231,33 @@ export default function FormsByStatus({ heading }) {
 
         case "Passed":
           return {
-            label: "Selected in Merit List",
+            label: "Select in Merit",
             onClick: (row) => {
               navigate(
-                `/SALU-PORTAL-FYP/Admissions/PassedCandidates/SelectedInMaritList?${row.cnic}`,
+                `/SALU-PORTAL-FYP/Admissions/PassedCandidates/SelectedInMeritList?${row.cnic}`,
                 { state: { form: row } }
               );
             },
             icon: (
               <button className="!px-4 !py-1 border border-green-500 text-green-500 hover:bg-green-500 hover:text-white transition cursor-pointer">
-                Selected in Merit List
+                Select in Merit
               </button>
             ),
           };
 
         case "Selected":
           return {
-            label: "Selected Status",
-            render: (row) => (
-              <select
-                className="border-2 border-gray-400 dark:border-gray-600 !px-2 !py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none"
-                value={selectedStatus[row.form_id] || ""}
-                onChange={(e) =>
-                  handleSelectChange(row.form_id, e.target.value)
-                }
-              >
-                <option value="" disabled>
-                  Select Status
-                </option>
-                <option value="Paid">Paid</option>
-                <option value="Un Paid">Un Paid</option>
-              </select>
+            label: "Process Enrollment",
+            onClick: (row) => {
+              navigate(
+                `/SALU-PORTAL-FYP/Admissions/Selected/ProcessEnrollment?${row.cnic}`,
+                { state: { form: row } }
+              );
+            },
+            icon: (
+              <button className="!px-4 !py-1 border border-purple-500 text-purple-500 hover:bg-purple-500 hover:text-white transition cursor-pointer">
+                Process Enrollment
+              </button>
             ),
           };
 
