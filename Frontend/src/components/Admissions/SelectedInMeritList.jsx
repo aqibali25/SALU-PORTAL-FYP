@@ -241,7 +241,7 @@ const SelectedInMaritList = () => {
           />
 
           {/* Merit List Select */}
-          <div className="flex w-full max-w-[800px] items-start md:items-center justify-start flex-col md:flex-row gap-[8px] md:gap-5">
+          <div className="flex w-full max-w-[800px] items-start md:items-center justify-start flex-col md:flex-row gap-[8px] md:gap-5 [@media(max-width:550px)]:gap-[5px]">
             <label
               htmlFor="merit_list"
               className="w-auto md:w-1/4 text-start md:text-right text-gray-900 dark:text-white"
@@ -254,7 +254,7 @@ const SelectedInMaritList = () => {
               required
               value={formData.merit_list}
               onChange={handleChange}
-              className="w-[40%] md:!w-full min-w-0 !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+              className="w-[40%] [@media(max-width:768px)]:!w-full min-w-0 !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
               disabled={loading}
             >
               <option value="" disabled>
@@ -269,7 +269,7 @@ const SelectedInMaritList = () => {
           </div>
 
           {/* Department Select */}
-          <div className="flex w-full max-w-[800px] items-start md:items-center justify-start flex-col md:flex-row gap-[8px] md:gap-5">
+          <div className="flex w-full max-w-[800px] items-start md:items-center justify-start flex-col md:flex-row gap-[8px] md:gap-5 [@media(max-width:550px)]:gap-[5px]">
             <label
               htmlFor="department"
               className="w-auto md:w-1/4 text-start md:text-right text-gray-900 dark:text-white"
@@ -282,7 +282,7 @@ const SelectedInMaritList = () => {
               required
               value={formData.department}
               onChange={handleChange}
-              className="w-[40%] md:!w-full min-w-0 !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+              className="w-[40%] [@media(max-width:768px)]:!w-full min-w-0 !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
               disabled={loading}
             >
               <option value="" disabled>
