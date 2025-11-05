@@ -20,6 +20,7 @@ export default function FormsByStatus({ heading }) {
   const [updatingStatus, setUpdatingStatus] = useState({}); // Track which forms are being updated
   const pageSize = 10;
   const status = heading.split(" ")[0];
+  localStorage.removeItem("reviewFormStep");
 
   const backendBaseUrl =
     import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
