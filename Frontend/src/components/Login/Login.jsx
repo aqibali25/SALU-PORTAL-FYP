@@ -5,6 +5,8 @@ import Image from "../../assets/splash-illustration.png";
 import FormImage from "../../assets/login-illustration.png";
 import { LuUser, LuLock } from "react-icons/lu";
 import { Link, useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const pageVariants = {
   initial: { opacity: 0, x: 40 },
@@ -35,6 +37,7 @@ export default function Login() {
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [formErrors, setFormErrors] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,22 +46,60 @@ export default function Login() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Validation function
+  const validateForm = () => {
+    const errors = {};
+
+    if (!formData.username.trim()) {
+      errors.username = "Username or email is required";
+    } else if (formData.username.length < 3) {
+      errors.username = "Username must be at least 3 characters long";
+    }
+
+    if (!formData.password) {
+      errors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      errors.password = "Password must be at least 6 characters long";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Clear field-specific error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+
+    // Clear general error message
+    if (errorMsg) {
+      setErrorMsg("");
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
 
-    if (!formData.username || !formData.password) {
-      setErrorMsg("Please enter your username and password.");
+    // Validate form
+    if (!validateForm()) {
+      toast.error("Please fix the form errors before submitting.");
       return;
     }
 
     try {
       setLoading(true);
+
+      // Show loading toast
+      const loadingToast = toast.loading("Signing in...");
+
       const response = await axios.post(
         "http://localhost:5000/api/auth/login",
         {
@@ -90,13 +131,42 @@ export default function Login() {
       // ✅ Set role in cookie for 1 day (86400 seconds)
       document.cookie = `role=${user.role}; path=/; max-age=86400`;
 
-      navigate("/SALU-PORTAL-FYP/");
+      // Update loading toast to success
+      toast.update(loadingToast, {
+        render: "Login successful! Redirecting...",
+        type: "success",
+        isLoading: false,
+        autoClose: 2000,
+        closeButton: true,
+      });
+
+      setTimeout(() => {
+        navigate("/SALU-PORTAL-FYP/");
+      }, 1000);
     } catch (error) {
-      if (error.response && error.response.data) {
-        setErrorMsg(error.response.data.message || "Invalid credentials");
-      } else {
-        setErrorMsg("Unable to connect to the server.");
+      let errorMessage = "Unable to connect to the server.";
+
+      if (error.response) {
+        // Server responded with error status
+        if (error.response.status === 401) {
+          errorMessage = "Invalid username or password";
+        } else if (error.response.status === 404) {
+          errorMessage = "User not found";
+        } else if (error.response.status === 500) {
+          errorMessage = "Server error. Please try again later.";
+        } else if (error.response.data && error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else {
+          errorMessage = "Login failed. Please try again.";
+        }
+      } else if (error.request) {
+        // Request was made but no response received
+        errorMessage =
+          "Unable to connect to server. Please check your internet connection.";
       }
+
+      setErrorMsg(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -126,147 +196,198 @@ export default function Login() {
   );
 
   return (
-    <AnimatePresence mode="wait">
-      {!showLoginForm ? (
-        // ---------------- INTRO SECTION ----------------
-        <section
-          key="intro"
-          className="flex flex-col md:flex-row justify-evenly items-center gap-10 w-full h-[calc(100vh-96px)] bg-white dark:bg-gray-900 p-6 overflow-hidden"
-          variants={pageVariants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-        >
-          {/* Left Section */}
-          <div className="flex flex-col justify-center items-center md:w-1/2 w-full">
-            <div
-              className="font-bold text-center font-[Radio_Canada_Big] text-[#faa21c]
-                         text-[3rem] sm:text-[5rem] md:text-[7rem] lg:text-[8rem]"
-            >
-              {renderAnimatedText("LOGIN")}
-            </div>
+    <>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
 
-            <div
-              className="text-center font-[Playwrite_US_Trad] text-[#faa21c] mt-[-1rem] sm:mt-[-2rem] md:mt-[-3rem]
-                         text-[3rem] sm:text-[5rem] md:text-[7rem] lg:text-[8rem]
-                         drop-shadow-[2px_4px_6px_rgba(0,0,0,0.2)]"
-            >
-              {renderAnimatedText("Portal", 0.6)}
-            </div>
-          </div>
-
-          {/* Right Section - floating illustration */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="hidden md:flex justify-center items-center w-1/2 h-full overflow-hidden p-6"
-          >
-            <motion.img
-              src={Image}
-              alt="Portal Illustration"
-              className="w-[85%] max-w-[500px] object-contain"
-              animate={{ y: [16, -6, 16], rotate: [0, -1.2, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            />
-          </motion.div>
-        </section>
-      ) : (
-        // ---------------- LOGIN FORM SECTION ----------------
-        <div className="flex h-[calc(100vh-96px)] bg-white dark:bg-gray-900">
-          <motion.form
-            key="form"
-            onSubmit={handleSubmit}
-            className="flex flex-col justify-center items-center gap-6 w-full h-[calc(100vh-96px)] dark:bg-gray-900 !px-8"
+      <AnimatePresence mode="wait">
+        {!showLoginForm ? (
+          // ---------------- INTRO SECTION ----------------
+          <section
+            key="intro"
+            className="flex flex-col md:flex-row justify-evenly items-center gap-10 w-full h-[calc(100vh-96px)] bg-white dark:bg-gray-900 p-6 overflow-hidden"
             variants={pageVariants}
             initial="initial"
             animate="animate"
             exit="exit"
           >
-            <motion.h1
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
+            {/* Left Section */}
+            <div className="flex flex-col justify-center items-center md:w-1/2 w-full">
+              <div
+                className="font-bold text-center font-[Radio_Canada_Big] text-[#faa21c]
+                         text-[3rem] sm:text-[5rem] md:text-[7rem] lg:text-[8rem]"
+              >
+                {renderAnimatedText("LOGIN")}
+              </div>
+
+              <div
+                className="text-center font-[Playwrite_US_Trad] text-[#faa21c] mt-[-1rem] sm:mt-[-2rem] md:mt-[-3rem]
+                         text-[3rem] sm:text-[5rem] md:text-[7rem] lg:text-[8rem]
+                         drop-shadow-[2px_4px_6px_rgba(0,0,0,0.2)]"
+              >
+                {renderAnimatedText("Portal", 0.6)}
+              </div>
+            </div>
+
+            {/* Right Section - floating illustration */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{
-                delay: 0.2,
+                delay: 0.3,
                 duration: 0.6,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className="font-bold text-center text-3xl sm:text-4xl text-gray-600 dark:text-gray-200"
+              className="hidden md:flex justify-center items-center w-1/2 h-full overflow-hidden p-6"
             >
-              Welcome Back!
-            </motion.h1>
-
-            {/* Username */}
-            <div className="relative flex justify-center items-center w-full sm:w-[80%] md:w-[60%] lg:w-[40%]">
-              <LuUser className="absolute left-4 text-gray-400 text-2xl pointer-events-none" />
-              <input
-                type="text"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                placeholder="Email or Username"
-                className="w-full !py-2 !pl-12 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a]
-                           dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                required
+              <motion.img
+                src={Image}
+                alt="Portal Illustration"
+                className="w-[85%] max-w-[500px] object-contain"
+                animate={{ y: [16, -6, 16], rotate: [0, -1.2, 0] }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
               />
-            </div>
-
-            {/* Password */}
-            <div className="relative flex justify-center items-center w-full sm:w-[80%] md:w-[60%] lg:w-[40%]">
-              <LuLock className="absolute left-4 text-gray-400 text-2xl pointer-events-none" />
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Password"
-                className="w-full !py-2 !pl-12 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a]
-                           dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                required
-              />
-            </div>
-
-            {/* Error message */}
-            {errorMsg && (
-              <p className="text-red-500 text-sm font-medium">{errorMsg}</p>
-            )}
-
-            <Link className="hover:underline dark:text-white">
-              Forgot your password?
-            </Link>
-
-            {/* Login Button */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              type="submit"
-              disabled={loading}
-              className="cursor-pointer relative overflow-hidden !px-[50px] !py-[5px] border-2 border-[#e5b300] text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
-                       before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#e5b300] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60"
+            </motion.div>
+          </section>
+        ) : (
+          // ---------------- LOGIN FORM SECTION ----------------
+          <div className="flex h-[calc(100vh-96px)] bg-white dark:bg-gray-900">
+            <motion.form
+              key="form"
+              onSubmit={handleSubmit}
+              className="flex flex-col justify-center items-center gap-6 w-full h-[calc(100vh-96px)] dark:bg-gray-900 !px-8"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
             >
-              <span className="relative z-10">
-                {loading ? "Signing in..." : "Login"}
-              </span>
-            </motion.button>
-          </motion.form>
+              <motion.h1
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  delay: 0.2,
+                  duration: 0.6,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+                className="font-bold text-center text-3xl sm:text-4xl text-gray-600 dark:text-gray-200"
+              >
+                Welcome Back!
+              </motion.h1>
 
-          {/* Right Illustration */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="hidden md:flex justify-center items-center w-[60%] h-full !p-6"
-          >
-            <motion.img
-              src={FormImage}
-              alt="Portal Illustration"
-              className="w-[100%] object-contain"
-              animate={{ y: [16, -6, 16], rotate: [0, -1.2, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            />
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+              {/* Username */}
+              <div className="relative flex justify-center items-center w-full sm:w-[80%] md:w-[60%] lg:w-[40%]">
+                <LuUser className="absolute left-4 text-gray-400 text-2xl pointer-events-none" />
+                <input
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  placeholder="Email or Username"
+                  className={`w-full !py-2 !pl-12 border-2 outline-none bg-[#f9f9f9] text-[#2a2a2a]
+                           dark:bg-gray-800 dark:text-gray-100 ${
+                             formErrors.username
+                               ? "border-red-500 dark:border-red-400"
+                               : "border-[#a5a5a5] dark:border-gray-600"
+                           }`}
+                  required
+                />
+                {formErrors.username && (
+                  <span className="absolute -bottom-5 left-0 text-red-500 text-xs font-medium">
+                    {formErrors.username}
+                  </span>
+                )}
+              </div>
+
+              {/* Password */}
+              <div className="relative flex justify-center items-center w-full sm:w-[80%] md:w-[60%] lg:w-[40%]">
+                <LuLock className="absolute left-4 text-gray-400 text-2xl pointer-events-none" />
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Password"
+                  className={`w-full !py-2 !pl-12 border-2 outline-none bg-[#f9f9f9] text-[#2a2a2a]
+                           dark:bg-gray-800 dark:text-gray-100 ${
+                             formErrors.password
+                               ? "border-red-500 dark:border-red-400"
+                               : "border-[#a5a5a5] dark:border-gray-600"
+                           }`}
+                  required
+                />
+                {formErrors.password && (
+                  <span className="absolute -bottom-5 left-0 text-red-500 text-xs font-medium">
+                    {formErrors.password}
+                  </span>
+                )}
+              </div>
+
+              {/* General error message */}
+              {errorMsg && (
+                <p className="text-red-500 text-sm font-medium text-center max-w-md">
+                  {errorMsg}
+                </p>
+              )}
+
+              <Link className="hover:underline dark:text-white text-sm">
+                Forgot your password?
+              </Link>
+
+              {/* Login Button */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                type="submit"
+                disabled={loading}
+                className="cursor-pointer relative overflow-hidden !px-[50px] !py-[5px] border-2 border-[#e5b300] text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
+                       before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#e5b300] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <span className="relative z-10">
+                  {loading ? "Signing in..." : "Login"}
+                </span>
+              </motion.button>
+            </motion.form>
+
+            {/* Right Illustration */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{
+                delay: 0.3,
+                duration: 0.6,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="hidden md:flex justify-center items-center w-[60%] h-full !p-6"
+            >
+              <motion.img
+                src={FormImage}
+                alt="Portal Illustration"
+                className="w-[100%] object-contain"
+                animate={{ y: [16, -6, 16], rotate: [0, -1.2, 0] }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

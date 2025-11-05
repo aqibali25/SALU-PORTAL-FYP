@@ -29,6 +29,49 @@ const mapStatusToEnum = (status) => {
   return statusMap[s] || "Pending"; // Default to Pending if not found
 };
 
+/* ========================== VIEW DOCUMENT (INLINE) ========================= */
+/** GET /api/admissions/viewDocument/:id */
+export const viewDocument = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log("View Document ID:", id);
+
+    // Fetch document with file data using Sequelize
+    const [results] = await sequelize.query(
+      `SELECT fileName, fileData, mimeType FROM \`${DB}\`.uploaded_docs WHERE id = ?`,
+      { replacements: [id] }
+    );
+
+    if (results.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Document not found.",
+      });
+    }
+
+    const document = results[0];
+
+    // Set appropriate headers for viewing in browser
+    res.setHeader("Content-Type", document.mimeType);
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${document.fileName}"`
+    );
+    res.setHeader("Content-Length", document.fileData.length);
+
+    // Send the file buffer
+    res.send(document.fileData);
+  } catch (err) {
+    console.error("viewDocument error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error!",
+      error: err.message,
+    });
+  }
+};
+
 /* ========================== LIST ALL ADMISSIONS =========================== */
 /** GET /api/admissions?status=Pending|Approved|Rejected */
 export const getAllAdmissions = async (req, res) => {

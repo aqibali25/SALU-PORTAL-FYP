@@ -1,8 +1,13 @@
 // Backend/routes/admissions.js
 import express from "express";
-import { getAllAdmissions, getAdmissionById } from "../controllers/admissionController.js";
-import { updateEntryTestMarks,getAllEnrolledStudents } from "../controllers/admissionController.js";
-import { updateFormStatus } from "../controllers/admissionController.js";
+import {
+  getAllAdmissions,
+  getAdmissionById,
+  viewDocument,
+  updateEntryTestMarks,
+  getAllEnrolledStudents,
+  updateFormStatus,
+} from "../controllers/admissionController.js";
 import { verifyToken } from "../middleware/authMiddleware.js"; // if you have it
 
 const router = express.Router();
@@ -15,5 +20,8 @@ router.patch("/updateStatus/:form_id", updateFormStatus);
 // Single form detail
 router.get("/:id", verifyToken, getAdmissionById);
 router.get("/enrolled/list", getAllEnrolledStudents);
+
+// View document inline
+router.get("/viewDocument/:id", viewDocument);
 
 export default router;
