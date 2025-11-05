@@ -3,6 +3,8 @@ import Background from "../../assets/Background.png";
 import SubjectCardsSection from "../SubjectCardsSection";
 
 const Attendance = () => {
+  const username = JSON.parse(localStorage.getItem("user")).username;
+
   const subjectCards = [
     {
       title: "OOP",
@@ -38,7 +40,7 @@ const Attendance = () => {
       }}
     >
       <SubjectCardsSection
-        title="Dr. Shahid Ali Mahar"
+        title={username}
         subjects={subjectCards}
         routePrefix="Attendance"
       />

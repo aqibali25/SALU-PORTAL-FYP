@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCog, faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
+import { faCog, faSignOutAlt, faUser } from "@fortawesome/free-solid-svg-icons";
 
 const Profile = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -67,6 +67,14 @@ const Profile = () => {
 
           {/* Menu Items */}
           <div className="flex flex-col bg-[#f5f5f5] !m-0 !p-0 z-[100]">
+            <Link
+              to="/SALU-PORTAL-FYP/Profile"
+              className="flex items-center gap-5 text-[1.1rem] text-black no-underline hover:text-white z-10 md:hover:bg-gradient-to-r md:hover:from-[#D5D5D5] md:hover:to-[#CA4DFF] transition-all duration-500 !px-[20px] !py-[15px]"
+              onClick={() => setMenuOpen(false)}
+            >
+              <FontAwesomeIcon icon={faUser} />
+              Profile
+            </Link>
             <Link
               to="/SALU-PORTAL-FYP/Settings"
               className="flex items-center gap-5 text-[1.1rem] text-black no-underline hover:text-white z-10 md:hover:bg-gradient-to-r md:hover:from-[#D5D5D5] md:hover:to-[#CA4DFF] transition-all duration-500 !px-[20px] !py-[15px]"

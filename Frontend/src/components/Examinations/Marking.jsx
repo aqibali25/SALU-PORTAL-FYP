@@ -3,6 +3,8 @@ import Background from "../../assets/Background.png";
 import SubjectCardsLayout from "../SubjectCardsSection";
 
 const Marking = () => {
+  const username = JSON.parse(localStorage.getItem("user")).username;
+
   const subjectCards = [
     {
       id: 1,
@@ -41,7 +43,7 @@ const Marking = () => {
       }}
     >
       <SubjectCardsLayout
-        title="Dr. Shahid Ali Mahar"
+        title={username}
         subjects={subjectCards}
         routePrefix="EnterMarks/Subject"
       />

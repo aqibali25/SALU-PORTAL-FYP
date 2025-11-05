@@ -14,6 +14,8 @@ import BackButton from "../BackButton";
 import { useEffect } from "react";
 
 const ComputerOperator = () => {
+  const username = JSON.parse(localStorage.getItem("user")).username;
+  const userrole = JSON.parse(localStorage.getItem("user")).role.toUpperCase();
   useEffect(() => {
     document.title = "SALU Portal | Computer Operator ";
   });
@@ -108,7 +110,7 @@ const ComputerOperator = () => {
         <div className="flex justify-start items-center gap-3">
           <BackButton></BackButton>
           <h1 className="text-2xl sm:text-3xl md:text-4xl py-3 font-bold text-gray-900 dark:text-white">
-            Computer Operator
+            {username + " - " + userrole}
           </h1>
         </div>
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />

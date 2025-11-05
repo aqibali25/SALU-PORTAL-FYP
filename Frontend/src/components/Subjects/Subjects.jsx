@@ -34,7 +34,7 @@ const Subjects = () => {
       }}
     >
       <SubjectCardsLayout
-        title="Add Subject"
+        title="Subjects"
         subjects={subjectCards}
         routePrefix="Subjects"
       />
