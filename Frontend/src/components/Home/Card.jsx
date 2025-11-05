@@ -64,7 +64,7 @@ const Card = ({
       ) : (
         <FontAwesomeIcon
           icon={Icon}
-          size="4x"
+          size="3x"
           className={`${
             hasAccess ? "text-gray-800 dark:text-white" : "text-gray-500"
           }`}

@@ -25,6 +25,7 @@ const Home = () => {
         w-full
         bg-white dark:bg-gray-900
         justify-center
+        items-start
       "
       style={{
         backgroundImage: `url(${Background})`,
@@ -37,7 +38,7 @@ const Home = () => {
         <div
           key={card.id}
           className="
-            basis-[20%] 
+            basis-[18%] 
             min-w-[200px] 
             max-[950px]:grow 
             h-[180px]
