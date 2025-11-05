@@ -194,7 +194,7 @@ const AssigningSubject = () => {
     >
       <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
         <div className="flex justify-start items-center gap-3">
-          <BackButton />
+          <BackButton url={"/SALU-PORTAL-FYP/SubjectAllocation"} />
           <h1 className="text-2xl sm:text-3xl md:text-4xl py-3 font-bold text-gray-900 dark:text-white">
             {isUpdate ? "Reassign Subject" : "Assign Subject"} - {subjectName}
           </h1>

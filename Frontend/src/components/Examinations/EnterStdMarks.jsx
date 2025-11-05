@@ -54,18 +54,20 @@ const EnterStdMarks = () => {
       // Uncomment this when backend is ready
       // await axios.post("/api/enroll-students/marks", marksData);
 
-      toast.success("✅ Marks saved successfully!", {
+      toast.success("Marks saved successfully!", {
         position: "top-right",
         autoClose: 2500,
-        theme: "colored",
+        theme: "light",
       });
 
-      // navigate(-1); // Go back if needed
+      setTimeout(() => {
+        navigate("/SALU-PORTAL-FYP/EnterMarks");
+      }, 1500);
     } catch (error) {
-      toast.error("❌ Failed to save marks. Please try again.", {
+      toast.error(" Failed to save marks. Please try again.", {
         position: "top-right",
         autoClose: 3000,
-        theme: "colored",
+        theme: "light",
       });
       console.error("Error saving marks:", error);
     } finally {
@@ -90,7 +92,7 @@ const EnterStdMarks = () => {
         className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5"
       >
         <div className="flex justify-start items-center gap-3">
-          <BackButton />
+          <BackButton url={"-1"} />
           <h1 className="text-2xl sm:text-3xl md:text-4xl py-3 font-bold text-gray-900 dark:text-white">
             Enter Marks for - {studentData.studentName || "Student"}
           </h1>
