@@ -31,7 +31,7 @@ const RevertAndTrashMessage = ({ open, onClose, onCancel }) => {
 
         {/* Textarea */}
         <textarea
-          className="w-full h-50 border-2 border-[#a5a5a5] rounded-md p-2
+          className="w-full h-50 border-2 border-[#a5a5a5] !p-2
             bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
             outline-none resize-none
             disabled:opacity-60 disabled:cursor-not-allowed"

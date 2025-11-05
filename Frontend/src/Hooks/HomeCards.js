@@ -17,7 +17,7 @@ export const cards = [
     isImg: true,
     color1: "#4F1A60",
     color2: "#f5f5f5",
-    roles: ["superadmin", "admin", "teacher"],
+    roles: ["superadmin", "admin", "teacher", "hod"],
   },
   {
     id: 2,
@@ -67,7 +67,7 @@ export const cards = [
     Icon: faCalendarAlt,
     color1: "#007BFF",
     color2: "#f5f5f5",
-    roles: ["superadmin", "teacher"],
+    roles: ["superadmin", "teacher", "hod"],
   },
   {
     id: 7,
@@ -97,7 +97,7 @@ export const cards = [
     Icon: faCog,
     color1: "#09FDEE",
     color2: "#f5f5f5",
-    roles: ["superadmin", "admin", "teacher"],
+    roles: ["superadmin", "admin", "teacher", "hod"],
   },
 ];
 

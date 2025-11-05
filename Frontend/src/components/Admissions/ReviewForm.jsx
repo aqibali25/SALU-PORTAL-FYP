@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import BackButton from "../BackButton";
 import Background from "./../../assets/Background.png";
 import { FiChevronLeft } from "react-icons/fi";
@@ -17,6 +17,7 @@ import "react-toastify/dist/ReactToastify.css";
 const ReviewForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isFirstMount = useRef(true);
 
   useEffect(() => {
     document.title = "SALU Portal | Review Form";
@@ -24,19 +25,26 @@ const ReviewForm = () => {
 
   // Step state
   const [step, setStep] = useState(() => {
-    // Retrieve saved step from localStorage if available
+    // Check if this is the first mount by checking if there's a saved step
     const savedStep = localStorage.getItem("reviewFormStep");
-    return savedStep ? Number(savedStep) : 1;
-  });
 
-  // Force step to 1 only on initial mount/render
-  useEffect(() => {
-    setStep(1);
-  }, []);
+    // If there's a saved step, user is returning - use their previous step
+    if (savedStep) {
+      return Number(savedStep);
+    }
+
+    // If no saved step, this is first mount - start from step 1
+    return 1;
+  });
 
   // Persist step in localStorage
   useEffect(() => {
-    localStorage.setItem("reviewFormStep", step);
+    // Only save to localStorage after the first mount
+    if (!isFirstMount.current) {
+      localStorage.setItem("reviewFormStep", step);
+    } else {
+      isFirstMount.current = false;
+    }
   }, [step]);
 
   const [showApproved, setShowApproved] = useState(false);
@@ -99,6 +107,9 @@ const ReviewForm = () => {
       // show success toast
       toast.success("Form approved successfully!", { position: "top-center" });
 
+      // Clear the saved step when form is approved
+      localStorage.removeItem("reviewFormStep");
+
       // navigate after short delay so user sees the toast
       setTimeout(() => {
         navigate("/SALU-PORTAL-FYP/Admissions/PendingForms");
@@ -106,6 +117,70 @@ const ReviewForm = () => {
     } catch (err) {
       console.error(err);
       toast.error("Failed to approve form", { position: "top-center" });
+    }
+  };
+
+  // Handle revert function
+  const handleRevert = async () => {
+    setShowRevert(false);
+
+    const formData = location.state?.form?.data;
+    if (!formData?.form_id) {
+      toast.error("Form ID missing!", { position: "top-center" });
+      return;
+    }
+
+    const backendBaseUrl =
+      import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
+    try {
+      await axios.patch(
+        `${backendBaseUrl}/api/admissions/updateStatus/${formData.form_id}`,
+        { status: "Revert" }
+      );
+
+      toast.success("Form reverted successfully!", { position: "top-center" });
+      localStorage.removeItem("reviewFormStep");
+
+      setTimeout(() => {
+        navigate("/SALU-PORTAL-FYP/Admissions/PendingForms");
+      }, 1000);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to revert form", { position: "top-center" });
+    }
+  };
+
+  // Handle trash function
+  const handleTrash = async () => {
+    setShowTrash(false);
+
+    const formData = location.state?.form?.data;
+    if (!formData?.form_id) {
+      toast.error("Form ID missing!", { position: "top-center" });
+      return;
+    }
+
+    const backendBaseUrl =
+      import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
+    try {
+      await axios.patch(
+        `${backendBaseUrl}/api/admissions/updateStatus/${formData.form_id}`,
+        { status: "Trash" }
+      );
+
+      toast.success("Form moved to trash successfully!", {
+        position: "top-center",
+      });
+      localStorage.removeItem("reviewFormStep");
+
+      setTimeout(() => {
+        navigate("/SALU-PORTAL-FYP/Admissions/PendingForms");
+      }, 1000);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to move form to trash", { position: "top-center" });
     }
   };
 
@@ -198,14 +273,14 @@ const ReviewForm = () => {
       <RevertAndTrashMessage
         open={showRevert}
         onCancel={() => setShowRevert(false)}
-        onClose={() => navigate("/SALU-PORTAL-FYP/Admissions/PendingForms")}
+        onClose={handleRevert}
         type="revert"
       />
 
       <RevertAndTrashMessage
         open={showTrash}
         onCancel={() => setShowTrash(false)}
-        onClose={() => navigate("/SALU-PORTAL-FYP/Admissions/PendingForms")}
+        onClose={handleTrash}
         type="trash"
       />
     </div>
