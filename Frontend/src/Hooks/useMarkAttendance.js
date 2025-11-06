@@ -36,7 +36,7 @@ export const useMarkAttendance = ({ initial = [], pageSize = 10 }) => {
     }
   };
 
-  fetchEnrolledStudents();
+  //fetchEnrolledStudents();
 
   // 🔹 Filter rows based on search query
   const filteredRows = useMemo(() => {
