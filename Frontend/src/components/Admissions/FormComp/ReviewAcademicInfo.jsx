@@ -9,8 +9,6 @@ const ReviewAcademicInfo = ({ title }) => {
   const formData = location.state?.form?.data;
   const matricRecord = formData.matriculation_latest;
   const interRecord = formData.intermediate_latest;
-  console.log("🎓 Matriculation Record:", matricRecord);
-  console.log("🎓 Intermediate Record:", interRecord);
 
   return (
     <div className="flex flex-col w-full justify-evenly items-center gap-8 !mt-6 !p-4">

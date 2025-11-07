@@ -7,6 +7,7 @@ import {
   updateEntryTestMarks,
   getAllEnrolledStudents,
   updateFormStatus,
+  assignRollNo,
 } from "../controllers/admissionController.js";
 import { verifyToken } from "../middleware/authMiddleware.js"; // if you have it
 
@@ -16,6 +17,7 @@ const router = express.Router();
 router.get("/", verifyToken, getAllAdmissions);
 router.put("/updateMarks/:form_id", updateEntryTestMarks);
 router.patch("/updateStatus/:form_id", updateFormStatus);
+router.put("/assignRollNo/:form_id", assignRollNo);
 
 // Single form detail
 router.get("/:id", verifyToken, getAdmissionById);

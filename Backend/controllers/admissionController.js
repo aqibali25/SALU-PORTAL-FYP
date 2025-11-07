@@ -7,7 +7,9 @@ const DB = process.env.DB_NAME || "u291434058_SALU_GC";
 /* -------------------------------- Helpers --------------------------------- */
 // Map any incoming status (case-insensitive) to your DB enum exactly
 const mapStatusToEnum = (status) => {
-  const s = String(status || "").toLowerCase().trim();
+  const s = String(status || "")
+    .toLowerCase()
+    .trim();
   const statusMap = {
     pending: "Pending",
     approved: "Approved",
@@ -37,7 +39,9 @@ export const viewDocument = async (req, res) => {
     );
 
     if (!rows.length) {
-      return res.status(404).json({ success: false, message: "Document not found." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Document not found." });
     }
 
     const doc = rows[0];
@@ -47,7 +51,9 @@ export const viewDocument = async (req, res) => {
     res.send(doc.fileData);
   } catch (err) {
     console.error("viewDocument error:", err);
-    res.status(500).json({ success: false, message: "Server error", error: err.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: err.message });
   }
 };
 
@@ -143,7 +149,10 @@ export const getAdmissionById = async (req, res) => {
       { replacements: [id] }
     );
 
-    if (!rows.length) return res.status(404).json({ success: false, message: "Form not found" });
+    if (!rows.length)
+      return res
+        .status(404)
+        .json({ success: false, message: "Form not found" });
     const row = rows[0];
 
     const [docs] = await sequelize.query(
@@ -236,8 +245,8 @@ export const updateEntryTestMarks = async (req, res) => {
       passing_marks,
       merit_list,
       department,
-      fee_status,   // "Paid" | "Unpaid"
-      status        // optional: any extended enum
+      fee_status, // "Paid" | "Unpaid"
+      status, // optional: any extended enum
     } = req.body;
 
     // 1) resolve CNIC
@@ -245,13 +254,18 @@ export const updateEntryTestMarks = async (req, res) => {
       `SELECT cnic FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
       { replacements: [form_id] }
     );
-    if (!pi) return res.status(404).json({ success: false, message: "Form not found" });
+    if (!pi)
+      return res
+        .status(404)
+        .json({ success: false, message: "Form not found" });
 
-    const cnic     = pi.cnic;
+    const cnic = pi.cnic;
     const obtained = Number(obtained_marks ?? 0);
-    const total    = Number(total_marks ?? 0);
-    const etPct    = total > 0 ? Number(((obtained / total) * 100).toFixed(2)) : null;
-    const finalPct = percentage != null ? Number(Number(percentage).toFixed(2)) : etPct;
+    const total = Number(total_marks ?? 0);
+    const etPct =
+      total > 0 ? Number(((obtained / total) * 100).toFixed(2)) : null;
+    const finalPct =
+      percentage != null ? Number(Number(percentage).toFixed(2)) : etPct;
     const passMarks = passing_marks != null ? Number(passing_marks) : null;
     const feeStatus = fee_status ?? "Unpaid";
     const enumStatus = status ? mapStatusToEnum(status) : null;
@@ -279,7 +293,10 @@ export const updateEntryTestMarks = async (req, res) => {
         `,
         {
           replacements: [
-            obtained, total, etPct, finalPct,
+            obtained,
+            total,
+            etPct,
+            finalPct,
             passMarks,
             merit_list ?? null,
             department ?? null,
@@ -295,13 +312,22 @@ export const updateEntryTestMarks = async (req, res) => {
         INSERT INTO \`${DB}\`.enroll_students
           (cnic, entry_test_obtained_marks, entry_test_total_marks,
            entry_test_percentage, total_percentage, passing_marks,
-           merit_list, department, fee_status${enumStatus ? ", form_status" : ""})
+           merit_list, department, fee_status${
+             enumStatus ? ", form_status" : ""
+           })
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?${enumStatus ? ", ?" : ""})
         `,
         {
           replacements: [
-            cnic, obtained, total, etPct, finalPct,
-            passMarks, merit_list ?? null, department ?? null, feeStatus,
+            cnic,
+            obtained,
+            total,
+            etPct,
+            finalPct,
+            passMarks,
+            merit_list ?? null,
+            department ?? null,
+            feeStatus,
             ...(enumStatus ? [enumStatus] : []),
           ],
         }
@@ -355,13 +381,19 @@ export const updateEntryTestMarksByEnroll = async (req, res) => {
       `SELECT cnic FROM \`${DB}\`.enroll_students WHERE enroll_id = ? LIMIT 1`,
       { replacements: [enroll_id] }
     );
-    if (!er) return res.status(404).json({ success: false, message: "Enrollment not found" });
+    if (!er)
+      return res
+        .status(404)
+        .json({ success: false, message: "Enrollment not found" });
 
     const [[pi]] = await sequelize.query(
       `SELECT id FROM \`${DB}\`.personal_info WHERE cnic = ? LIMIT 1`,
       { replacements: [er.cnic] }
     );
-    if (!pi) return res.status(404).json({ success: false, message: "Form not found for CNIC" });
+    if (!pi)
+      return res
+        .status(404)
+        .json({ success: false, message: "Form not found for CNIC" });
 
     req.params.form_id = pi.id;
     return updateEntryTestMarks(req, res);
@@ -416,7 +448,10 @@ export const getAcademicsById = async (req, res) => {
       `SELECT cnic FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
       { replacements: [id] }
     );
-    if (!pi) return res.status(404).json({ success: false, message: "Form not found" });
+    if (!pi)
+      return res
+        .status(404)
+        .json({ success: false, message: "Form not found" });
     const cnic = pi.cnic;
 
     const [matricRows] = await sequelize.query(
@@ -466,7 +501,10 @@ export const getDocumentsById = async (req, res) => {
       `SELECT cnic FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
       { replacements: [id] }
     );
-    if (!pi) return res.status(404).json({ success: false, message: "Form not found" });
+    if (!pi)
+      return res
+        .status(404)
+        .json({ success: false, message: "Form not found" });
 
     const [docs] = await sequelize.query(
       `
@@ -486,14 +524,16 @@ export const getDocumentsById = async (req, res) => {
 };
 
 /* ============================== Status Only ================================ */
-/** PATCH /api/admissions/updateStatus/:form_id   Body: { status } */
+/** PATCH /api/admissions/updateStatus/:form_id   Body: { status, remarks } */
 export const updateFormStatus = async (req, res) => {
   try {
     const { form_id } = req.params;
-    const { status } = req.body;
+    const { status, remarks } = req.body;
 
     if (!status) {
-      return res.status(400).json({ success: false, message: "Missing 'status'." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing 'status'." });
     }
 
     const enumStatus = mapStatusToEnum(status);
@@ -502,16 +542,60 @@ export const updateFormStatus = async (req, res) => {
       `SELECT id FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
       { replacements: [form_id] }
     );
-    if (!exists) return res.status(404).json({ success: false, message: "Form not found" });
+    if (!exists)
+      return res
+        .status(404)
+        .json({ success: false, message: "Form not found" });
 
+    // Update both status and remarks
     await sequelize.query(
-      `UPDATE \`${DB}\`.personal_info SET form_status = ? WHERE id = ?`,
-      { replacements: [enumStatus, form_id] }
+      `UPDATE \`${DB}\`.personal_info SET form_status = ?, remarks = ? WHERE id = ?`,
+      { replacements: [enumStatus, remarks || null, form_id] } // Use null if remarks is not provided
     );
 
-    res.json({ success: true, message: `form_status updated to '${enumStatus}'.` });
+    res.json({
+      success: true,
+      message: `Form status updated to '${enumStatus}'${
+        remarks ? " with remarks" : ""
+      }.`,
+    });
   } catch (err) {
     console.error("updateFormStatus error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+export const assignRollNo = async (req, res) => {
+  try {
+    const { form_id } = req.params;
+    const { roll_no } = req.body;
+
+    if (!roll_no) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing 'roll_no'." });
+    }
+
+    const [[exists]] = await sequelize.query(
+      `SELECT id FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
+      { replacements: [form_id] }
+    );
+    if (!exists)
+      return res
+        .status(404)
+        .json({ success: false, message: "Form not found" });
+
+    // ✅ CORRECTED: Use UPDATE instead of INSERT
+    await sequelize.query(
+      `UPDATE \`${DB}\`.personal_info SET roll_no = ? WHERE id = ?`,
+      { replacements: [roll_no, form_id] }
+    );
+
+    res.json({
+      success: true,
+      message: `Roll number assigned: '${roll_no}'.`,
+    });
+  } catch (err) {
+    console.error("assignRollNo error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };

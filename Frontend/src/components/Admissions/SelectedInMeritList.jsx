@@ -19,7 +19,7 @@ const SelectedInMaritList = () => {
   const departmentOptions = [
     "Computer Science",
     "Business Administration",
-    "English Language and Literature",
+    "English Linguistics and Literature",
   ];
 
   const [formData, setFormData] = useState({

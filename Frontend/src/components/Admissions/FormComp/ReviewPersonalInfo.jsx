@@ -7,8 +7,6 @@ const ReviewPersonalInfo = () => {
   const cnic = formData?.cnic;
   const personalInfo = formData?.personal_info;
 
-  console.log("📦 Personal Info Data:", personalInfo);
-
   if (!personalInfo) {
     return (
       <p className="text-center text-gray-700 dark:text-gray-200 mt-10">

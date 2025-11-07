@@ -7,6 +7,7 @@ import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Cookies from "js-cookie";
 
 export default function FormsByStatus({ heading }) {
   const navigate = useNavigate();
@@ -16,11 +17,14 @@ export default function FormsByStatus({ heading }) {
   const [loading, setLoading] = useState(true);
   const [loadingForm, setLoadingForm] = useState(false);
   const [query, setQuery] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("");
   const [page, setPage] = useState(1);
-  const [updatingStatus, setUpdatingStatus] = useState({}); // Track which forms are being updated
+  const [updatingStatus, setUpdatingStatus] = useState({});
   const pageSize = 10;
   const status = heading.split(" ")[0];
   localStorage.removeItem("reviewFormStep");
+  const role = Cookies.get("role")?.toLowerCase();
+  const [candidate, setCandidate] = useState(null);
 
   const backendBaseUrl =
     import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
@@ -56,20 +60,45 @@ export default function FormsByStatus({ heading }) {
     }
   };
 
+  // ✅ Fetch candidate on mount
+  useEffect(() => {
+    document.title = `SALU Portal | Select Merit List`;
+
+    const fetchCandidate = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get(
+          `http://localhost:5000/api/admissions/enrolled/list`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setCandidate(res.data.data);
+      } catch (err) {
+        console.error("Error fetching candidate:", err);
+        toast.error("Failed to fetch candidate data!", {
+          position: "top-center",
+        });
+      }
+    };
+
+    fetchCandidate();
+  }, []);
+
   useEffect(() => {
     fetchAdmissions();
   }, []);
 
-  /** 🔍 Filter by status + search */
-  useEffect(() => {
+  /** 🔍 Apply all filters including department switching */
+  const getFilteredAndSwitchedForms = () => {
     let data = [...forms];
 
+    // Filter by status
     if (status) {
       data = data.filter(
         (form) => form.status?.toLowerCase() === status.toLowerCase()
       );
     }
 
+    // Filter by search query
     if (query.trim() !== "") {
       const lowerQuery = query.toLowerCase();
       data = data.filter(
@@ -81,13 +110,36 @@ export default function FormsByStatus({ heading }) {
       );
     }
 
-    setFilteredForms(data);
+    // Switch departments first
+    const formsWithSwitchedDepartments = data.map((form) => {
+      const matchingCandidate = candidate?.find((c) => c.cnic === form.cnic);
+      const department = matchingCandidate?.department || form.department;
+      return {
+        ...form,
+        department: department,
+      };
+    });
+
+    // Then apply department filter
+    if (departmentFilter.trim() !== "") {
+      return formsWithSwitchedDepartments.filter(
+        (form) =>
+          form.department?.toLowerCase() === departmentFilter.toLowerCase()
+      );
+    }
+
+    return formsWithSwitchedDepartments;
+  };
+
+  // Update filteredForms when any filter changes
+  useEffect(() => {
+    const filteredData = getFilteredAndSwitchedForms();
+    setFilteredForms(filteredData);
     setPage(1);
-  }, [forms, status, query]);
+  }, [forms, status, query, departmentFilter, candidate]);
 
   /** ✅ Handle Status Change for All Forms */
   const handleSelectChange = async (formId, currentStatus, newStatus) => {
-    // Don't update if the status is the same
     if (currentStatus === newStatus) {
       return;
     }
@@ -97,7 +149,6 @@ export default function FormsByStatus({ heading }) {
 
       const token = localStorage.getItem("token");
 
-      // Update the status in the backend using your API endpoint
       await axios.patch(
         `${backendBaseUrl}/api/admissions/updateStatus/${formId}`,
         { status: newStatus },
@@ -109,7 +160,6 @@ export default function FormsByStatus({ heading }) {
         }
       );
 
-      // Update forms array
       setForms((prevForms) =>
         prevForms.map((form) =>
           form.form_id === formId ? { ...form, status: newStatus } : form
@@ -136,6 +186,7 @@ export default function FormsByStatus({ heading }) {
   /** 🧱 Columns */
   const columns = [
     { key: "serialNo", label: "Serial No." },
+    { key: "roll_no", label: "Roll No." },
     { key: "student_name", label: "Student's Name" },
     { key: "father_name", label: "Father's Name" },
     { key: "department", label: "Department" },
@@ -143,11 +194,131 @@ export default function FormsByStatus({ heading }) {
     { key: "status", label: "Status" },
   ];
 
-  const rows = paginatedForms.map((form, index) => ({
-    ...form,
-    serialNo: startIndex + index + 1,
-  }));
+  // Just sort and add serial numbers (all filtering is already done)
+  const rows = paginatedForms
+    .sort((a, b) => a.student_name?.localeCompare(b.student_name))
+    .map((form, index) => ({
+      ...form,
+      roll_no: form.roll_no || "Yet to Assign",
+      serialNo: startIndex + index + 1, // Proper sequential numbers per page
+    }));
 
+  const generateRollNumbers = async () => {
+    try {
+      // Check if ANY form doesn't have roll number
+      const hasFormsWithoutRollNumbers = filteredForms.some(
+        (form) =>
+          !form.roll_no ||
+          form.roll_no === "Yet to Assign" ||
+          form.roll_no === ""
+      );
+
+      // If ALL forms already have roll numbers, show error and return
+      if (!hasFormsWithoutRollNumbers) {
+        toast.error("All students already have roll numbers assigned!");
+        return;
+      }
+
+      const currentYear = new Date().getFullYear().toString().slice(-2);
+      const year = Number(currentYear) + 1;
+
+      const getDepartmentCode = (dept) => {
+        switch (dept) {
+          case "English Linguistics and Literature":
+            return "BSENG";
+          case "Computer Science":
+            return "BSCS";
+          case "Business Administration":
+            return "BBA";
+          default:
+            return dept;
+        }
+      };
+
+      // Create counters for each department
+      const departmentCounters = {};
+
+      // ✅ FIXED: Generate roll numbers for ALL forms (not just the ones without roll numbers)
+      const formsToUpdate = filteredForms
+        .sort((a, b) => a.student_name?.localeCompare(b.student_name))
+        .map((form) => {
+          const departmentCode = getDepartmentCode(form.department);
+
+          if (!departmentCounters[departmentCode]) {
+            departmentCounters[departmentCode] = 1;
+          }
+
+          const rollNumber = `GC${year}-${departmentCode}-${String(
+            departmentCounters[departmentCode]
+          ).padStart(2, "0")}`;
+
+          departmentCounters[departmentCode]++;
+
+          return {
+            ...form,
+            roll_no: rollNumber, // Generate new roll number for EVERY form
+          };
+        });
+
+      console.log("All forms with new roll numbers:", formsToUpdate);
+
+      // Send roll numbers to backend for ALL forms
+      const token = localStorage.getItem("token");
+      const promises = formsToUpdate.map(async (form) => {
+        try {
+          const res = await axios.put(
+            `${backendBaseUrl}/api/admissions/assignRollNo/${form.form_id}`,
+            { roll_no: form.roll_no },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          return {
+            success: true,
+            form_id: form.form_id,
+            roll_no: form.roll_no,
+            assigned: true,
+          };
+        } catch (error) {
+          console.error(
+            `❌ Error Assigning roll number for form ${form.form_id}:`,
+            error
+          );
+          return {
+            success: false,
+            form_id: form.form_id,
+            error: error.response?.data?.message || error.message,
+          };
+        }
+      });
+
+      const results = await Promise.all(promises);
+      const successful = results.filter((r) => r && r.success);
+      const failed = results.filter((r) => r && !r.success);
+
+      if (failed.length > 0) {
+        toast.error(`Failed to assign roll numbers for ${failed.length} forms`);
+        console.error(
+          "Failed forms:",
+          failed.map((f) => f.form_id)
+        );
+      } else {
+        toast.success(
+          `Successfully assigned roll numbers to ${successful.length} students!`
+        );
+      }
+
+      setTimeout(() => {
+        fetchAdmissions();
+      }, 2000);
+    } catch (error) {
+      console.error("❌ Error in generateRollNumbers:", error);
+      toast.error("Failed to generate roll numbers. Please try again.");
+    }
+  };
   /** 🎯 Table Actions */
   const actions = [
     (() => {
@@ -275,6 +446,112 @@ export default function FormsByStatus({ heading }) {
             ),
           };
 
+        case "Revert":
+          if (role === "admin" || role === "superadmin") {
+            return {
+              label: "Back to Pending",
+              render: (row) => (
+                <button
+                  disabled={updatingStatus[row.form_id]}
+                  className="!px-4 !py-1 border border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={async () => {
+                    try {
+                      setUpdatingStatus((prev) => ({
+                        ...prev,
+                        [row.form_id]: true,
+                      }));
+
+                      const token = localStorage.getItem("token");
+                      await axios.patch(
+                        `${backendBaseUrl}/api/admissions/updateStatus/${row.form_id}`,
+                        {
+                          status: "Pending",
+                          remarks: "Form moved back to pending from revert",
+                        },
+                        {
+                          headers: { Authorization: `Bearer ${token}` },
+                        }
+                      );
+
+                      toast.success("Form moved back to pending successfully!");
+
+                      // Add delay before refreshing data
+                      setTimeout(() => {
+                        fetchAdmissions();
+                      }, 1500); // 1.5 second delay
+                    } catch (err) {
+                      console.error("Error moving form to pending:", err);
+                      toast.error("Failed to move form to pending");
+                    } finally {
+                      setUpdatingStatus((prev) => ({
+                        ...prev,
+                        [row.form_id]: false,
+                      }));
+                    }
+                  }}
+                >
+                  {updatingStatus[row.form_id]
+                    ? "Updating..."
+                    : "Back to Pending"}
+                </button>
+              ),
+            };
+          }
+          // Return null or empty object for non-admin users
+          return null;
+
+        case "Trash":
+          if (role === "admin" || role === "superadmin") {
+            return {
+              label: "Back to Pending",
+              render: (row) => (
+                <button
+                  disabled={updatingStatus[row.form_id]}
+                  className="!px-4 !py-1 border border-purple-500 text-purple-500 hover:bg-purple-500 hover:text-white transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={async () => {
+                    try {
+                      setUpdatingStatus((prev) => ({
+                        ...prev,
+                        [row.form_id]: true,
+                      }));
+
+                      const token = localStorage.getItem("token");
+                      await axios.patch(
+                        `${backendBaseUrl}/api/admissions/updateStatus/${row.form_id}`,
+                        {
+                          status: "Pending",
+                          remarks: "Form moved back to pending from trash",
+                        },
+                        {
+                          headers: { Authorization: `Bearer ${token}` },
+                        }
+                      );
+
+                      toast.success("Form moved back to pending successfully!");
+
+                      // Add delay before refreshing data
+                      setTimeout(() => {
+                        fetchAdmissions();
+                      }, 1500); // 1.5 second delay
+                    } catch (err) {
+                      console.error("Error moving form to pending:", err);
+                      toast.error("Failed to move form to pending");
+                    } finally {
+                      setUpdatingStatus((prev) => ({
+                        ...prev,
+                        [row.form_id]: false,
+                      }));
+                    }
+                  }}
+                >
+                  {updatingStatus[row.form_id]
+                    ? "Updating..."
+                    : "Back to Pending"}
+                </button>
+              ),
+            };
+          }
+          return null;
         default:
           return null;
       }
@@ -300,7 +577,6 @@ export default function FormsByStatus({ heading }) {
         backgroundPosition: "center",
       }}
     >
-      {/* ✅ ToastContainer at top level */}
       <ToastContainer
         position="top-center"
         autoClose={3000}
@@ -312,6 +588,7 @@ export default function FormsByStatus({ heading }) {
         draggable
         pauseOnHover
         theme="light"
+        style={{ zIndex: 9999 }}
       />
 
       <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
@@ -330,8 +607,41 @@ export default function FormsByStatus({ heading }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search forms..."
-            className="w-full sm:w-[250px] !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded"
+            className="w-full sm:w-[250px] !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           />
+        </div>
+
+        {/* Department Filter */}
+        <div className="relative sm:w-75">
+          <select
+            value={departmentFilter}
+            onChange={(e) => setDepartmentFilter(e.target.value)}
+            className="w-full !px-4 !py-1 border-2 border-[#a5a5a5] bg-[#f9f9f9] dark:bg-gray-800 text-[#2a2a2a] dark:text-gray-100 focus:outline-none appearance-none cursor-pointer"
+          >
+            <option value="">All Departments</option>
+            <option value="computer science">Computer Science</option>
+            <option value="business administration">
+              Business Administration
+            </option>
+            <option value="english linguistics and literature">
+              English linguistics and literature
+            </option>
+          </select>
+          <div className="absolute inset-y-0 right-0 flex items-center !pr-2 pointer-events-none">
+            <svg
+              className="h-5 w-5 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
         </div>
 
         <DataTable columns={columns} rows={rows} actions={actions} />
@@ -339,8 +649,18 @@ export default function FormsByStatus({ heading }) {
         {/* Pagination */}
         <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
           <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
-            Total Forms: {filteredForms.length}
+            Total Forms: {rows.length} {/* Show filtered count */}
           </span>
+          {heading === "Enrolled Candidates" && (
+            <button
+              type="button"
+              onClick={generateRollNumbers}
+              className="cursor-pointer relative overflow-hidden !px-[20px] !py-[5px] border-2 border-[#e5b300] text-white  hover:dark:text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
+                     before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#e5b300] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-6"
+            >
+              <span className="relative z-10">Assign Roll No.</span>
+            </button>
+          )}
           <Pagination
             totalPages={pageCount}
             currentPage={page}

@@ -9,9 +9,6 @@ const ReviewFatherInfo = () => {
   const fatherInfo = formData?.father_info;
   const guardianInfo = formData?.guardian_info;
 
-  console.log("👨‍👦 Father Info:", fatherInfo);
-  console.log("🧑‍🤝‍🧑 Guardian Info:", guardianInfo);
-
   if (!fatherInfo && !guardianInfo) {
     return (
       <p className="text-center text-gray-700 dark:text-gray-200 mt-10">

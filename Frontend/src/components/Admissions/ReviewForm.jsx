@@ -25,21 +25,15 @@ const ReviewForm = () => {
 
   // Step state
   const [step, setStep] = useState(() => {
-    // Check if this is the first mount by checking if there's a saved step
     const savedStep = localStorage.getItem("reviewFormStep");
-
-    // If there's a saved step, user is returning - use their previous step
     if (savedStep) {
       return Number(savedStep);
     }
-
-    // If no saved step, this is first mount - start from step 1
     return 1;
   });
 
   // Persist step in localStorage
   useEffect(() => {
-    // Only save to localStorage after the first mount
     if (!isFirstMount.current) {
       localStorage.setItem("reviewFormStep", step);
     } else {
@@ -50,6 +44,8 @@ const ReviewForm = () => {
   const [showApproved, setShowApproved] = useState(false);
   const [showRevert, setShowRevert] = useState(false);
   const [showTrash, setShowTrash] = useState(false);
+  const [revertRemarks, setRevertRemarks] = useState("");
+  const [trashRemarks, setTrashRemarks] = useState("");
 
   const stepTitles = {
     1: "Program of Study",
@@ -87,7 +83,7 @@ const ReviewForm = () => {
 
   // Approve function
   const handleApprove = async () => {
-    setShowApproved(false); // close modal first
+    setShowApproved(false);
 
     const formData = location.state?.form?.data;
     if (!formData?.form_id) {
@@ -101,16 +97,15 @@ const ReviewForm = () => {
     try {
       await axios.patch(
         `${backendBaseUrl}/api/admissions/updateStatus/${formData.form_id}`,
-        { status: "Approved" }
+        {
+          status: "Approved",
+          remarks: "Form approved successfully", // Optional approval remarks
+        }
       );
 
-      // show success toast
       toast.success("Form approved successfully!", { position: "top-center" });
-
-      // Clear the saved step when form is approved
       localStorage.removeItem("reviewFormStep");
 
-      // navigate after short delay so user sees the toast
       setTimeout(() => {
         navigate("/SALU-PORTAL-FYP/Admissions/PendingForms");
       }, 1000);
@@ -120,8 +115,8 @@ const ReviewForm = () => {
     }
   };
 
-  // Handle revert function
-  const handleRevert = async () => {
+  // Handle revert function with remarks
+  const handleRevert = async (remarks) => {
     setShowRevert(false);
 
     const formData = location.state?.form?.data;
@@ -136,7 +131,10 @@ const ReviewForm = () => {
     try {
       await axios.patch(
         `${backendBaseUrl}/api/admissions/updateStatus/${formData.form_id}`,
-        { status: "Revert" }
+        {
+          status: "Revert",
+          remarks: remarks, // Send remarks to API
+        }
       );
 
       toast.success("Form reverted successfully!", { position: "top-center" });
@@ -151,8 +149,8 @@ const ReviewForm = () => {
     }
   };
 
-  // Handle trash function
-  const handleTrash = async () => {
+  // Handle trash function with remarks
+  const handleTrash = async (remarks) => {
     setShowTrash(false);
 
     const formData = location.state?.form?.data;
@@ -167,7 +165,10 @@ const ReviewForm = () => {
     try {
       await axios.patch(
         `${backendBaseUrl}/api/admissions/updateStatus/${formData.form_id}`,
-        { status: "Trash" }
+        {
+          status: "Trash",
+          remarks: remarks,
+        }
       );
 
       toast.success("Form moved to trash successfully!", {
@@ -225,8 +226,8 @@ const ReviewForm = () => {
                 <button
                   type="button"
                   onClick={() => setShowApproved(true)}
-                  className="cursor-pointer relative overflow-hidden !px-[10px] !py-[5px] border-2 border-[#e5b300] text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
-                       before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#e5b300] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60"
+                  className="cursor-pointer relative overflow-hidden !px-[20px] !py-[5px] border-2 border-[#e5b300] text-white hover:text-black hover:dark:text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
+                     before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#e5b300] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60"
                 >
                   <span className="relative z-10">Approve</span>
                 </button>
@@ -234,8 +235,8 @@ const ReviewForm = () => {
                 <button
                   type="button"
                   onClick={() => setShowRevert(true)}
-                  className="cursor-pointer relative overflow-hidden !px-[10px] !py-[5px] border-2 border-[#e5b300] text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
-                       before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#e5b300] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60"
+                  className="cursor-pointer relative overflow-hidden !px-[20px] !py-[5px] border-2 border-[#e5b300] text-white hover:text-black hover:dark:text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
+                     before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#e5b300] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60"
                 >
                   <span className="relative z-10">Revert</span>
                 </button>
@@ -243,8 +244,8 @@ const ReviewForm = () => {
                 <button
                   type="button"
                   onClick={() => setShowTrash(true)}
-                  className="cursor-pointer relative overflow-hidden !px-[10px] !py-[5px] border-2 border-[#e5b300] text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
-                       before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#e5b300] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60"
+                  className="cursor-pointer relative overflow-hidden !px-[20px] !py-[5px] border-2 border-[#e5b300] text-white hover:text-black hover:dark:text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
+                     before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#e5b300] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60"
                 >
                   <span className="relative z-10">Trash</span>
                 </button>

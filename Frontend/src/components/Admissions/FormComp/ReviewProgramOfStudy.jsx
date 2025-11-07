@@ -6,8 +6,6 @@ const ReviewProgramOfStudy = () => {
   const formData = location.state?.form?.data;
   const programData = formData?.program_of_study;
 
-  console.log("📦 Program of Study Data:", formData);
-
   if (!programData) {
     return (
       <p className="text-center text-gray-700 dark:text-gray-200 mt-10">

@@ -16,7 +16,6 @@ const ReviewDocuments = () => {
   const [showApproved, setShowApproved] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
 
-  // Preview document - similar to your working component
   const handlePreview = async (doc) => {
     try {
       setLoadingPreview(true);
@@ -33,7 +32,7 @@ const ReviewDocuments = () => {
         doc.mimeType === "application/pdf" || doc.fileName?.match(/\.pdf$/i);
 
       if (isImage) {
-        // For images, create a blob URL
+        // For images, create a blob URL and show in modal
         const response = await axios.get(
           `${backendBaseUrl}/api/admissions/viewDocument/${doc.id}`,
           {
@@ -58,7 +57,30 @@ const ReviewDocuments = () => {
           }
         );
         const blobUrl = URL.createObjectURL(response.data);
-        window.open(blobUrl, "_blank");
+
+        // Open in new tab and handle popup blockers
+        const newWindow = window.open(blobUrl, "_blank");
+
+        if (
+          !newWindow ||
+          newWindow.closed ||
+          typeof newWindow.closed === "undefined"
+        ) {
+          // Popup blocked, show download option
+          toast.info(
+            "Popup blocked. Please allow popups for this site or download the PDF.",
+            {
+              position: "top-center",
+            }
+          );
+
+          // Alternative: force download
+          const downloadLink = document.createElement("a");
+          downloadLink.href = blobUrl;
+          downloadLink.download = doc.fileName || "document.pdf";
+          downloadLink.click();
+        }
+
         setLoadingPreview(false);
         return;
       } else {
@@ -94,30 +116,10 @@ const ReviewDocuments = () => {
     }
   };
 
-  // Approve form function
-  const handleApprove = async () => {
+  // Remove the handleApprove function since approval is now handled in the parent ReviewForm component
+  const handleApprove = () => {
     setShowApproved(false);
-    if (!formData?.form_id) {
-      toast.error("Form ID missing, cannot approve.", {
-        position: "top-center",
-      });
-      return;
-    }
-
-    const backendBaseUrl =
-      import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-    try {
-      await axios.patch(
-        `${backendBaseUrl}/api/admissions/updateStatus/${formData.form_id}`,
-        {
-          status: "Approved",
-        }
-      );
-      toast.success("Form approved successfully!", { position: "top-center" });
-    } catch (err) {
-      console.error("Error updating form status:", err);
-      toast.error("Failed to approve form", { position: "top-center" });
-    }
+    // Approval logic is now handled in the parent ReviewForm component
   };
 
   if (!documents.length) {
@@ -206,14 +208,7 @@ const ReviewDocuments = () => {
         </div>
       )}
 
-      {/* Approved message modal */}
-      {showApproved && (
-        <ApprovedMessage
-          open={showApproved}
-          onClose={handleApprove}
-          onCancel={() => setShowApproved(false)}
-        />
-      )}
+      {/* Remove the ApprovedMessage modal from here since it's now in the parent ReviewForm */}
     </div>
   );
 };

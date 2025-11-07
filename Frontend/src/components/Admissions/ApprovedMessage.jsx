@@ -1,14 +1,23 @@
 import React from "react";
 import { FaCheckCircle } from "react-icons/fa";
 
-const ApprovedMessage = ({ open, onClose }) => {
+const ApprovedMessage = ({ open, onClose, onCancel }) => {
   if (!open) return null;
 
+  const handleOverlayClick = () => {
+    if (onCancel) {
+      onCancel(); // Call onCancel when overlay is clicked
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 cursor-pointer">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 cursor-pointer"
+      onClick={handleOverlayClick} // Add overlay click handler
+    >
       <div
         className="flex justify-center items-center flex-col gap-6 bg-white dark:bg-gray-800 rounded-lg !p-8 w-[90%] max-w-md text-center cursor-auto"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()} // Prevent overlay click when clicking inside
       >
         <FaCheckCircle className="text-6xl text-black dark:text-white mx-auto mb-6" />
 
