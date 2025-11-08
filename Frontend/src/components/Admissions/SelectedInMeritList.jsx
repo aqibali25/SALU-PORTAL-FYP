@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
 import InputContainer from "../InputContainer";
+import { departmentsArray } from "../../Hooks/HomeCards";
 
 const SelectedInMaritList = () => {
   const location = useLocation();
@@ -15,11 +16,6 @@ const SelectedInMaritList = () => {
     "1st Merit List",
     "2nd Merit List",
     "3rd Merit List",
-  ];
-  const departmentOptions = [
-    "Computer Science",
-    "Business Administration",
-    "English Linguistics and Literature",
   ];
 
   const [formData, setFormData] = useState({
@@ -288,7 +284,7 @@ const SelectedInMaritList = () => {
               <option value="" disabled>
                 [Select an Option]
               </option>
-              {departmentOptions.map((dept) => (
+              {departmentsArray.map((dept) => (
                 <option key={dept} value={dept}>
                   {dept}
                 </option>

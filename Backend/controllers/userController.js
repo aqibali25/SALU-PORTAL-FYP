@@ -1,6 +1,7 @@
 // Backend/controllers/userController.js
 import bcrypt from "bcrypt";
 import { User } from "../models/User.js";
+
 /**
  * Create or update user based on CNIC.
  * If CNIC exists -> update existing user.
@@ -8,7 +9,7 @@ import { User } from "../models/User.js";
  */
 export const upsertUser = async (req, res) => {
   try {
-    const { cnic, username, email, password, role } = req.body;
+    const { cnic, username, email, password, role, department } = req.body;
 
     if (!cnic || !username || !email || !role)
       return res.status(400).json({ message: "Missing required fields" });
@@ -27,6 +28,7 @@ export const upsertUser = async (req, res) => {
       existing.username = username;
       existing.email = email;
       existing.role = role;
+      existing.department = department;
       if (passwordHash) existing.password_hash = passwordHash;
       await existing.save();
 
@@ -39,6 +41,7 @@ export const upsertUser = async (req, res) => {
       email,
       cnic,
       role,
+      department,
       password_hash: passwordHash,
     });
 
@@ -55,7 +58,15 @@ export const upsertUser = async (req, res) => {
 export const getMe = async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
-      attributes: ["id", "username", "email", "cnic", "role", "created_at"],
+      attributes: [
+        "id",
+        "username",
+        "email",
+        "cnic",
+        "role",
+        "department",
+        "created_at",
+      ],
     });
 
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -65,11 +76,20 @@ export const getMe = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 // ✅ Fetch all users
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: ["id", "username", "email", "cnic", "role", "created_at"],
+      attributes: [
+        "id",
+        "username",
+        "email",
+        "cnic",
+        "role",
+        "department",
+        "created_at",
+      ],
       order: [["created_at", "DESC"]],
     });
     res.json(users);
@@ -78,6 +98,7 @@ export const getAllUsers = async (req, res) => {
     res.status(500).json({ message: "Server error while fetching users" });
   }
 };
+
 // ✅ DELETE user by ID or CNIC
 export const deleteUser = async (req, res) => {
   try {

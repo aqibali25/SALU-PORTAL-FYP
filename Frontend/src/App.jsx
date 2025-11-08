@@ -30,6 +30,7 @@ import { cards } from "./Hooks/HomeCards";
 // ✅ Toastify Import
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Fees from "./components/Fees/Fees";
 
 // Helper function to get roles for a specific route
 const getRolesForRoute = (routePath) => {
@@ -285,11 +286,12 @@ function App() {
               }
             />
 
+            <Route path="/SALU-PORTAL-FYP/Settings" element={<Settings />} />
             <Route
-              path="/SALU-PORTAL-FYP/Settings"
+              path="/SALU-PORTAL-FYP/Fees"
               element={
-                <ProtectedRoute allowedRoles={getRolesForRoute("settings")}>
-                  <Settings />
+                <ProtectedRoute allowedRoles={getRolesForRoute("fees")}>
+                  <Fees />
                 </ProtectedRoute>
               }
             />

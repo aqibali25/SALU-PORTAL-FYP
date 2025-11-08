@@ -8,6 +8,7 @@ import BackButton from "../BackButton";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Cookies from "js-cookie";
+import { departmentsArray } from "../../Hooks/HomeCards";
 
 export default function FormsByStatus({ heading }) {
   const navigate = useNavigate();
@@ -611,37 +612,52 @@ export default function FormsByStatus({ heading }) {
           />
         </div>
 
-        {/* Department Filter */}
-        <div className="relative sm:w-75">
-          <select
-            value={departmentFilter}
-            onChange={(e) => setDepartmentFilter(e.target.value)}
-            className="w-full !px-4 !py-1 border-2 border-[#a5a5a5] bg-[#f9f9f9] dark:bg-gray-800 text-[#2a2a2a] dark:text-gray-100 focus:outline-none appearance-none cursor-pointer"
-          >
-            <option value="">All Departments</option>
-            <option value="computer science">Computer Science</option>
-            <option value="business administration">
-              Business Administration
-            </option>
-            <option value="english linguistics and literature">
-              English linguistics and literature
-            </option>
-          </select>
-          <div className="absolute inset-y-0 right-0 flex items-center !pr-2 pointer-events-none">
-            <svg
-              className="h-5 w-5 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+        {/* Department Filter with Clear Button */}
+        <div className="flex gap-3 items-center w-full sm:w-fit">
+          {/* Department Dropdown Container */}
+          <div className="relative flex-1 lg:w-80">
+            <select
+              value={departmentFilter}
+              onChange={(e) => setDepartmentFilter(e.target.value)}
+              className="w-full !px-4 !py-2 border-2 border-[#a5a5a5] bg-[#f9f9f9] dark:bg-gray-800 text-[#2a2a2a] dark:text-gray-100 focus:outline-none appearance-none cursor-pointer"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
+              <option value="">All Departments</option>
+              {departmentsArray.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+            {/* Dropdown Arrow */}
+            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+              <svg
+                className="h-5 w-5 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
           </div>
+
+          {/* Clear All Button - Only show when filters are active */}
+          {(query || departmentFilter) && (
+            <button
+              onClick={() => {
+                setQuery("");
+                setDepartmentFilter("");
+              }}
+              className="!px-4 !py-2 cursor-pointer bg-red-500 hover:bg-red-600 text-white font-medium transition-colors duration-200 whitespace-nowrap"
+            >
+              Clear All
+            </button>
+          )}
         </div>
 
         <DataTable columns={columns} rows={rows} actions={actions} />

@@ -6,27 +6,19 @@ import Background from "../../assets/Background.png";
 import CnicInput from "../CNICInput";
 import InputContainer from "../InputContainer";
 import BackButton from "../BackButton";
+import { rolesArray, departmentsArray } from "../../Hooks/HomeCards";
 
 const AddUser = ({ Title }) => {
-  const rolesArray = [
-    "Office Secretary",
-    "Assistant",
-    "Clerk",
-    "Peon",
-    "Supervisor",
-    "Admin",
-    "HR Officer",
-    "Accountant",
-    "IT Support",
-    "Librarian",
-    "Teacher",
-    "HOD",
-  ];
-
   const [cnic, setCnic] = useState("");
   const [loading, setLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
+  const roleDepartments = [
+    ...departmentsArray,
+    "Admin",
+    "Examination",
+    "Library",
+  ];
 
   const editingUser = useMemo(
     () => location.state?.user ?? null,
@@ -39,6 +31,7 @@ const AddUser = ({ Title }) => {
     userPassword: "",
     userConfirmPassword: "",
     userRole: "",
+    userDepartment: "",
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -49,19 +42,37 @@ const AddUser = ({ Title }) => {
         setLoading(true);
 
         if (editingUser) {
-          // Normalize role (capitalize each word to match rolesArray)
-          const normalizeRole = (role = "") =>
-            role
-              .toLowerCase()
-              .split(" ")
-              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-              .join(" ");
+          // Fix role mapping to match frontend rolesArray
+          const mapRoleToFrontend = (backendRole = "") => {
+            const roleMap = {
+              // Map backend roles to frontend rolesArray values
+              admin: "Admin",
+              staff: "Staff",
+              user: "User",
+              "office secretary": "Office Secretary",
+              assistant: "Assistant",
+              clerk: "Clerk",
+              peon: "Peon",
+              supervisor: "Supervisor",
+              "hr officer": "HR Officer",
+              accountant: "Accountant",
+              "it support": "IT Support",
+              librarian: "Librarian",
+              teacher: "Teacher",
+              hod: "HOD",
+              "super admin": "Super Admin", // Added Super Admin mapping
+            };
+
+            const normalizedRole = backendRole.toLowerCase();
+            return roleMap[normalizedRole] || backendRole;
+          };
 
           setForm((f) => ({
             ...f,
             username: editingUser.username ?? "",
             userEmail: editingUser.email ?? "",
-            userRole: normalizeRole(editingUser.role ?? ""),
+            userRole: mapRoleToFrontend(editingUser.role ?? ""),
+            userDepartment: editingUser.department ?? "",
           }));
 
           if (editingUser.cnic) setCnic(editingUser.cnic);
@@ -74,8 +85,19 @@ const AddUser = ({ Title }) => {
     initData();
   }, [editingUser]);
 
-  const onChange = (key) => (e) =>
-    setForm((f) => ({ ...f, [key]: e.target.value }));
+  const onChange = (key) => (e) => {
+    const value = e.target.value;
+    setForm((f) => {
+      const updatedForm = { ...f, [key]: value };
+
+      // If role is changed to "Super Admin", automatically set department to "Super Admin"
+      if (key === "userRole" && value === "Super Admin") {
+        updatedForm.userDepartment = "Super Admin";
+      }
+
+      return updatedForm;
+    });
+  };
 
   // ✅ CNIC formatting
   const formatCNIC = (digitsOnly) => {
@@ -108,13 +130,43 @@ const AddUser = ({ Title }) => {
       const token = localStorage.getItem("token");
       const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
+      // Map frontend role to backend role format
+      const mapRoleToBackend = (frontendRole = "") => {
+        const roleMap = {
+          // Map frontend roles to backend ENUM values
+          Admin: "admin",
+          Staff: "staff",
+          User: "user",
+          "Office Secretary": "office secretary",
+          Assistant: "assistant",
+          Clerk: "clerk",
+          Peon: "peon",
+          Supervisor: "supervisor",
+          "HR Officer": "hr officer",
+          Accountant: "accountant",
+          "IT Support": "it support",
+          Librarian: "librarian",
+          Teacher: "teacher",
+          HOD: "hod",
+          "Super Admin": "super admin", // Added Super Admin mapping
+        };
+
+        return roleMap[frontendRole] || frontendRole.toLowerCase();
+      };
+
+      // Auto-set department to "Super Admin" if role is "Super Admin"
+      const finalDepartment =
+        form.userRole === "Super Admin" ? "Super Admin" : form.userDepartment;
+
       const payload = {
         cnic,
         username: form.username.trim(),
         email: form.userEmail.trim(),
-        role: form.userRole,
+        role: mapRoleToBackend(form.userRole),
+        department: finalDepartment,
         password: form.userPassword || undefined, // optional for updates
       };
+      console.log("Submitting payload:", payload);
 
       await axios.post(`${API}/api/users/upsert`, payload, {
         headers: {
@@ -137,6 +189,9 @@ const AddUser = ({ Title }) => {
       setSubmitting(false);
     }
   };
+
+  // Check if department should be shown
+  const showDepartment = form.userRole !== "Super Admin";
 
   // ✅ Loading Spinner
   if (loading) {
@@ -263,6 +318,33 @@ const AddUser = ({ Title }) => {
               ))}
             </select>
           </div>
+
+          {/* Department Dropdown - Only show if role is not Super Admin */}
+          {showDepartment ? (
+            <div className="flex w-full max-w-[800px] items-start md:items-center justify-start flex-col md:flex-row gap-[8px] md:gap-5 [@media(max-width:550px)]:gap-[5px]">
+              <label
+                htmlFor="userDepartment"
+                className="w-auto md:w-1/4 text-start md:text-right text-gray-900 dark:text-white"
+              >
+                <span className="text-[#ff0000] mr-1">*</span>
+                Department:
+              </label>
+              <select
+                id="userDepartment"
+                value={form.userDepartment}
+                onChange={onChange("userDepartment")}
+                required
+                className="w-[40%] [@media(max-width:768px)]:!w-full min-w-0 !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+              >
+                <option value="">[Select Department]</option>
+                {roleDepartments.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
 
           <div className="w-full flex justify-end mt-4">
             <button

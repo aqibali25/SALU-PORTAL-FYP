@@ -4,6 +4,7 @@ import Background from "../../assets/Background.png";
 import InputContainer from "../InputContainer";
 import ProfilePic from "../../assets/Profile.png";
 import BackButton from "../BackButton";
+import { rolesArray } from "../../Hooks/HomeCards";
 
 const Profile = () => {
   const [userData, setUserData] = useState(null);
@@ -27,8 +28,14 @@ const Profile = () => {
         withCredentials: true,
       });
 
-      console.log("User Data Response:", res.data); // 👈 Add this
-      setUserData(res.data);
+      console.log("User Data Response:", res.data);
+
+      const userWithFormattedRole = {
+        ...res.data,
+        role: rolesArray.find((role) => role.toLowerCase() === res.data.role),
+      };
+
+      setUserData(userWithFormattedRole);
     } catch (err) {
       console.error("Error fetching profile data:", err);
       alert(err.response?.data?.message || "Failed to load profile.");
@@ -98,13 +105,11 @@ const Profile = () => {
             />
 
             <InputContainer
-              title="Cnic No."
+              title="CNIC No."
               htmlFor="cnic"
               inputType="text"
               placeholder="451XX-XXXXXXX-X"
-              value={
-                userData?.cnic || userData?.userCnic || userData?.UserCnic || ""
-              }
+              value={userData?.cnic || ""}
               disabled
             />
 
@@ -115,8 +120,18 @@ const Profile = () => {
               placeholder="Role"
               value={userData?.role || ""}
               disabled
-              rows={4}
             />
+
+            {userData?.department && (
+              <InputContainer
+                title="Department"
+                htmlFor="department"
+                inputType="text"
+                placeholder="Department"
+                value={userData.department}
+                disabled
+              />
+            )}
           </div>
         </div>
       </div>

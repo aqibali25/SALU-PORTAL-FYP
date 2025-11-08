@@ -5,6 +5,7 @@ import { toast } from "react-toastify"; // ✅ Import Toastify
 import Background from "../../assets/Background.png";
 import InputContainer from "../InputContainer";
 import BackButton from "../BackButton";
+import { departmentsArray } from "../../Hooks/HomeCards";
 
 const AddSubject = ({ Title }) => {
   const location = useLocation();
@@ -26,12 +27,6 @@ const AddSubject = ({ Title }) => {
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-
-  const departments = [
-    "Computer Science",
-    "Business Administration",
-    "English Language And Literature",
-  ];
 
   useEffect(() => {
     const initData = async () => {
@@ -212,7 +207,7 @@ const AddSubject = ({ Title }) => {
               <option value="" disabled>
                 Select Department
               </option>
-              {departments.map((dept, index) => (
+              {departmentsArray.map((dept, index) => (
                 <option key={index} value={dept}>
                   {dept}
                 </option>
