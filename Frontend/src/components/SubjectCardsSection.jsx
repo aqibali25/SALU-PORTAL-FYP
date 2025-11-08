@@ -14,17 +14,23 @@ const SubjectCardsLayout = ({ title, subjects, routePrefix }) => {
       <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 
       <div className="flex flex-wrap items-center justify-start gap-5 min-h-[60vh] w-full bg-white dark:bg-gray-900 rounded-md overflow-x-auto !p-5">
-        {subjects.map((card) => (
-          <AdmissionCard
-            key={card.id}
-            title={card.title}
-            bgColor={card.bgColor}
-            borderColor={card.borderColor}
-            iconBg={card.iconBg}
-            Icon={card.Icon}
-            to={`${routePrefix}/${card.title.replace(/\s+/g, "")}`}
-          />
-        ))}
+        {subjects.length === 0 ? (
+          <h1 className="w-full text-center text-2xl text-red-600">
+            You don't have any subject assigned yet!
+          </h1>
+        ) : (
+          subjects.map((card) => (
+            <AdmissionCard
+              key={card.id}
+              title={card.title}
+              bgColor={card.bgColor}
+              borderColor={card.borderColor}
+              iconBg={card.iconBg}
+              Icon={card.Icon}
+              to={`${routePrefix}/${card.title.replace(/\s+/g, "")}`}
+            />
+          ))
+        )}
       </div>
     </div>
   );

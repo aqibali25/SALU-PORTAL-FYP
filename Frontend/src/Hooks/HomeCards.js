@@ -88,7 +88,7 @@ export const cards = [
     Icon: faPenFancy,
     color1: "#6A0DAD",
     color2: "#F3E8FF",
-    roles: ["super admin", "teacher"],
+    roles: ["super admin", "hod", "teacher"],
   },
   {
     id: 9,
