@@ -8,11 +8,15 @@ import BackButton from "../BackButton";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Cookies from "js-cookie";
-import { departmentsArray } from "../../Hooks/HomeCards";
+import { useDepartments } from "../../Hooks/HomeCards";
 
 export default function FormsByStatus({ heading }) {
   const navigate = useNavigate();
-
+  const {
+    departmentsArray,
+    loading: departmentsLoading,
+    error: departmentsError,
+  } = useDepartments();
   const [forms, setForms] = useState([]);
   const [filteredForms, setFilteredForms] = useState([]);
   const [loading, setLoading] = useState(true);

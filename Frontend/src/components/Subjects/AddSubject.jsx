@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import Background from "../../assets/Background.png";
 import InputContainer from "../InputContainer";
 import BackButton from "../BackButton";
-import { departmentsArray } from "../../Hooks/HomeCards";
+import { useDepartments } from "../../Hooks/HomeCards";
 
 const AddSubject = ({ Title }) => {
   const location = useLocation();
@@ -14,6 +14,11 @@ const AddSubject = ({ Title }) => {
     () => location.state?.subject ?? null,
     [location.state]
   );
+  const {
+    departmentsArray,
+    loading: departmentsLoading,
+    error: departmentsError,
+  } = useDepartments();
 
   // Get user department with safe parsing
   const userString = localStorage.getItem("user");

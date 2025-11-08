@@ -7,19 +7,26 @@ import Background from "../../assets/Background.png";
 import CnicInput from "../CNICInput";
 import InputContainer from "../InputContainer";
 import BackButton from "../BackButton";
-import { rolesArray, departmentsArray } from "../../Hooks/HomeCards";
+import { rolesArray, useDepartments } from "../../Hooks/HomeCards"; // Import the hook
 
 const AddUser = ({ Title }) => {
   const [cnic, setCnic] = useState("");
   const [loading, setLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
-  const roleDepartments = [
-    ...departmentsArray,
-    "Admin",
-    "Examination",
-    "Library",
-  ];
+
+  // Use the departments hook
+  const {
+    departmentsArray,
+    loading: departmentsLoading,
+    error: departmentsError,
+  } = useDepartments();
+
+  // Combine departments with admin departments
+  const roleDepartments = useMemo(() => {
+    const adminDepartments = ["Admin", "Examination", "Library"];
+    return [...departmentsArray, ...adminDepartments];
+  }, [departmentsArray]);
 
   const editingUser = useMemo(
     () => location.state?.user ?? null,
@@ -211,12 +218,17 @@ const AddUser = ({ Title }) => {
   const showDepartment = form.userRole !== "Super Admin";
 
   // ✅ Loading Spinner
-  if (loading) {
+  if (loading || departmentsLoading) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-90px)] bg-white dark:bg-gray-900">
         <div className="w-16 h-16 border-4 border-yellow-400 border-dashed rounded-full animate-spin"></div>
       </div>
     );
+  }
+
+  // ✅ Error state for departments
+  if (departmentsError) {
+    toast.error("Failed to load departments. Using default list.");
   }
 
   return (

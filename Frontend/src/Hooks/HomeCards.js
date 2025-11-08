@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   faUserPlus,
   faUsers,
@@ -9,6 +10,7 @@ import {
   faBook,
   faMoneyBillWave,
 } from "@fortawesome/free-solid-svg-icons";
+import axios from "axios";
 
 export const cards = [
   {
@@ -111,6 +113,7 @@ export const cards = [
     roles: ["super admin", "admin", "teacher", "hod"],
   },
 ];
+
 export const rolesArray = [
   "Super Admin",
   "Admin",
@@ -126,7 +129,55 @@ export const rolesArray = [
   "Peon",
 ];
 
-export const departmentsArray = [
+// Custom hook for departments
+export const useDepartments = () => {
+  const [departmentsArray, setDepartmentsArray] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchDepartments = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await axios.get("http://localhost:5000/api/departments", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.data.success) {
+        // Map the department names from the API response
+        const apiDepartments = res.data.data.map((item) => item.departmentName);
+
+        // Combine with default departments
+        const allDepartments = [...apiDepartments];
+
+        // Remove duplicates and set state
+        setDepartmentsArray([...new Set(allDepartments)]);
+      }
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      setError(error.message);
+      // Fallback to default departments if API fails
+      setDepartmentsArray([
+        "Computer Science",
+        "Business Administration",
+        "English Linguistics and Literature",
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  return { departmentsArray, loading, error, refetch: fetchDepartments };
+};
+
+// Default export for departments array (for non-React usage)
+export const getDefaultDepartments = () => [
   "Computer Science",
   "Business Administration",
   "English Linguistics and Literature",

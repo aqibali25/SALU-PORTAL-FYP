@@ -6,7 +6,8 @@ import Pagination from "../../components/Pagination";
 import Background from "./../../assets/Background.png";
 import { useNavigate } from "react-router-dom";
 import BackButton from "../BackButton";
-import { departmentsArray, rolesArray } from "../../Hooks/HomeCards";
+import { useDepartments } from "../../Hooks/HomeCards";
+import { toast } from "react-toastify";
 
 export default function ListUsers() {
   const [users, setUsers] = useState([]);
@@ -16,6 +17,12 @@ export default function ListUsers() {
   const [loading, setLoading] = useState(true);
   const pageSize = 10;
   const navigate = useNavigate();
+
+  const {
+    departmentsArray,
+    loading: departmentsLoading,
+    error: departmentsError,
+  } = useDepartments();
 
   // Departments including additional ones
   const departments = [
@@ -66,7 +73,7 @@ export default function ListUsers() {
         setUsers(data);
       } catch (err) {
         console.error(err);
-        alert("Error loading users: " + err.message);
+        toast.error("Error loading users: " + err.message);
       } finally {
         setLoading(false);
       }
@@ -132,9 +139,10 @@ export default function ListUsers() {
             headers: { Authorization: `Bearer ${token}` },
           });
           setUsers((prev) => prev.filter((u) => u.id !== row.id));
+          toast.success("User deleted successfully!");
         } catch (err) {
           console.error(err);
-          alert("Error deleting user: " + err.message);
+          toast.error("Error deleting user: " + err.message);
         } finally {
           setLoading(false);
         }
@@ -148,7 +156,14 @@ export default function ListUsers() {
     setPage(1);
   }, [query, departmentFilter]);
 
-  if (loading) {
+  // Show error toast if departments fail to load
+  useEffect(() => {
+    if (departmentsError) {
+      toast.error("Failed to load departments. Using default list.");
+    }
+  }, [departmentsError]);
+
+  if (loading || departmentsLoading) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-90px)] bg-white dark:bg-gray-900">
         <div className="w-16 h-16 border-4 border-yellow-400 border-dashed rounded-full animate-spin"></div>
@@ -233,6 +248,7 @@ export default function ListUsers() {
             </button>
           )}
         </div>
+
         {/* Table */}
         <DataTable columns={columns} rows={currentPageRows} actions={actions} />
 

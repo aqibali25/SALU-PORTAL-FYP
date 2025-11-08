@@ -5,12 +5,17 @@ import { toast } from "react-toastify";
 import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
 import InputContainer from "../InputContainer";
-import { departmentsArray } from "../../Hooks/HomeCards";
+import { useDepartments } from "../../Hooks/HomeCards";
 
 const SelectedInMaritList = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const formDataFromState = location.state?.form || {};
+  const {
+    departmentsArray,
+    loading: departmentsLoading,
+    error: departmentsError,
+  } = useDepartments();
 
   const meritListOptions = [
     "1st Merit List",
