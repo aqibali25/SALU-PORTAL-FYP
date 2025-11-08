@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { toast } from "react-toastify"; // ✅ Import Toastify
+import { toast } from "react-toastify";
 import Background from "../../assets/Background.png";
 import InputContainer from "../InputContainer";
 import BackButton from "../BackButton";
@@ -15,11 +15,28 @@ const AddSubject = ({ Title }) => {
     [location.state]
   );
 
+  // Get user department with safe parsing
+  const userString = localStorage.getItem("user");
+  const user = userString ? JSON.parse(userString) : null;
+  const userDepartment = user?.department || "";
+
+  // Check if user is from one of the specific departments (not Super Admin)
+  const isSpecificDepartment = [
+    "Computer Science",
+    "Business Administration",
+    "English Linguistics and Literature",
+  ].includes(userDepartment);
+  const isSuperAdmin = userDepartment === "Super Admin";
+
   const [form, setForm] = useState({
     subjectId: "",
     subjectName: "",
     subjectType: "",
-    department: "",
+    department: isSpecificDepartment
+      ? userDepartment
+      : isSuperAdmin
+      ? ""
+      : userDepartment,
     semester: "",
     creditHours: "",
     year: "",
@@ -42,13 +59,19 @@ const AddSubject = ({ Title }) => {
             creditHours: editingSubject.creditHours || "",
             year: editingSubject.year || "",
           });
+        } else if (isSpecificDepartment || (!isSuperAdmin && userDepartment)) {
+          // Auto-set department for specific department users when adding new subject
+          setForm((prev) => ({
+            ...prev,
+            department: userDepartment,
+          }));
         }
       } finally {
         setLoading(false);
       }
     };
     initData();
-  }, [editingSubject]);
+  }, [editingSubject, isSpecificDepartment, isSuperAdmin, userDepartment]);
 
   const onChange = (key) => (e) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -149,6 +172,7 @@ const AddSubject = ({ Title }) => {
                 required
                 value={form.subjectId}
                 onChange={onChange("subjectId")}
+                disabled
               />
             </>
           )}
@@ -203,6 +227,7 @@ const AddSubject = ({ Title }) => {
               required
               value={form.department}
               onChange={onChange("department")}
+              disabled={isSpecificDepartment} // Disable only for specific departments
             >
               <option value="" disabled>
                 Select Department
@@ -231,7 +256,7 @@ const AddSubject = ({ Title }) => {
             placeholder="Enter Credit Hours"
             title="Credit Hours"
             htmlFor="creditHours"
-            inputType="number" // use number type
+            inputType="number"
             required
             value={form.creditHours}
             onChange={(e) => {
@@ -241,8 +266,8 @@ const AddSubject = ({ Title }) => {
                 onChange("creditHours")(e);
               }
             }}
-            min={0} // optional: min value
-            max={1} // optional: max value
+            min={0}
+            max={9}
           />
 
           {/* Year */}
@@ -260,8 +285,8 @@ const AddSubject = ({ Title }) => {
                 onChange("year")(e);
               }
             }}
-            min={1000} // optional: minimum year
-            max={9999} // optional: maximum year
+            min={1000}
+            max={9999}
           />
 
           {/* Submit Button */}

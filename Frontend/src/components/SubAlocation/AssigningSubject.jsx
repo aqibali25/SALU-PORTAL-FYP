@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { toast } from "react-toastify";
 import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
 import InputContainer from "../InputContainer";
@@ -9,6 +10,12 @@ const AssigningSubject = () => {
   const { subjectId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Get user department
+  const userString = localStorage.getItem("user");
+  const user = userString ? JSON.parse(userString) : null;
+  const userDepartment = user?.department || "";
+  const isSuperAdmin = userDepartment === "Super Admin";
 
   // Extract the name from subjectId (remove trailing numbers if any)
   const subjectName = subjectId.replace(/-\d+$/, "");
@@ -43,25 +50,34 @@ const AssigningSubject = () => {
       try {
         setLoading(true);
         const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:5000/api/users", {
+        const API =
+          import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+        const res = await axios.get(`${API}/api/users`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const teacherUsers = res.data.filter(
-          (user) => user.role?.toLowerCase() === "teacher"
-        );
+        // Filter teachers based on department
+        const teacherUsers = res.data.filter((user) => {
+          const isTeacher =
+            user.role?.toLowerCase() === "teacher" ||
+            user.role?.toLowerCase() === "hod";
+          if (isSuperAdmin) {
+            return isTeacher; // Super Admin sees all teachers
+          }
+          return isTeacher && user.department === userDepartment;
+        });
 
         setTeachers(["Yet to assign", ...teacherUsers.map((t) => t.username)]);
       } catch (err) {
         console.error("Error fetching teachers:", err);
-        alert("Error loading teachers: " + err.message);
+        toast.error("Error loading teachers: " + err.message);
       } finally {
         setLoading(false);
       }
     };
 
     fetchTeachers();
-  }, [subjectName]);
+  }, [subjectName, isSuperAdmin, userDepartment]);
 
   // Handle form input change
   const handleChange = (e) => {
@@ -69,13 +85,68 @@ const AssigningSubject = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Show Toastify confirmation for reassign
+  const showReassignConfirmation = () => {
+    return new Promise((resolve) => {
+      toast.info(
+        <div className="text-center">
+          <p className="font-semibold mb-2">Reassign Subject?</p>
+          <p className="text-sm mb-4">
+            Are you sure you want to reassign this subject to a different
+            teacher?
+          </p>
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={() => {
+                toast.dismiss();
+                resolve(true);
+              }}
+              className="px-4 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+            >
+              Yes, Reassign
+            </button>
+            <button
+              onClick={() => {
+                toast.dismiss();
+                resolve(false);
+              }}
+              className="px-4 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>,
+        {
+          position: "top-center",
+          autoClose: false,
+          closeOnClick: false,
+          draggable: false,
+          closeButton: false,
+          style: {
+            minWidth: "300px",
+          },
+        }
+      );
+    });
+  };
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Show confirmation only for reassign (update operations)
+    if (isUpdate) {
+      const confirmed = await showReassignConfirmation();
+      if (!confirmed) {
+        return; // User cancelled the reassign
+      }
+    }
+
     setSubmitting(true);
 
     try {
       const token = localStorage.getItem("token");
+      const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
       // Convert numeric fields
       const creditHoursNum = Number(formData.creditHours);
@@ -83,19 +154,19 @@ const AssigningSubject = () => {
 
       // Validate fields
       if (!formData.subName || !formData.department || !formData.semester) {
-        alert("Please fill in all required fields.");
+        toast.error("Please fill in all required fields.");
         setSubmitting(false);
         return;
       }
 
       if (isNaN(creditHoursNum) || creditHoursNum <= 0) {
-        alert("Credit Hours must be a valid number.");
+        toast.error("Credit Hours must be a valid number.");
         setSubmitting(false);
         return;
       }
 
       if (isNaN(yearNum) || yearNum <= 0) {
-        alert("Year must be a valid number.");
+        toast.error("Year must be a valid number.");
         setSubmitting(false);
         return;
       }
@@ -121,64 +192,114 @@ const AssigningSubject = () => {
       if (isUpdate) {
         // UPDATE operation - use PUT request
         if (!formData.saId) {
-          alert("Subject Allocation ID is required for update.");
+          toast.error("Subject Allocation ID is required for update.");
           setSubmitting(false);
           return;
         }
 
         res = await axios.put(
-          `http://localhost:5000/api/subject-allocations/${formData.saId}`,
+          `${API}/api/subject-allocations/${formData.saId}`,
           payload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         console.log("Subject updated:", res.data);
-        alert("Teacher reassigned successfully!");
+        toast.success("Teacher reassigned successfully!");
       } else {
         // CREATE operation - use POST request
-        res = await axios.post(
-          `http://localhost:5000/api/subject-allocations`,
-          payload,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        res = await axios.post(`${API}/api/subject-allocations`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         console.log("Subject assigned:", res.data);
-        alert("Teacher assigned successfully!");
+        toast.success("Teacher assigned successfully!");
       }
 
-      navigate("/SALU-PORTAL-FYP/SubjectAllocation");
+      setTimeout(() => {
+        navigate("/SALU-PORTAL-FYP/SubjectAllocation");
+      }, 1500);
     } catch (err) {
       console.error("Error in subject allocation:", err);
       const msg = err.response?.data?.message || err.message || "Unknown error";
-      alert(`Error ${isUpdate ? "reassigning" : "assigning"} teacher: ${msg}`);
+      toast.error(
+        `Error ${isUpdate ? "reassigning" : "assigning"} teacher: ${msg}`
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
+  // Show Toastify confirmation for unassign
+  const showUnassignConfirmation = () => {
+    return new Promise((resolve) => {
+      toast.info(
+        <div className="text-center">
+          <p className="font-semibold !mb-2">Unassign Teacher?</p>
+          <p className="text-sm !mb-4">
+            Are you sure you want to unassign this teacher from the subject?
+          </p>
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={() => {
+                toast.dismiss();
+                resolve(true);
+              }}
+              className="!px-4 !py-1 bg-red-500 text-white hover:bg-red-600 transition-colors cursor-pointer"
+            >
+              Yes, Unassign
+            </button>
+            <button
+              onClick={() => {
+                toast.dismiss();
+                resolve(false);
+              }}
+              className="!px-4 !py-1 bg-gray-500 text-white hover:bg-gray-600 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>,
+        {
+          position: "top-center",
+          autoClose: false,
+          closeOnClick: false,
+          draggable: false,
+          closeButton: false,
+          style: {
+            minWidth: "300px",
+          },
+        }
+      );
+    });
+  };
+
   // Handle unassign/delete
   const handleUnassign = async () => {
     if (!isUpdate || !formData.saId) {
-      alert("No subject allocation to unassign.");
+      toast.error("No subject allocation to unassign.");
       return;
     }
 
-    if (!window.confirm("Are you sure you want to unassign this teacher?")) {
-      return;
+    const confirmed = await showUnassignConfirmation();
+    if (!confirmed) {
+      return; // User cancelled the unassign
     }
 
     try {
       const token = localStorage.getItem("token");
+      const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-      await axios.delete(
-        `http://localhost:5000/api/subject-allocations/${formData.saId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.delete(`${API}/api/subject-allocations/${formData.saId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      alert("Teacher unassigned successfully!");
-      navigate("/SALU-PORTAL-FYP/SubjectAllocation");
+      toast.success("Teacher unassigned successfully!");
+
+      setTimeout(() => {
+        navigate("/SALU-PORTAL-FYP/SubjectAllocation");
+      }, 1500);
     } catch (err) {
       console.error("Error unassigning teacher:", err);
       const msg = err.response?.data?.message || err.message || "Unknown error";
-      alert("Error unassigning teacher: " + msg);
+      toast.error("Error unassigning teacher: " + msg);
     }
   };
 
@@ -196,7 +317,7 @@ const AssigningSubject = () => {
         <div className="flex justify-start items-center gap-3">
           <BackButton url={"/SALU-PORTAL-FYP/SubjectAllocation"} />
           <h1 className="text-2xl sm:text-3xl md:text-4xl py-3 font-bold text-gray-900 dark:text-white">
-            {isUpdate ? "Reassign Subject" : "Assign Subject"} - {subjectName}
+            {isUpdate ? "Reassign Subject" : "Assign Subject"}
           </h1>
         </div>
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />

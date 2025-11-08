@@ -5,8 +5,13 @@ export default function useSubjectAllocation({ pageSize = 10 }) {
   const [subjects, setSubjects] = useState([]);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [sorts, setSorts] = useState([]); // [{ key, dir }]
   const [loading, setLoading] = useState(true);
+
+  // Get user department
+  const userString = localStorage.getItem("user");
+  const user = userString ? JSON.parse(userString) : null;
+  const userDepartment = user?.department || "";
+  const isSuperAdmin = userDepartment === "Super Admin";
 
   const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
@@ -28,9 +33,6 @@ export default function useSubjectAllocation({ pageSize = 10 }) {
             withCredentials: true,
           }),
         ]);
-
-        console.log("Subject Allocations:", allocationsRes.data.data);
-        console.log("Subjects:", subjectsRes.data.data);
 
         // Create a map of subjectId/subjectName to teacherName from allocations
         const allocationMap = new Map();
@@ -62,8 +64,12 @@ export default function useSubjectAllocation({ pageSize = 10 }) {
         });
 
         // Transform allocations data
-        const allocationsTransformed = (allocationsData || []).map(
-          (allocation, index) => ({
+        const allocationsTransformed = (allocationsData || [])
+          .filter(
+            (allocation) =>
+              isSuperAdmin || allocation.department === userDepartment
+          )
+          .map((allocation, index) => ({
             saId: allocation.saId || allocation.subjectId || `alloc-${index}`,
             subName:
               allocation.subName || allocation.subjectName || "Unknown Subject",
@@ -75,8 +81,7 @@ export default function useSubjectAllocation({ pageSize = 10 }) {
             createdAt: allocation.createdAt,
             updatedAt: allocation.updatedAt,
             source: "allocation",
-          })
-        );
+          }));
 
         // Transform subjects data that are not already in allocations
         const subjectsTransformed = subjectsData
@@ -88,6 +93,9 @@ export default function useSubjectAllocation({ pageSize = 10 }) {
               !allocatedSubjectIds.has(subjectName)
             );
           })
+          .filter(
+            (subject) => isSuperAdmin || subject.department === userDepartment
+          )
           .map((subject, index) => {
             // Check if this subject has an allocation
             const teacherName =
@@ -111,11 +119,11 @@ export default function useSubjectAllocation({ pageSize = 10 }) {
             };
           });
 
-        // Combine both arrays
+        // Combine both arrays and sort by saId in descending order
         const combinedData = [
           ...allocationsTransformed,
           ...subjectsTransformed,
-        ];
+        ].sort((a, b) => a.saId.toString().localeCompare(b.saId.toString()));
 
         console.log("Combined Data:", combinedData);
         setSubjects(combinedData);
@@ -127,9 +135,9 @@ export default function useSubjectAllocation({ pageSize = 10 }) {
     };
 
     fetchData();
-  }, []);
+  }, [isSuperAdmin, userDepartment]);
 
-  // ✅ Filter + Sort
+  // ✅ Filter only (no sorting on header click)
   const filtered = useMemo(() => {
     let data = [...subjects];
 
@@ -140,38 +148,11 @@ export default function useSubjectAllocation({ pageSize = 10 }) {
       );
     }
 
-    if (sorts.length > 0) {
-      data.sort((a, b) => {
-        for (const { key, dir } of sorts) {
-          const valA = a[key]?.toString().toLowerCase() ?? "";
-          const valB = b[key]?.toString().toLowerCase() ?? "";
-          if (valA < valB) return dir === "asc" ? -1 : 1;
-          if (valA > valB) return dir === "asc" ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-
     return data;
-  }, [subjects, query, sorts]);
+  }, [subjects, query]);
 
   const pageCount = Math.ceil(filtered.length / pageSize) || 1;
   const rows = filtered.slice((page - 1) * pageSize, page * pageSize);
-
-  const onSort = (key, multi = false) => {
-    setSorts((prev) => {
-      const existing = prev.find((s) => s.key === key);
-      if (existing) {
-        if (existing.dir === "asc") {
-          return prev.map((s) => (s.key === key ? { ...s, dir: "desc" } : s));
-        } else {
-          return prev.filter((s) => s.key !== key);
-        }
-      }
-      const newSort = { key, dir: "asc" };
-      return multi ? [...prev, newSort] : [newSort];
-    });
-  };
 
   return {
     loading,
@@ -181,7 +162,5 @@ export default function useSubjectAllocation({ pageSize = 10 }) {
     setPage,
     query,
     setQuery,
-    sorts,
-    onSort,
   };
 }

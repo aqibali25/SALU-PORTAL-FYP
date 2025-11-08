@@ -15,6 +15,12 @@ export default function ViewSubject() {
   const pageSize = 10;
   const navigate = useNavigate();
 
+  // Get user department
+  const userString = localStorage.getItem("user");
+  const user = userString ? JSON.parse(userString) : null;
+  const userDepartment = user?.department || "";
+  const isSuperAdmin = userDepartment === "Super Admin";
+
   const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
   // ✅ Fetch subjects from backend
@@ -30,7 +36,16 @@ export default function ViewSubject() {
         });
 
         // res.data.data because backend sends { success, total, data }
-        setSubjects(res.data.data || []);
+        const allSubjects = res.data.data || [];
+
+        // Filter subjects by department if user is not Super Admin
+        const filteredSubjects = isSuperAdmin
+          ? allSubjects
+          : allSubjects.filter(
+              (subject) => subject.department === userDepartment
+            );
+
+        setSubjects(filteredSubjects);
       } catch (err) {
         console.error(err);
         alert("Error loading subjects: " + err.message);
@@ -40,23 +55,25 @@ export default function ViewSubject() {
     };
 
     fetchSubjects();
-  }, []);
+  }, [isSuperAdmin, userDepartment]);
 
   // ✅ Filter subjects by search query
-  const filteredSubjects = subjects.filter((s) =>
-    [
-      s.subjectId,
-      s.subjectName,
-      s.subjectType,
-      s.department,
-      s.semester,
-      s.creditHours,
-      s.year,
-    ]
-      .join(" ")
-      .toLowerCase()
-      .includes(query.toLowerCase())
-  );
+  const filteredSubjects = subjects
+    .filter((s) =>
+      [
+        s.subjectId,
+        s.subjectName,
+        s.subjectType,
+        s.department,
+        s.semester,
+        s.creditHours,
+        s.year,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(query.toLowerCase())
+    )
+    .sort((a, b) => a.subjectId - b.subjectId);
 
   // ✅ Pagination logic
   const pageCount = Math.ceil(filteredSubjects.length / pageSize);
@@ -119,6 +136,11 @@ export default function ViewSubject() {
     },
   ];
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [query]);
+
   // ✅ Loader
   if (loading) {
     return (
@@ -148,18 +170,27 @@ export default function ViewSubject() {
 
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 
-        {/* Search */}
-        <div className="w-full flex justify-end">
+        {/* Search Input */}
+        <div className="w-full flex justify-end lg:w-auto">
           <input
             value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Search subjects..."
-            className="max-w-[100%] !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search subjects by ID, name, type, department..."
+            className="w-full lg:w-80 !px-3 !py-2 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           />
         </div>
+
+        {/* Clear Search Button */}
+        {query && (
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={() => setQuery("")}
+              className="!px-4 !py-2 bg-red-500 hover:bg-red-600 text-white font-medium transition-colors duration-200"
+            >
+              Clear Search
+            </button>
+          </div>
+        )}
 
         {/* Table */}
         <DataTable columns={columns} rows={currentPageRows} actions={actions} />

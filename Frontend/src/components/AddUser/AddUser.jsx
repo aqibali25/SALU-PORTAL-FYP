@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Cookies from "js-cookie";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { toast } from "react-toastify";
 import Background from "../../assets/Background.png";
 import CnicInput from "../CNICInput";
 import InputContainer from "../InputContainer";
@@ -46,21 +47,18 @@ const AddUser = ({ Title }) => {
           const mapRoleToFrontend = (backendRole = "") => {
             const roleMap = {
               // Map backend roles to frontend rolesArray values
+              "super admin": "Super Admin",
               admin: "Admin",
-              staff: "Staff",
-              user: "User",
-              "office secretary": "Office Secretary",
-              assistant: "Assistant",
+              "examination officer": "Examination Officer",
+              hod: "HOD",
+              "focal person admin": "Focal Person Admin",
+              "focal person teacher": "Focal Person Teacher",
+              teacher: "Teacher",
+              "transport incharge": "Transport Incharge",
+              librarian: "Librarian",
+              "it support": "It Support",
               clerk: "Clerk",
               peon: "Peon",
-              supervisor: "Supervisor",
-              "hr officer": "HR Officer",
-              accountant: "Accountant",
-              "it support": "IT Support",
-              librarian: "Librarian",
-              teacher: "Teacher",
-              hod: "HOD",
-              "super admin": "Super Admin", // Added Super Admin mapping
             };
 
             const normalizedRole = backendRole.toLowerCase();
@@ -119,11 +117,22 @@ const AddUser = ({ Title }) => {
   // ✅ Submit Handler (Axios)
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!cnic) return alert("CNIC is required.");
-    if (!/^\d{5}-\d{7}-\d$/.test(cnic))
-      return alert("CNIC must be in the format 12345-1234567-1.");
-    if (form.userPassword !== form.userConfirmPassword)
-      return alert("Passwords do not match.");
+
+    // Validation with Toastify
+    if (!cnic) {
+      toast.error("CNIC is required.");
+      return;
+    }
+
+    if (!/^\d{5}-\d{7}-\d$/.test(cnic)) {
+      toast.error("CNIC must be in the format 12345-1234567-1.");
+      return;
+    }
+
+    if (form.userPassword !== form.userConfirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
 
     try {
       setSubmitting(true);
@@ -134,21 +143,18 @@ const AddUser = ({ Title }) => {
       const mapRoleToBackend = (frontendRole = "") => {
         const roleMap = {
           // Map frontend roles to backend ENUM values
+          "Super Admin": "super admin",
           Admin: "admin",
-          Staff: "staff",
-          User: "user",
-          "Office Secretary": "office secretary",
-          Assistant: "assistant",
+          "Examination Officer": "examination officer",
+          HOD: "hod",
+          "Focal Person Admin": "focal person admin",
+          "Focal Person Teacher": "focal person teacher",
+          Teacher: "teacher",
+          "Transport Incharge": "transport incharge",
+          Librarian: "librarian",
+          "It Support": "it support",
           Clerk: "clerk",
           Peon: "peon",
-          Supervisor: "supervisor",
-          "HR Officer": "hr officer",
-          Accountant: "accountant",
-          "IT Support": "it support",
-          Librarian: "librarian",
-          Teacher: "teacher",
-          HOD: "hod",
-          "Super Admin": "super admin", // Added Super Admin mapping
         };
 
         return roleMap[frontendRole] || frontendRole.toLowerCase();
@@ -176,15 +182,26 @@ const AddUser = ({ Title }) => {
         withCredentials: true,
       });
 
-      alert(
+      // Success toast with auto navigation
+      toast.success(
         Title === "Update User"
           ? "User updated successfully!"
-          : "User added successfully!"
+          : "User added successfully!",
+        {
+          position: "top-right",
+          autoClose: 2000,
+        }
       );
-      navigate("/SALU-PORTAL-FYP/ListUsers");
+
+      // Navigate after success message
+      setTimeout(() => {
+        navigate("/SALU-PORTAL-FYP/ListUsers");
+      }, 3000);
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Error saving user");
+      toast.error(err.response?.data?.message || "Error saving user", {
+        position: "top-right",
+      });
     } finally {
       setSubmitting(false);
     }

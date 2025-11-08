@@ -121,6 +121,7 @@ export const rolesArray = [
   "Teacher",
   "Transport Incharge",
   "Librarian",
+  "It Support",
   "Clerk",
   "Peon",
 ];

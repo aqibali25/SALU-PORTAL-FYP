@@ -5,34 +5,17 @@ import Pagination from "../Pagination";
 import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 
 export default function SubjectAllocation() {
-  const [subjectData, setSubjectData] = useState([]);
-  const [loading, setLoading] = useState(true); // ✅ Loading state added
+  const { rows, page, pageCount, setPage, query, setQuery, loading } =
+    useSubjectAllocation({ pageSize: 10 });
 
-  useEffect(() => {
-    document.title = "SALU Portal | Subject Allocation";
-
-    const fetchData = async () => {
-      try {
-        const response = await fetch(
-          "http://localhost:5000/api/subject-allocations"
-        );
-        const data = await response.json();
-        console.log("Fetched Subject Allocations:", data.data);
-        setSubjectData(data.data || []);
-      } catch (error) {
-        console.error("Error fetching subject allocations:", error);
-      } finally {
-        setLoading(false); // ✅ Stop loader after fetch completes
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  const { rows, page, pageCount, setPage, query, setQuery, sorts, onSort } =
-    useSubjectAllocation({ initial: subjectData, pageSize: 10 });
+  // Get user department for display
+  const userString = localStorage.getItem("user");
+  const user = userString ? JSON.parse(userString) : null;
+  const userDepartment = user?.department || "";
+  const isSuperAdmin = userDepartment === "Super Admin";
 
   const columns = [
     { key: "saId", label: "SA ID" },
@@ -48,7 +31,6 @@ export default function SubjectAllocation() {
     {
       label: "Action",
       render: (row) => {
-        // ✅ Safe values with fallback
         const subNameSafe = row.subName
           ? row.subName.replace(/\s+/g, "")
           : "UNKNOWN";
@@ -62,7 +44,7 @@ export default function SubjectAllocation() {
         return (
           <Link
             to={`/SALU-PORTAL-FYP/SubjectAllocation/${subNameSafe}-${saIdSafe}`}
-            state={{ subjectData: row }} // ✅ Send subject row data here
+            state={{ subjectData: row }}
             type="button"
             className={`cursor-pointer relative overflow-hidden !px-[15px] !py-[5px]
           border-2 text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
@@ -125,13 +107,7 @@ export default function SubjectAllocation() {
           />
         </div>
 
-        <DataTable
-          columns={columns}
-          rows={rows}
-          sort={sorts[0]}
-          onSort={onSort}
-          actions={actions}
-        />
+        <DataTable columns={columns} rows={rows} actions={actions} />
 
         <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-5">
           <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
