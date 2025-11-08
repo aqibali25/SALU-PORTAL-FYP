@@ -31,6 +31,9 @@ import { cards } from "./Hooks/HomeCards";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Fees from "./components/Fees/Fees";
+import Departments from "./components/Departments/Departments";
+import AddDepartments from "./components/Departments/AddDepartments";
+import ViewDepartments from "./components/Departments/ViewDepartments";
 
 // Helper function to get roles for a specific route
 const getRolesForRoute = (routePath) => {
@@ -292,6 +295,38 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={getRolesForRoute("fees")}>
                   <Fees />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Departments"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("departments")}>
+                  <Departments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Departments/AddDepartment"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("departments")}>
+                  <AddDepartments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Departments/UpdateDepartment/:departmentId"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("departments")}>
+                  <AddDepartments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Departments/ViewDepartments"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("departments")}>
+                  <ViewDepartments />
                 </ProtectedRoute>
               }
             />

@@ -16,6 +16,8 @@ const InputContainer = forwardRef(
       width = "70%",
       autoComplete,
       spellCheck = false,
+      justify = "start",
+      item = "start",
     },
     ref
   ) => {
@@ -24,13 +26,11 @@ const InputContainer = forwardRef(
 
     return (
       <div
-        className="
-          flex w-full max-w-[800px]
-          items-start md:items-center justify-start
+        className={`flex w-full max-w-[800px]
+          items-${item} md:items-center justify-${justify}
           flex-col md:flex-row
           gap-[8px] md:gap-5
-          [@media(max-width:550px)]:gap-[5px]
-        "
+          [@media(max-width:550px)]:gap-[5px]`}
       >
         <label
           htmlFor={htmlFor}

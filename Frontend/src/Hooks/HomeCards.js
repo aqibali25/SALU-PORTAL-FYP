@@ -9,6 +9,7 @@ import {
   faCog,
   faBook,
   faMoneyBillWave,
+  faBuilding,
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 
@@ -104,6 +105,16 @@ export const cards = [
   },
   {
     id: 10,
+    Heading: "Departments",
+    link: "Departments",
+    isImg: false,
+    Icon: faBuilding, // You might want to import this icon
+    color1: "#8B4513",
+    color2: "#F5F5DC",
+    roles: ["super admin", "admin"],
+  },
+  {
+    id: 11,
     Heading: "Settings",
     link: "Settings",
     isImg: false,
