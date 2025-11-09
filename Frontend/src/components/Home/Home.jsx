@@ -38,10 +38,10 @@ const Home = () => {
         <div
           key={card.id}
           className="
-            basis-[18%] 
-            min-w-[200px] 
+            basis-[16%] 
+            min-w-[150px] 
             max-[950px]:grow 
-            h-[180px]
+            h-[150px]
           "
         >
           <Card

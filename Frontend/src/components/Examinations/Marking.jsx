@@ -1,6 +1,7 @@
 import { FaClipboardCheck } from "react-icons/fa";
 import Background from "../../assets/Background.png";
-import SubjectCardsLayout from "../SubjectCardsSection";
+import BackButton from "../BackButton";
+import AdmissionCard from "../Admissions/AdmissionCard";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
@@ -25,6 +26,7 @@ const Marking = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   const username = user?.username;
   const token = user?.token || localStorage.getItem("token");
+  const userRole = user?.role; // Get user role from user object
 
   const [subjectCards, setSubjectCards] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,11 +46,21 @@ const Marking = () => {
       });
       const data = response.data.data;
 
-      const subjectsData = data.filter(
-        (subject) => subject.teacherName === username
-      );
+      // Check if user is super admin
+      const isSuperAdmin = userRole === "super admin";
 
-      // Transform the filtered data into subject cards with unique colors
+      let subjectsData;
+      if (isSuperAdmin) {
+        // Show all subjects for super admin
+        subjectsData = data;
+      } else {
+        // Show only subjects assigned to the teacher
+        subjectsData = data.filter(
+          (subject) => subject.teacherName === username
+        );
+      }
+
+      // Transform the data into subject cards with unique colors
       const transformedSubjects = subjectsData.map((subject, index) => {
         const colorIndex = index % COLOR_COMBINATIONS.length;
         const colors = COLOR_COMBINATIONS[colorIndex];
@@ -117,6 +129,9 @@ const Marking = () => {
     );
   }
 
+  const displayTitle =
+    userRole === "super admin" ? "All Subjects" : `${username}'s Subjects`;
+
   return (
     <div
       className="sm:!px-[40px] md:!px-[80px] !px-5 !py-[20px] min-h-[calc(100vh-90px)] w-full bg-white dark:bg-gray-900"
@@ -127,11 +142,41 @@ const Marking = () => {
         backgroundPosition: "center",
       }}
     >
-      <SubjectCardsLayout
-        title={username}
-        subjects={subjectCards}
-        routePrefix="EnterMarks/Subject"
-      />
+      {/* Integrated SubjectCardsLayout directly */}
+      <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
+        <div className="flex justify-start items-center gap-3">
+          <BackButton />
+          <h1 className="text-2xl sm:text-3xl md:text-4xl py-3 font-bold text-gray-900 dark:text-white">
+            {displayTitle}
+          </h1>
+        </div>
+
+        <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
+
+        <div className="flex flex-wrap items-center justify-center gap-5 min-h-[60vh] w-full bg-white dark:bg-gray-900 rounded-md overflow-x-auto !p-5">
+          {subjectCards.length === 0 ? (
+            <h1 className="w-full text-center text-2xl text-red-600">
+              You don't have any{" "}
+              {displayTitle === "All Subjects"
+                ? "subjects available"
+                : `${displayTitle} assigned`}{" "}
+              yet!
+            </h1>
+          ) : (
+            subjectCards.map((card, index) => (
+              <AdmissionCard
+                key={index}
+                title={card.title}
+                bgColor={card.bgColor}
+                borderColor={card.borderColor}
+                iconBg={card.iconBg}
+                Icon={card.Icon}
+                to={`EnterMarks/Subject/${card.title.replace(/\s+/g, "")}`}
+              />
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 };
