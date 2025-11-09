@@ -3,6 +3,7 @@ import DataTable from "../TableData";
 import Pagination from "../Pagination";
 import Background from "../../assets/Background.png";
 import { useEnrolledStudents } from "../../Hooks/useEnrolledStudents";
+import { useDepartments } from "../../Hooks/HomeCards";
 
 const EnrolledStudents = () => {
   const { students, loading, error } = useEnrolledStudents();
@@ -13,6 +14,7 @@ const EnrolledStudents = () => {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  const { departmentsArray } = useDepartments();
 
   // Get logged-in user info
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -32,15 +34,6 @@ const EnrolledStudents = () => {
         student.current_year !== "5th" && student.current_year !== null
     );
   }, [students]);
-
-  // Extract unique departments, years, and semesters from validStudents using useMemo
-  const departments = useMemo(() => {
-    return [
-      ...new Set(
-        validStudents.map((student) => student.department).filter(Boolean)
-      ),
-    ].sort();
-  }, [validStudents]);
 
   const years = useMemo(() => {
     return [
@@ -211,7 +204,7 @@ const EnrolledStudents = () => {
                 className="w-full !px-4 !py-2 border-2 border-[#a5a5a5] bg-[#f9f9f9] dark:bg-gray-800 text-[#2a2a2a] dark:text-gray-100 focus:outline-none appearance-none cursor-pointer"
               >
                 <option value="">All Departments</option>
-                {departments.map((dept) => (
+                {departmentsArray.map((dept) => (
                   <option key={dept} value={dept}>
                     {dept}
                   </option>

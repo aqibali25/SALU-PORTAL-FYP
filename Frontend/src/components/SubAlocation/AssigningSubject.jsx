@@ -90,8 +90,8 @@ const AssigningSubject = () => {
     return new Promise((resolve) => {
       toast.info(
         <div className="text-center">
-          <p className="font-semibold mb-2">Reassign Subject?</p>
-          <p className="text-sm mb-4">
+          <p className="font-semibold !mb-2">Reassign Subject?</p>
+          <p className="text-sm !mb-4">
             Are you sure you want to reassign this subject to a different
             teacher?
           </p>
@@ -101,7 +101,7 @@ const AssigningSubject = () => {
                 toast.dismiss();
                 resolve(true);
               }}
-              className="px-4 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+              className="!px-4 !py-1 bg-green-500 text-white  hover:bg-green-600 transition-colors cursor-pointer"
             >
               Yes, Reassign
             </button>
@@ -110,7 +110,7 @@ const AssigningSubject = () => {
                 toast.dismiss();
                 resolve(false);
               }}
-              className="px-4 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+              className="!px-4 !py-1 bg-red-500 text-white  hover:bg-red-600 transition-colors cursor-pointer"
             >
               Cancel
             </button>

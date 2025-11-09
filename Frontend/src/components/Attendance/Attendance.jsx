@@ -128,7 +128,6 @@ const Attendance = () => {
     );
   }
 
-  // Fixed the title logic - consistent with your role check above
   const displayTitle =
     userRole === "super admin" ? "All Subjects" : `${username}'s Subjects`;
 
