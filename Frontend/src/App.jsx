@@ -34,6 +34,8 @@ import Fees from "./components/Fees/Fees";
 import Departments from "./components/Departments/Departments";
 import AddDepartments from "./components/Departments/AddDepartments";
 import ViewDepartments from "./components/Departments/ViewDepartments";
+import AddFees from "./components/Fees/Addfees";
+import ViewFees from "./components/Fees/ViewFees";
 
 // Helper function to get roles for a specific route
 const getRolesForRoute = (routePath) => {
@@ -295,6 +297,30 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={getRolesForRoute("fees")}>
                   <Fees />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Fees/AddFees"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("fees")}>
+                  <AddFees Title="Add Fees" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Fees/UpdateFees"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("fees")}>
+                  <AddFees Title="Update Fees" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Fees/ViewFees"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("fees")}>
+                  <ViewFees />
                 </ProtectedRoute>
               }
             />
