@@ -16,12 +16,14 @@ const SubjectCardsLayout = ({ title, subjects, routePrefix }) => {
       <div className="flex flex-wrap items-center justify-start gap-5 min-h-[60vh] w-full bg-white dark:bg-gray-900 rounded-md overflow-x-auto !p-5">
         {subjects.length === 0 ? (
           <h1 className="w-full text-center text-2xl text-red-600">
-            You don't have any subject assigned yet!
+            You don't have any{" "}
+            {title === "Enrolled Students" ? "Department" : `${title} assigned`}{" "}
+            yet!
           </h1>
         ) : (
-          subjects.map((card) => (
+          subjects.map((card, index) => (
             <AdmissionCard
-              key={card.id}
+              key={index}
               title={card.title}
               bgColor={card.bgColor}
               borderColor={card.borderColor}

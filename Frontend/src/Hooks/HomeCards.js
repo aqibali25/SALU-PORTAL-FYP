@@ -10,6 +10,7 @@ import {
   faBook,
   faMoneyBillWave,
   faBuilding,
+  faUserGraduate,
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 
@@ -45,6 +46,16 @@ export const cards = [
   },
   {
     id: 4,
+    Heading: "Enrolled Students",
+    link: "EnrolledStudents",
+    isImg: false,
+    Icon: faUserGraduate, // Perfect icon for enrolled students
+    color1: "#10B981",
+    color2: "#ECFDF5",
+    roles: ["super admin", "admin", "hod"],
+  },
+  {
+    id: 5,
     Heading: "Admissions",
     link: "Admissions",
     isImg: false,
@@ -54,7 +65,7 @@ export const cards = [
     roles: ["super admin", "admin", "clerk"],
   },
   {
-    id: 5,
+    id: 6,
     Heading: "Fees",
     link: "Fees",
     isImg: false,
@@ -64,7 +75,7 @@ export const cards = [
     roles: ["super admin", "admin", "clerk"],
   },
   {
-    id: 6,
+    id: 7,
     Heading: "Subject Allocation",
     link: "SubjectAllocation",
     isImg: false,
@@ -74,7 +85,7 @@ export const cards = [
     roles: ["super admin", "hod"],
   },
   {
-    id: 7,
+    id: 8,
     Heading: "Attendance",
     link: "Attendance",
     isImg: false,
@@ -84,7 +95,7 @@ export const cards = [
     roles: ["super admin", "teacher", "hod"],
   },
   {
-    id: 8,
+    id: 9,
     Heading: "Enter Marks",
     link: "EnterMarks",
     isImg: false,
@@ -94,7 +105,7 @@ export const cards = [
     roles: ["super admin", "hod", "teacher"],
   },
   {
-    id: 9,
+    id: 10,
     Heading: "Subjects",
     link: "Subjects",
     isImg: false,
@@ -104,17 +115,17 @@ export const cards = [
     roles: ["super admin", "hod"],
   },
   {
-    id: 10,
+    id: 11,
     Heading: "Departments",
     link: "Departments",
     isImg: false,
-    Icon: faBuilding, // You might want to import this icon
+    Icon: faBuilding,
     color1: "#8B4513",
     color2: "#F5F5DC",
     roles: ["super admin", "admin"],
   },
   {
-    id: 11,
+    id: 12,
     Heading: "Settings",
     link: "Settings",
     isImg: false,

@@ -36,6 +36,7 @@ import AddDepartments from "./components/Departments/AddDepartments";
 import ViewDepartments from "./components/Departments/ViewDepartments";
 import AddFees from "./components/Fees/Addfees";
 import ViewFees from "./components/Fees/ViewFees";
+import EnrolledStudents from "./components/EnrolledStudents/EnrolledStudents";
 
 // Helper function to get roles for a specific route
 const getRolesForRoute = (routePath) => {
@@ -193,6 +194,16 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={getRolesForRoute("admissions")}>
                   <FormsByStatus heading="Enrolled Candidates" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/EnrolledStudents"
+              element={
+                <ProtectedRoute
+                  allowedRoles={getRolesForRoute("enrolledstudents")}
+                >
+                  <EnrolledStudents />
                 </ProtectedRoute>
               }
             />
