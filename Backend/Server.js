@@ -9,6 +9,7 @@ import userRoutes from "./routes/user.js";
 import admissionsRoutes from "./routes/admissions.js";
 import subjectAllocationRoutes from "./routes/subjectAllocation.js";
 import subjectsRoutes from "./routes/subjects.js";
+import feesRoutes from "./routes/fees.js";
 import departmentsRoutes from "./routes/departments.js"; // Add this import
 import dotenv from "dotenv";
 
@@ -39,7 +40,7 @@ app.use("/api/admissions", admissionsRoutes);
 app.use("/api/subject-allocations", subjectAllocationRoutes);
 app.use("/api/subjects", subjectsRoutes);
 app.use("/api/departments", departmentsRoutes); // Add this line
-
+app.use("/api/fees", feesRoutes);
 // Error handler
 app.use((err, _req, res, _next) => {
   console.error(err);
