@@ -34,7 +34,7 @@ import Fees from "./components/Fees/Fees";
 import Departments from "./components/Departments/Departments";
 import AddDepartments from "./components/Departments/AddDepartments";
 import ViewDepartments from "./components/Departments/ViewDepartments";
-import AddFees from "./components/Fees/Addfees";
+import AddFees from "./components/Fees/AddFees";
 import ViewFees from "./components/Fees/ViewFees";
 import EnrolledStudents from "./components/EnrolledStudents/EnrolledStudents";
 
@@ -320,7 +320,7 @@ function App() {
               }
             />
             <Route
-              path="/SALU-PORTAL-FYP/Fees/UpdateFees"
+              path="/SALU-PORTAL-FYP/Fees/UpdateFees/:feeId"
               element={
                 <ProtectedRoute allowedRoles={getRolesForRoute("fees")}>
                   <AddFees Title="Update Fees" />

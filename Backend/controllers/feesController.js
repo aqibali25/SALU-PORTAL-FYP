@@ -1,38 +1,15 @@
-// Backend/controllers/feesController.js
 import { sequelize } from "../db.js";
 
 const DB = process.env.DB_NAME || "u291434058_SALU_GC";
 
 /* ------------------------------- Utilities -------------------------------- */
 const normalizeCNIC = (cnic = "") => {
-  // Accepts "4510275930238" or "45102-7593023-8" and returns "45102-7593023-8"
   const digits = String(cnic).replace(/\D/g, "").slice(0, 13);
   if (digits.length !== 13) return null;
   return `${digits.slice(0, 5)}-${digits.slice(5, 12)}-${digits.slice(12)}`;
 };
 
-const mapUiYearToDbYear = (val = "") => {
-  // UI sends "1st Year" etc. DB has YEAR(4). We store 0001..0004.
-  const s = String(val).toLowerCase().trim();
-  if (s.startsWith("1st")) return 1;
-  if (s.startsWith("2nd")) return 2;
-  if (s.startsWith("3rd")) return 3;
-  if (s.startsWith("4th")) return 4;
-  // If already a 4-digit year like 2025, keep it.
-  if (/^\d{4}$/.test(val)) return Number(val);
-  return null; // store NULL if unknown
-};
-
 /* -------------------------------- Upsert ---------------------------------- */
-/**
- * POST /api/fees/upsert
- * Body:
- *  {
- *    fee_id?, cnic, paid_date(YYYY-MM-DD), amount(number/decimal),
- *    year("1st Year"|... or 4-digit), status("Partial Pay"|"Full Pay"),
- *    challan_no, department
- *  }
- */
 export const upsertFee = async (req, res) => {
   try {
     const {
@@ -45,6 +22,8 @@ export const upsertFee = async (req, res) => {
       challan_no,
       department,
     } = req.body || {};
+
+    console.log("Received fee data:", req.body);
 
     // ---- basic validation
     const normCnic = normalizeCNIC(cnic);
@@ -67,11 +46,10 @@ export const upsertFee = async (req, res) => {
         .json({ success: false, message: "amount must be a positive number." });
     }
 
-    const yearDb = mapUiYearToDbYear(year); // may be 1..4 or a 4-digit year or null
-    if (year && yearDb === null) {
-      // not fatal – we allow NULL in YEAR (MySQL converts invalid to 0000)
-      // but better to return a helpful warning
-      // You can hard-enforce by returning 400 here if you prefer.
+    if (!year) {
+      return res
+        .status(400)
+        .json({ success: false, message: "year is required." });
     }
 
     if (!status) {
@@ -91,6 +69,36 @@ export const upsertFee = async (req, res) => {
         .status(400)
         .json({ success: false, message: "department is required." });
     }
+
+    // Use year as string directly (since DB field is varchar)
+    const yearDb = String(year).trim();
+
+    // ✅ Check if CNIC exists in personal_info table
+    const [[cnicExists]] = await sequelize.query(
+      `
+      SELECT COUNT(*) as count FROM \`${DB}\`.personal_info 
+      WHERE cnic = ?
+      `,
+      { replacements: [normCnic] }
+    );
+
+    if (cnicExists.count === 0) {
+      return res.status(400).json({
+        success: false,
+        message: `CNIC ${normCnic} does not exist in the system. Please register the student first.`,
+      });
+    }
+
+    console.log("Processing fee upsert:", {
+      fee_id: fee_id || "NEW",
+      cnic: normCnic,
+      paid_date,
+      amount: amt,
+      year: yearDb,
+      status,
+      challan_no,
+      department,
+    });
 
     // ---- create or update
     if (fee_id) {
@@ -116,6 +124,8 @@ export const upsertFee = async (req, res) => {
         }
       );
 
+      console.log("Update result:", result);
+
       if (result.affectedRows === 0) {
         return res
           .status(404)
@@ -123,7 +133,7 @@ export const upsertFee = async (req, res) => {
       }
     } else {
       // INSERT
-      await sequelize.query(
+      const [result] = await sequelize.query(
         `
         INSERT INTO \`${DB}\`.fees
           (cnic, paid_date, amount, year, status, challan_no, department)
@@ -141,6 +151,8 @@ export const upsertFee = async (req, res) => {
           ],
         }
       );
+
+      console.log("Insert result:", result);
     }
 
     // ---- return the latest fee row for this CNIC
@@ -156,22 +168,37 @@ export const upsertFee = async (req, res) => {
       { replacements: [normCnic] }
     );
 
+    console.log("Returning fee data:", row);
+
     return res.json({
       success: true,
-      message: fee_id ? "Fee updated." : "Fee added.",
+      message: fee_id ? "Fee updated successfully." : "Fee added successfully.",
       data: row,
     });
   } catch (err) {
     console.error("upsertFee error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("Error details:", err.message);
+    console.error("SQL error code:", err.original?.code);
+    console.error("SQL error number:", err.original?.errno);
+
+    // Handle foreign key constraint error specifically
+    if (err.name === "SequelizeForeignKeyConstraintError") {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Cannot add fee. The provided CNIC does not exist in the student records. Please register the student first.",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Server error while processing fee",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
   }
 };
 
 /* --------------------------------- GETs ----------------------------------- */
-/**
- * GET /api/fees
- * Optional filters: ?cnic=...&department=...&status=...&year=...&challan_no=...
- */
 export const getFees = async (req, res) => {
   try {
     const { cnic, department, status, year, challan_no } = req.query;
@@ -197,9 +224,8 @@ export const getFees = async (req, res) => {
       params.push(status);
     }
     if (year) {
-      const y = mapUiYearToDbYear(year);
       where.push("f.year = ?");
-      params.push(y);
+      params.push(year); // Use string directly
     }
     if (challan_no) {
       where.push("f.challan_no = ?");

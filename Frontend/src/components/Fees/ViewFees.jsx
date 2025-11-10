@@ -59,38 +59,62 @@ export default function ViewFees() {
   // Status options
   const statusOptions = ["Partial Pay", "Full Pay"];
 
-  //   // ✅ Fetch fees using Axios
-  //   useEffect(() => {
-  //     const fetchFees = async () => {
-  //       try {
-  //         setLoading(true);
-  //         const token = localStorage.getItem("token");
-  //         const API =
-  //           import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-  //         const res = await axios.get(`${API}/api/fees`, {
-  //           headers: { Authorization: `Bearer ${token}` },
-  //         });
+  // ✅ Fetch fees using Axios
+  useEffect(() => {
+    const fetchFees = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
+        const API =
+          import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-  //         const data = res.data.map((fee, index) => ({
-  //           ...fee,
-  //         }));
-  //         setFees(data);
-  //       } catch (err) {
-  //         console.error(err);
-  //         toast.error("Error loading fees: " + err.message);
-  //       } finally {
-  //         setLoading(false);
-  //       }
-  //     };
-  //     fetchFees();
-  //   }, []);
+        // Build query parameters for filters
+        const params = {};
+        if (departmentFilter) params.department = departmentFilter;
+        if (yearFilter) params.year = yearFilter;
+        if (statusFilter) params.status = statusFilter;
+        if (query) {
+          // If query looks like a CNIC, search by CNIC
+          if (query.replace(/\D/g, "").length === 13) {
+            params.cnic = query;
+          } else {
+            // Otherwise search in challan_no
+            params.challan_no = query;
+          }
+        }
 
-  // ✅ Filter fees by search query and filters
+        const res = await axios.get(`${API}/api/fees`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: params,
+        });
+
+        if (res.data.success) {
+          setFees(res.data.data || []);
+        } else {
+          toast.error(
+            "Failed to load fees: " + (res.data.message || "Unknown error")
+          );
+          setFees([]);
+        }
+      } catch (err) {
+        console.error("Error fetching fees:", err);
+        toast.error(
+          "Error loading fees: " + (err.response?.data?.message || err.message)
+        );
+        setFees([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFees();
+  }, [departmentFilter, yearFilter, statusFilter, query]); // Re-fetch when filters change
+
+  // ✅ Filter fees by search query and filters (client-side filtering as fallback)
   const filteredFees = fees.filter((fee) => {
     const matchesSearch = [
       fee.cnic,
       fee.challan_no,
-      fee.amount,
+      fee.amount?.toString(),
       fee.year,
       fee.status,
       fee.department,
@@ -126,13 +150,68 @@ export default function ViewFees() {
     { key: "paid_date", label: "Paid Date" },
   ];
 
+  // ✅ Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  // ✅ Format amount without currency symbol
+  const formatAmount = (amount) => {
+    if (amount === null || amount === undefined) return "0.00";
+    const numAmount = parseFloat(amount);
+    return isNaN(numAmount)
+      ? "0.00"
+      : numAmount.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+  };
+
+  // ✅ Delete fee function
+  const handleDeleteFee = async (feeId, challanNo) => {
+    if (!window.confirm(`Delete fee record for challan no ${challanNo}?`))
+      return;
+
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+      const response = await axios.delete(`${API}/api/fees/delete/${feeId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.data.success) {
+        // Remove the deleted fee from state
+        setFees((prev) => prev.filter((fee) => fee.fee_id !== feeId));
+        toast.success("Fee record deleted successfully!");
+      } else {
+        toast.error("Failed to delete fee: " + response.data.message);
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      toast.error(
+        "Error deleting fee record: " +
+          (err.response?.data?.message || err.message)
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ✅ Table actions - Only show if user is admin
   const actions = isAdmin
     ? [
         {
           label: "Edit",
           onClick: (row) => {
-            navigate(`/SALU-PORTAL-FYP/UpdateFee/${row.fee_id}`, {
+            navigate(`/SALU-PORTAL-FYP/Fees/UpdateFees/${row.fee_id}`, {
               state: { fee: row },
             });
           },
@@ -143,46 +222,23 @@ export default function ViewFees() {
             />
           ),
         },
-        {
-          label: "Delete",
-          onClick: async (row) => {
-            if (
-              !window.confirm(
-                `Delete fee record for challan no ${row.challan_no}?`
-              )
-            )
-              return;
-            try {
-              setLoading(true);
-              const token = localStorage.getItem("token");
-              const API =
-                import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-              await axios.delete(`${API}/api/fees/${row.fee_id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-              });
-              setFees((prev) =>
-                prev.filter((fee) => fee.fee_id !== row.fee_id)
-              );
-              toast.success("Fee record deleted successfully!");
-            } catch (err) {
-              console.error(err);
-              toast.error("Error deleting fee record: " + err.message);
-            } finally {
-              setLoading(false);
-            }
-          },
-          icon: (
-            <FaTrash size={20} className="text-red-500 hover:text-red-600" />
-          ),
-        },
+        // {
+        //   label: "Delete",
+        //   onClick: (row) => handleDeleteFee(row.fee_id, row.challan_no),
+        //   icon: (
+        //     <FaTrash
+        //       size={20}
+        //       className="cursor-pointer text-red-500 hover:text-red-600"
+        //     />
+        //   ),
+        // },
       ]
     : [
         // View only action for non-admin users
         {
           label: "View",
           onClick: (row) => {
-            // Navigate to view details page or show modal
-            navigate(`/SALU-PORTAL-FYP/ViewFee/${row.fee_id}`, {
+            navigate(`/SALU-PORTAL-FYP/Fees/ViewFee/${row.fee_id}`, {
               state: { fee: row },
             });
           },
@@ -240,7 +296,7 @@ export default function ViewFees() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search fees by CNIC, challan no, amount, year, status, or department..."
+            placeholder="Search by CNIC, challan no, amount, year, status, or department..."
             className="w-full sm:w-80 !px-3 !py-2 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           />
         </div>
@@ -356,12 +412,19 @@ export default function ViewFees() {
           )}
         </div>
 
-        {/* Table */}
-        <DataTable columns={columns} rows={currentPageRows} actions={actions} />
+        <DataTable
+          columns={columns}
+          rows={currentPageRows.map((row) => ({
+            ...row,
+            paid_date: formatDate(row.paid_date),
+            amount: formatAmount(row.amount), // No currency symbol, just formatted number
+          }))}
+          actions={actions}
+        />
 
         <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
           <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
-            Total Fees Records : {filteredFees.length}
+            Total Fees Records: {filteredFees.length}
           </span>
           <Pagination
             totalPages={pageCount}

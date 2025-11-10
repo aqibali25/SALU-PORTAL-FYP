@@ -86,7 +86,7 @@ const Profile = () => {
 
             <button
               onClick={handleLogout}
-              className="flex items-center gap-5 text-[1.1rem] text-black w-full text-left hover:text-white md:hover:bg-gradient-to-r md:hover:from-[#D5D5D5] md:hover:to-[#CA4DFF] transition-all duration-500 !px-[20px] !py-[15px]"
+              className="flex items-center gap-5 text-[1.1rem] text-black w-full text-left hover:text-white md:hover:bg-gradient-to-r md:hover:from-[#D5D5D5] md:hover:to-[#CA4DFF] transition-all duration-500 !px-[20px] !py-[15px] cursor-pointer"
             >
               <FontAwesomeIcon icon={faSignOutAlt} />
               Log Out
