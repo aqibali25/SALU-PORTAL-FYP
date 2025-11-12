@@ -3,23 +3,9 @@ import { sequelize } from "../db.js";
 
 const DB = process.env.DB_NAME || "u291434058_SALU_GC";
 
-/* =======================================================================
-   1️⃣  CREATE attendance record(s)
-   ======================================================================= */
-/**
- * POST /api/attendance
- * Body example:
- * [
- *   {
- *     subject_id: 1,
- *     student_id: 5,
- *     attendance_date: "2025-11-12",
- *     status: "Present",
- *     remarks: "On time",
- *     class_time: "2025-11-12 09:00:00"
- *   }
- * ]
- */
+
+   //CREATE attendance record(s)
+
 export const createAttendance = async (req, res) => {
   try {
     const records = Array.isArray(req.body) ? req.body : [req.body];
@@ -76,14 +62,9 @@ export const createAttendance = async (req, res) => {
   }
 };
 
-/* =======================================================================
-   2️⃣  GET attendance (all / filters)
-   ======================================================================= */
-/**
- * GET /api/attendance
- * Optional query params:
- *   ?subject_id=1&student_id=5&date=2025-11-12
- */
+
+   //GET attendance (all / filters)
+   
 export const getAttendance = async (req, res) => {
   try {
     const { subject_id, student_id, date } = req.query;
@@ -136,17 +117,9 @@ export const getAttendance = async (req, res) => {
   }
 };
 
-/* =======================================================================
-   3️⃣  UPDATE attendance record
-   ======================================================================= */
-/**
- * PUT /api/attendance/:attendance_id
- * Body example:
- * {
- *   status: "Absent",
- *   remarks: "Left early"
- * }
- */
+
+   //UPDATE attendance record
+ 
 export const updateAttendance = async (req, res) => {
   try {
     const { attendance_id } = req.params;
