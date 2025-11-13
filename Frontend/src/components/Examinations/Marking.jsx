@@ -4,20 +4,7 @@ import BackButton from "../BackButton";
 import AdmissionCard from "../Admissions/AdmissionCard";
 import { useState, useEffect } from "react";
 import axios from "axios";
-
-// Predefined color combinations to ensure good contrast and visual appeal
-const COLOR_COMBINATIONS = [
-  { bgColor: "#FFFBEB", borderColor: "#FACC15", iconBg: "#FACC15" }, // Yellow
-  { bgColor: "#EFF6FF", borderColor: "#3B82F6", iconBg: "#3B82F6" }, // Blue
-  { bgColor: "#FEF2F2", borderColor: "#EF4444", iconBg: "#EF4444" }, // Red
-  { bgColor: "#F0FDF4", borderColor: "#22C55E", iconBg: "#22C55E" }, // Green
-  { bgColor: "#FAF5FF", borderColor: "#A855F7", iconBg: "#A855F7" }, // Purple
-  { bgColor: "#FFF7ED", borderColor: "#F97316", iconBg: "#F97316" }, // Orange
-  { bgColor: "#F0F9FF", borderColor: "#0EA5E9", iconBg: "#0EA5E9" }, // Sky Blue
-  { bgColor: "#FDF2F8", borderColor: "#EC4899", iconBg: "#EC4899" }, // Pink
-  { bgColor: "#FEFCE8", borderColor: "#EAB308", iconBg: "#EAB308" }, // Amber
-  { bgColor: "#ECFDF5", borderColor: "#10B981", iconBg: "#10B981" }, // Emerald
-];
+import { COLOR_COMBINATIONS } from "../../Hooks/useColorCombination";
 
 // API base URL - adjust according to your configuration
 const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -31,6 +18,7 @@ const Marking = () => {
   const [subjectCards, setSubjectCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [subjectsData, setSubjectsData] = useState([]);
 
   const fetchSubjects = async () => {
     try {
@@ -45,6 +33,7 @@ const Marking = () => {
         withCredentials: true,
       });
       const data = response.data.data;
+      console.log(data);
 
       // Check if user is super admin
       const isSuperAdmin = userRole === "super admin";
@@ -59,6 +48,7 @@ const Marking = () => {
           (subject) => subject.teacherName === username
         );
       }
+      setSubjectsData(subjectsData);
 
       // Transform the data into subject cards with unique colors
       const transformedSubjects = subjectsData.map((subject, index) => {
@@ -82,7 +72,6 @@ const Marking = () => {
         };
       });
 
-      console.log("Transformed subjects:", transformedSubjects);
       setSubjectCards(transformedSubjects);
     } catch (error) {
       console.error("Error fetching subjects:", error);
@@ -172,6 +161,7 @@ const Marking = () => {
                 iconBg={card.iconBg}
                 Icon={card.Icon}
                 to={`EnterMarks/Subject/${card.title.replace(/\s+/g, "")}`}
+                subjectsData={subjectsData}
               />
             ))
           )}

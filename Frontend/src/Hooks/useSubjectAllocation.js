@@ -33,6 +33,8 @@ export default function useSubjectAllocation({ pageSize = 10 }) {
             withCredentials: true,
           }),
         ]);
+        console.log("Allocations Data:", allocationsRes.data.data);
+        console.log("Subjects Data:", subjectsRes.data.data);
 
         // Create a map of subjectId/subjectName to teacherName from allocations
         const allocationMap = new Map();

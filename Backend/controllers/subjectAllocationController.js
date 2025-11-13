@@ -24,33 +24,18 @@ const toSnake = (k) =>
     creditHours: "credit_hours",
   }[k] || k);
 
-// ----------------- LIST -----------------
+// ----------------- LIST (ALL ENTRIES) -----------------
 export const listSubjectAllocations = async (req, res) => {
   try {
-    const {
-      search = "",
-      sortBy = "created_at",
-      sortDir = "DESC",
-      page = 1,
-      pageSize = 10,
-    } = req.query;
+    const { search = "", sortBy = "created_at", sortDir = "DESC" } = req.query;
 
     const sortCol = ALLOWED_SORTS.has(sortBy) ? sortBy : "created_at";
     const dir = String(sortDir).toUpperCase() === "ASC" ? "ASC" : "DESC";
-
-    const p = Math.max(parseInt(page, 10) || 1, 1);
-    const ps = Math.min(Math.max(parseInt(pageSize, 10) || 10, 1), 100);
-    const offset = (p - 1) * ps;
 
     const where = search
       ? `WHERE (subject_name LIKE ? OR teacher_name LIKE ? OR department LIKE ? OR semester LIKE ? OR CAST(year AS CHAR) LIKE ?)`
       : "";
     const params = search ? Array(5).fill(`%${search}%`) : [];
-
-    const [[{ total }]] = await sequelize.query(
-      `SELECT COUNT(*) AS total FROM ${TABLE} ${where}`,
-      { replacements: params }
-    );
 
     const [rows] = await sequelize.query(
       `SELECT
@@ -65,17 +50,13 @@ export const listSubjectAllocations = async (req, res) => {
          updated_at   AS updatedAt
        FROM ${TABLE}
        ${where}
-       ORDER BY ${sortCol} ${dir}
-       LIMIT ? OFFSET ?`,
-      { replacements: [...params, ps, offset] }
+       ORDER BY ${sortCol} ${dir}`,
+      { replacements: params }
     );
 
     res.json({
       success: true,
-      total,
-      page: p,
-      pageSize: ps,
-      pageCount: Math.ceil(total / ps),
+      total: rows.length,
       data: rows,
     });
   } catch (err) {
@@ -138,12 +119,10 @@ export const createSubjectAllocation = async (req, res) => {
     const yearNum = Number(year);
 
     if (isNaN(creditHoursNum) || creditHoursNum <= 0) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Credit Hours must be a valid number.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Credit Hours must be a valid number.",
+      });
     }
     if (isNaN(yearNum) || yearNum <= 0) {
       return res
@@ -184,13 +163,11 @@ export const createSubjectAllocation = async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Error in createSubjectAllocation:", err);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Internal Server Error while allocating subject.",
-        error: err.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error while allocating subject.",
+      error: err.message,
+    });
   }
 };
 

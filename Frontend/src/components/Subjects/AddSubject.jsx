@@ -89,12 +89,16 @@ const AddSubject = ({ Title }) => {
       const token = localStorage.getItem("token");
       const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-      const payload = { ...form };
+      const payload = {
+        ...form,
+        semester: form.semester.toLowerCase(),
+      };
 
-      // ✅ Generate Final Subject Name only on submit
-      payload.subjectName = `${form.subjectName}${
-        form.subjectType ? " - " + form.subjectType : ""
-      }`;
+      Title === "Add Subject"
+        ? (payload.subjectName = `${form.subjectName}${
+            form.subjectType ? " - " + form.subjectType : ""
+          }`)
+        : null;
 
       if (Title === "Add Subject") delete payload.subjectId;
 
@@ -247,7 +251,7 @@ const AddSubject = ({ Title }) => {
 
           {/* Semester */}
           <InputContainer
-            placeholder="Enter Semester"
+            placeholder="Enter Semester (1st, 2nd, 3rd, 4th, 5th, 6th, 7th, 8th)"
             title="Semester"
             htmlFor="semester"
             inputType="text"
@@ -258,7 +262,7 @@ const AddSubject = ({ Title }) => {
 
           {/* Credit Hours */}
           <InputContainer
-            placeholder="Enter Credit Hours"
+            placeholder="Enter Credit Hours (1-9)"
             title="Credit Hours"
             htmlFor="creditHours"
             inputType="number"
@@ -277,7 +281,7 @@ const AddSubject = ({ Title }) => {
 
           {/* Year */}
           <InputContainer
-            placeholder="Enter Year"
+            placeholder="Enter Year (current academic year)"
             title="Year"
             htmlFor="year"
             inputType="number"

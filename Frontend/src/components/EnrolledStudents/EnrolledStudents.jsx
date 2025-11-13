@@ -4,6 +4,7 @@ import Pagination from "../Pagination";
 import Background from "../../assets/Background.png";
 import { useEnrolledStudents } from "../../Hooks/useEnrolledStudents";
 import { useDepartments } from "../../Hooks/HomeCards";
+import BackButton from "../BackButton";
 
 const EnrolledStudents = () => {
   const { students, loading, error } = useEnrolledStudents();
@@ -27,28 +28,48 @@ const EnrolledStudents = () => {
     userRole === "superadmin" ||
     userRole === "super admin";
 
-  // Use useMemo to prevent recreation on every render
+  // Use useMemo to filter and sort students
   const validStudents = useMemo(() => {
     return students.filter(
       (student) =>
-        student.current_year !== "5th" && student.current_year !== null
+        student.current_year !== "5th" &&
+        student.current_year !== null &&
+        student.current_semester !== null
     );
   }, [students]);
 
+  // Extract available years and semesters for filters
   const years = useMemo(() => {
-    return [
-      ...new Set(
-        validStudents.map((student) => student.current_year).filter(Boolean)
-      ),
-    ].sort();
+    const yearSet = new Set(
+      validStudents
+        .map((student) => student.current_year)
+        .filter((year) => year && year !== "N/A")
+    );
+    return Array.from(yearSet).sort((a, b) => {
+      const yearOrder = { "1st": 1, "2nd": 2, "3rd": 3, "4th": 4 };
+      return yearOrder[a] - yearOrder[b];
+    });
   }, [validStudents]);
 
   const semesters = useMemo(() => {
-    return [
-      ...new Set(
-        validStudents.map((student) => student.current_semester).filter(Boolean)
-      ),
-    ].sort();
+    const semesterSet = new Set(
+      validStudents
+        .map((student) => student.current_semester)
+        .filter((sem) => sem && sem !== "N/A")
+    );
+    return Array.from(semesterSet).sort((a, b) => {
+      const semOrder = {
+        "1st": 1,
+        "2nd": 2,
+        "3rd": 3,
+        "4th": 4,
+        "5th": 5,
+        "6th": 6,
+        "7th": 7,
+        "8th": 8,
+      };
+      return semOrder[a] - semOrder[b];
+    });
   }, [validStudents]);
 
   // Apply filters
@@ -117,7 +138,7 @@ const EnrolledStudents = () => {
 
   // Table columns
   const columns = [
-    { key: "roll_number", label: "Roll No." },
+    { key: "roll_no", label: "Roll No." },
     { key: "student_name", label: "Student Name" },
     { key: "father_name", label: "Father Name" },
     { key: "cnic", label: "CNIC" },
@@ -177,10 +198,12 @@ const EnrolledStudents = () => {
       }}
     >
       <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl !py-3 font-bold text-gray-900 dark:text-white">
-          Enrolled Students
-        </h1>
-
+        <div className="flex justify-start items-center gap-3">
+          <BackButton url={"/SALU-PORTAL-FYP/"} />
+          <h1 className="text-2xl sm:text-3xl md:text-4xl !py-3 font-bold text-gray-900 dark:text-white">
+            Enrolled Students
+          </h1>
+        </div>
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 
         {/* Search */}

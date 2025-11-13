@@ -21,8 +21,7 @@ const ALLOWED_SORTS = new Set([
  *   search   - matches subject_name / department / semester / year / type
  *   sortBy   - any of ALLOWED_SORTS (default subject_allocation_id)
  *   sortDir  - ASC|DESC (default DESC)
- *   page     - default 1
- *   pageSize - default 10 (max 100)
+ *   No pagination - returns all entries
  */
 export const listSubjects = async (req, res) => {
   try {
@@ -30,27 +29,16 @@ export const listSubjects = async (req, res) => {
       search = "",
       sortBy = "subject_allocation_id",
       sortDir = "DESC",
-      page = 1,
-      pageSize = 10,
     } = req.query;
 
     const sort = ALLOWED_SORTS.has(sortBy) ? sortBy : "subject_allocation_id";
     const dir = String(sortDir).toUpperCase() === "ASC" ? "ASC" : "DESC";
-
-    const p = Math.max(parseInt(page, 10) || 1, 1);
-    const ps = Math.min(Math.max(parseInt(pageSize, 10) || 10, 1), 100);
-    const offset = (p - 1) * ps;
 
     const where = search
       ? `WHERE (subject_name LIKE ? OR department LIKE ? OR semester LIKE ? OR subject_type LIKE ? OR CAST(year AS CHAR) LIKE ?)`
       : "";
 
     const params = search ? Array(5).fill(`%${search}%`) : [];
-
-    const [[{ total }]] = await sequelize.query(
-      `SELECT COUNT(*) AS total FROM ${TABLE} ${where}`,
-      { replacements: params }
-    );
 
     const [rows] = await sequelize.query(
       `
@@ -65,22 +53,18 @@ export const listSubjects = async (req, res) => {
       FROM ${TABLE}
       ${where}
       ORDER BY ${sort} ${dir}
-      LIMIT ? OFFSET ?
       `,
-      { replacements: [...params, ps, offset] }
+      { replacements: params }
     );
 
     res.json({
       success: true,
-      total,
-      page: p,
-      pageSize: ps,
-      pageCount: Math.ceil(total / ps),
+      total: rows.length,
       data: rows,
     });
   } catch (err) {
     console.error("listSubjects error:", err);
-    res.status(500).json({ success: false, message: "Duplictate Entry" });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -129,8 +113,6 @@ export const getSubjectById = async (req, res) => {
  * }
  * If subjectId exists -> UPDATE, else INSERT
  */
-// POST: /api/subjects/upsert
-// POST: /api/subjects/upsert
 export const upsertSubject = async (req, res) => {
   try {
     const {
@@ -139,8 +121,8 @@ export const upsertSubject = async (req, res) => {
       subjectType,
       department,
       semester,
-      creditHours, // keep string
-      year, // keep string
+      creditHours,
+      year,
     } = req.body;
 
     if (

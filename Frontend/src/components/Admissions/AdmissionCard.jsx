@@ -1,9 +1,17 @@
 import { Link } from "react-router-dom";
 
-const AdmissionCard = ({ title, bgColor, borderColor, iconBg, Icon, to }) => {
+const AdmissionCard = ({
+  title,
+  bgColor,
+  borderColor,
+  iconBg,
+  Icon,
+  to,
+  subjectsData,
+}) => {
   return (
     <div
-      className="flex flex-col items-center justify-center gap-5 w-65 h-75 !p-6 rounded-lg shadow-sm"
+      className="flex flex-col items-center justify-center gap-5 w-60 h-75 !p-6 rounded-lg shadow-sm"
       style={{ backgroundColor: bgColor, border: `1px solid ${borderColor}` }}
     >
       {/* Icon Section */}
@@ -20,6 +28,7 @@ const AdmissionCard = ({ title, bgColor, borderColor, iconBg, Icon, to }) => {
       {/* Button */}
       <Link
         to={`/SALU-PORTAL-FYP/${to}`}
+        state={subjectsData && subjectsData.length > 0 ? subjectsData : null}
         className="!px-4 !py-1 bg-white border border-gray-300 text-gray-800 "
         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = bgColor)}
         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}

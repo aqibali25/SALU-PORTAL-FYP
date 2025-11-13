@@ -15,19 +15,32 @@ export const useEnrolledStudents = () => {
 
   // Function to convert number to ordinal (1st, 2nd, 3rd, etc.)
   const getOrdinal = (number) => {
-    if (number === 1) return "1st";
-    if (number === 2) return "2nd";
-    if (number === 3) return "3rd";
-    if (number === 4) return "4th";
-    if (number === 5) return "5th";
-    if (number === 6) return "6th";
-    if (number === 7) return "7th";
-    if (number === 8) return "8th";
-    return `${number}th`;
+    if (!number || isNaN(number)) return null;
+
+    const num = parseInt(number);
+    if (num === 1) return "1st";
+    if (num === 2) return "2nd";
+    if (num === 3) return "3rd";
+    if (num === 4) return "4th";
+    if (num === 5) return "5th";
+    if (num === 6) return "6th";
+    if (num === 7) return "7th";
+    if (num === 8) return "8th";
+    return `${num}th`;
   };
 
   // Function to calculate current year, semester number, and display values
-  const calculateYearAndSemester = (rollNumber) => {
+  const calculateYearAndSemester = (
+    rollNumber,
+    enrollmentYearFromData = null
+  ) => {
+    // If enrollment year is provided from data, use it
+    if (enrollmentYearFromData) {
+      const enrollmentYear = parseInt(enrollmentYearFromData);
+      return calculateFromEnrollmentYear(enrollmentYear);
+    }
+
+    // Otherwise calculate from roll number
     if (!rollNumber || typeof rollNumber !== "string") {
       return {
         current_year: null,
@@ -54,6 +67,11 @@ export const useEnrolledStudents = () => {
         enrollmentYear < 50 ? 2000 + enrollmentYear : 1900 + enrollmentYear;
     }
 
+    return calculateFromEnrollmentYear(enrollmentYear);
+  };
+
+  // Common calculation logic from enrollment year
+  const calculateFromEnrollmentYear = (enrollmentYear) => {
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth() + 1; // January is 1
@@ -145,13 +163,10 @@ export const useEnrolledStudents = () => {
       return [];
     }
 
-    if (!candidateData || candidateData.length === 0) {
-      setEnrolledStudents([]);
-      return [];
-    }
-
     const processedStudents = formsData.map((form) => {
-      const matchingCandidate = candidateData.find((c) => c.cnic === form.cnic);
+      const matchingCandidate = candidateData?.find(
+        (c) => c.cnic === form.cnic
+      );
 
       const department = matchingCandidate?.department || form.department;
       const rollNumber =
@@ -160,17 +175,25 @@ export const useEnrolledStudents = () => {
         matchingCandidate?.roll_number ||
         form.roll_number;
 
+      // Use enrollment year from data if available, otherwise calculate from roll number
+      const enrollmentYearFromData =
+        form.enrollment_year || matchingCandidate?.enrollment_year;
+
       // Calculate current year and semester
       const { current_year, current_semester, enrollment_year } =
-        calculateYearAndSemester(rollNumber);
+        calculateYearAndSemester(rollNumber, enrollmentYearFromData);
 
       const processedForm = {
         ...form,
         department: department,
-        roll_number: rollNumber,
         current_year: current_year,
         current_semester: current_semester,
         enrollment_year: enrollment_year,
+        student_name:
+          form.student_name || matchingCandidate?.student_name || "N/A",
+        father_name:
+          form.father_name || matchingCandidate?.father_name || "N/A",
+        cnic: form.cnic || "N/A",
       };
 
       return processedForm;
@@ -178,7 +201,7 @@ export const useEnrolledStudents = () => {
 
     // Filter out 5th year students and students with invalid roll numbers
     const filteredStudents = processedStudents.filter((student) => {
-      return student.current_year !== null;
+      return student.current_year !== "5th" && student.current_year !== null;
     });
 
     // Sort by year first, then semester, then name alphabetically
@@ -221,7 +244,6 @@ export const useEnrolledStudents = () => {
     });
 
     setEnrolledStudents(sortedStudents);
-
     return sortedStudents;
   };
 
@@ -230,43 +252,46 @@ export const useEnrolledStudents = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `http://localhost:5000/api/admissions/enrolled/list`,
+        `${backendBaseUrl}/api/admissions/enrolled/list`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const candidateData = res.data.data;
       return candidateData;
     } catch (err) {
       console.error("Error fetching candidate:", err);
-      toast.error("Failed to fetch candidate data!", {
-        position: "top-center",
-      });
+      toast.error("Failed to fetch candidate data!");
       return [];
     }
   };
 
   // Main data fetching effect
   useEffect(() => {
-    document.title = `SALU Portal | Select Merit List`;
+    document.title = `SALU Portal | Enrolled Students`;
 
     const fetchAllData = async () => {
       try {
         setLoading(true);
 
         // Fetch both data sources
-        const candidateData = await fetchCandidate();
-        const formsData = await fetchAdmissions();
+        const [candidateData, formsData] = await Promise.all([
+          fetchCandidate(),
+          fetchAdmissions(),
+        ]);
 
         // Set state first
         setCandidate(candidateData);
         setForms(formsData);
 
         // Then process the data immediately
-        if (formsData.length > 0 && candidateData.length > 0) {
+        if (formsData.length > 0) {
           processEnrolledStudents(formsData, candidateData);
+        } else {
+          setEnrolledStudents([]);
         }
       } catch (error) {
         console.error("❌ Error fetching data:", error);
         setError(error.message);
+        toast.error("Failed to fetch enrolled students data!");
       } finally {
         setLoading(false);
       }
@@ -277,17 +302,17 @@ export const useEnrolledStudents = () => {
 
   // Fallback processing when state updates
   useEffect(() => {
-    if (forms.length > 0 && candidate.length > 0) {
+    if (forms.length > 0) {
       processEnrolledStudents(forms, candidate);
     }
   }, [forms, candidate]);
 
   return {
     students: enrolledStudents,
-    loading,
-    error,
+    loading: loading,
+    error: error,
     refreshEnrolledStudents: () => {
-      if (forms.length > 0 && candidate.length > 0) {
+      if (forms.length > 0) {
         processEnrolledStudents(forms, candidate);
       }
     },

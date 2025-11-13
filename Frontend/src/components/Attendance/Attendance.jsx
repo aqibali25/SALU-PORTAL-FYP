@@ -4,20 +4,7 @@ import BackButton from "../BackButton";
 import AdmissionCard from "../Admissions/AdmissionCard";
 import { useState, useEffect } from "react";
 import axios from "axios";
-
-// Predefined color combinations to ensure good contrast and visual appeal
-const COLOR_COMBINATIONS = [
-  { bgColor: "#FFFBEB", borderColor: "#FACC15", iconBg: "#FACC15" }, // Yellow
-  { bgColor: "#EFF6FF", borderColor: "#3B82F6", iconBg: "#3B82F6" }, // Blue
-  { bgColor: "#FEF2F2", borderColor: "#EF4444", iconBg: "#EF4444" }, // Red
-  { bgColor: "#F0FDF4", borderColor: "#22C55E", iconBg: "#22C55E" }, // Green
-  { bgColor: "#FAF5FF", borderColor: "#A855F7", iconBg: "#A855F7" }, // Purple
-  { bgColor: "#FFF7ED", borderColor: "#F97316", iconBg: "#F97316" }, // Orange
-  { bgColor: "#F0F9FF", borderColor: "#0EA5E9", iconBg: "#0EA5E9" }, // Sky Blue
-  { bgColor: "#FDF2F8", borderColor: "#EC4899", iconBg: "#EC4899" }, // Pink
-  { bgColor: "#FEFCE8", borderColor: "#EAB308", iconBg: "#EAB308" }, // Amber
-  { bgColor: "#ECFDF5", borderColor: "#10B981", iconBg: "#10B981" }, // Emerald
-];
+import { COLOR_COMBINATIONS } from "../../Hooks/useColorCombination";
 
 // API base URL - adjust according to your configuration
 const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -31,6 +18,7 @@ const Attendance = () => {
   const [subjectCards, setSubjectCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [subjectsData, setSubjectsData] = useState([]);
 
   // Function to fetch subjects from database/API
   const fetchSubjects = async () => {
@@ -60,6 +48,7 @@ const Attendance = () => {
           (subject) => subject.teacherName === username
         );
       }
+      setSubjectsData(subjectsData);
 
       // Transform the data into subject cards with unique colors
       const transformedSubjects = subjectsData.map((subject, index) => {
@@ -107,7 +96,7 @@ const Attendance = () => {
   if (error) {
     return (
       <div
-        className="sm:!px-[40px] md:!px-[80px] !px-5 !py-[20px] min-h-[calc(100vh-90px)] w-full bg-white dark:bg-gray-900 flex items-center justify-center"
+        className="sm:!px-[40px] md:!px-[50px] !px-5 !py-[20px] min-h-[calc(100vh-90px)] w-full bg-white dark:bg-gray-900 flex items-center justify-center"
         style={{
           backgroundImage: `url(${Background})`,
           backgroundSize: "cover",
@@ -171,6 +160,7 @@ const Attendance = () => {
                 iconBg={card.iconBg}
                 Icon={card.Icon}
                 to={`Attendance/${card.title.replace(/\s+/g, "")}`}
+                subjectsData={subjectsData}
               />
             ))
           )}
