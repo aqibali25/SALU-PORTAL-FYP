@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -39,6 +39,7 @@ export default function MarkAttendance() {
   const [showClassInput, setShowClassInput] = useState(false);
   const [hasCheckedAttendance, setHasCheckedAttendance] = useState(false);
   const pageSize = 10;
+  const toastShownRef = useRef(false);
 
   const token = localStorage.getItem("token");
 
@@ -194,22 +195,23 @@ export default function MarkAttendance() {
     }
   };
 
-  // Show appropriate message based on attendance status
   useEffect(() => {
     if (
       hasCheckedAttendance &&
       subject &&
-      studentsEnrolledinSubject.length > 0
+      studentsEnrolledinSubject.length > 0 &&
+      !toastShownRef.current
     ) {
       const today = getTodayDate();
       const storedClasses = localStorage.getItem(getStorageKey());
 
       if (classesTakenToday >= classesToday && classesToday > 0) {
         // Limit reached
+        toastShownRef.current = true;
         toast.warning(
           `You have already taken attendance for all ${classesToday} class${
             classesToday > 1 ? "es" : ""
-          } today. Please contact your Admin or HOD for updates.`,
+          } today.`,
           {
             position: "top-center",
             autoClose: 6000,
@@ -217,24 +219,31 @@ export default function MarkAttendance() {
         );
       } else if (!storedClasses && classesTakenToday === 0) {
         // No classes set and no attendance taken - show class input
+        toastShownRef.current = true;
         setShowClassInput(true);
         toast.info(
-          <div className="text-center">
-            <h3 className="font-bold text-lg !mb-2">
+          <div className="text-center w-full">
+            <h3 className="font-bold text-lg !mb-2 sm:text-base">
               How many classes do you have today? ({formatDisplayDate(today)})
             </h3>
-            <div className="flex justify-center gap-4 !mt-4">
+            <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 !mt-4">
               <button
                 onClick={() => handleClassInput(1)}
-                className="bg-blue-500 hover:bg-blue-600 text-white !px-6 !py-2 rounded-lg font-semibold transition-colors"
+                className="bg-blue-500 hover:bg-blue-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
               >
                 1 Class
               </button>
               <button
                 onClick={() => handleClassInput(2)}
-                className="bg-green-500 hover:bg-green-600 text-white !px-6 !py-2 rounded-lg font-semibold transition-colors"
+                className="bg-green-500 hover:bg-green-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
               >
                 2 Classes
+              </button>
+              <button
+                onClick={() => handleClassInput(3)}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
+              >
+                3 Classes
               </button>
             </div>
           </div>,
@@ -245,12 +254,14 @@ export default function MarkAttendance() {
             draggable: false,
             closeButton: false,
             style: {
-              minWidth: "400px",
+              minWidth: "min(450px, 90vw)",
+              maxWidth: "95vw",
             },
           }
         );
       } else if (storedClasses && classesTakenToday > 0) {
         // Show current status
+        toastShownRef.current = true;
         toast.info(
           `Today (${formatDisplayDate(
             today
@@ -271,6 +282,11 @@ export default function MarkAttendance() {
     classesTakenToday,
     classesToday,
   ]);
+
+  // Reset the toast shown flag when date changes
+  useEffect(() => {
+    toastShownRef.current = false;
+  }, [currentDate]);
 
   const handleClassInput = (classCount) => {
     setClassesToday(classCount);
@@ -783,7 +799,7 @@ export default function MarkAttendance() {
             {/* Class Info Display */}
             {classesToday > 0 && (
               <div
-                className={`border rounded-lg !px-4 !py-2 ${
+                className={`border !px-4 !py-2 ${
                   isAttendanceLimitReached
                     ? "bg-red-100 border-red-300"
                     : "bg-blue-100 border-blue-300"
@@ -837,8 +853,7 @@ export default function MarkAttendance() {
                   submitting ||
                   studentsEnrolledinSubject.length === 0 ||
                   isAttendanceLimitReached ||
-                  classesToday === 0 ||
-                  !allSelected
+                  classesToday === 0
                 }
                 className="cursor-pointer relative overflow-hidden !px-[15px] !py-[5px] border-2 border-[#22c55e] text-white text-[0.9rem] font-medium bg-transparent transition-all duration-300 ease-linear
                   before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#22c55e] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60 disabled:cursor-not-allowed"
