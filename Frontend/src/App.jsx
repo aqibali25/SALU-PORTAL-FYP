@@ -14,7 +14,7 @@ import Cookies from "js-cookie";
 import { useEffect } from "react";
 import SubjectAllocation from "./components/SubAlocation/SubjectAllocation";
 import AssigningSubject from "./components/SubAlocation/AssigningSubject";
-import Attendance from "./components/Attendance/Attendance";
+import TakeAttendance from "./components/Attendance/TakeAttendance";
 import MarkAttendances from "./components/Attendance/MarkAttendance";
 import AddTestMarks from "./components/Admissions/AddTestMarks";
 import SelectedInMaritList from "./components/Admissions/SelectedInMeritList";
@@ -37,6 +37,10 @@ import ViewDepartments from "./components/Departments/ViewDepartments";
 import AddFees from "./components/Fees/AddFees";
 import ViewFees from "./components/Fees/ViewFees";
 import EnrolledStudents from "./components/EnrolledStudents/EnrolledStudents";
+import Attendance from "./components/Attendance/Attendance";
+import ViewAttendance from "./components/Attendance/ViewAttendance";
+import StudentAttendance from "./components/Attendance/StudentAttendance";
+import UpdateStudentAttendance from "./components/Attendance/UpdateStudentAttendance";
 
 // Helper function to get roles for a specific route
 const getRolesForRoute = (routePath) => {
@@ -270,10 +274,50 @@ function App() {
               }
             />
             <Route
-              path="/SALU-PORTAL-FYP/Attendance/:subjectId"
+              path="/SALU-PORTAL-FYP/Attendance/TakeAttendance"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("attendance")}>
+                  <TakeAttendance title="Take Attendance" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Attendance/TakeAttendance/:subjectId"
               element={
                 <ProtectedRoute allowedRoles={getRolesForRoute("attendance")}>
                   <MarkAttendances />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Attendance/ViewAttendance"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("attendance")}>
+                  <TakeAttendance title="View Attendance" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Attendance/ViewAttendance/:subjectId"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("attendance")}>
+                  <ViewAttendance />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Attendance/ViewAttendance/:subjectId/:roll_no"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("attendance")}>
+                  <StudentAttendance />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Attendance/ViewAttendance/:subjectId/:roll_no/UpdateAttendance/"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("attendance")}>
+                  <UpdateStudentAttendance />
                 </ProtectedRoute>
               }
             />
