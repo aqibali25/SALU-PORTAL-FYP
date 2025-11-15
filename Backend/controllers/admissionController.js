@@ -552,7 +552,7 @@ export const updateFormStatus = async (req, res) => {
     // Update both status and remarks
     await sequelize.query(
       `UPDATE \`${DB}\`.personal_info SET form_status = ?, remarks = ?, cgpa = ? WHERE id = ?`,
-      { replacements: [enumStatus, remarks || null, cgpa || null, form_id] } // Use null if remarks is not provided
+      { replacements: [enumStatus, remarks || null, cgpa || 0, form_id] } // Use null if remarks is not provided
     );
 
     res.json({

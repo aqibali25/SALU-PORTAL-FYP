@@ -45,7 +45,6 @@ export default function ShowStudentsForMarking() {
   // ✅ Redirect if no subject data is available
   useEffect(() => {
     if (!subjectsData) {
-      console.error("❌ No subjects data found. Redirecting...");
       navigate("/SALU-PORTAL-FYP/EnterMarks");
       return;
     }
@@ -69,13 +68,10 @@ export default function ShowStudentsForMarking() {
   // Filter enrolled students by semester and department
   useEffect(() => {
     if (students && subject) {
-      console.log("✅ All Students:", students);
-
       const enrolledStudents = students
         .filter((student) => student.current_semester === subject.semester)
         .filter((student) => student.department === subject.department);
 
-      console.log("✅ Filtered Enrolled Students:", enrolledStudents);
       setStudentsEnrolledinSubject(enrolledStudents);
     }
   }, [students, subject]);
