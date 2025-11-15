@@ -233,18 +233,22 @@ export default function MarkAttendance() {
               >
                 1 Class
               </button>
-              <button
-                onClick={() => handleClassInput(2)}
-                className="bg-green-500 hover:bg-green-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
-              >
-                2 Classes
-              </button>
-              <button
-                onClick={() => handleClassInput(3)}
-                className="bg-yellow-500 hover:bg-yellow-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
-              >
-                3 Classes
-              </button>
+              {subject.creditHours > 1 && (
+                <div>
+                  <button
+                    onClick={() => handleClassInput(2)}
+                    className="bg-green-500 hover:bg-green-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
+                  >
+                    2 Classes
+                  </button>
+                  <button
+                    onClick={() => handleClassInput(3)}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
+                  >
+                    3 Classes
+                  </button>
+                </div>
+              )}
             </div>
           </div>,
           {

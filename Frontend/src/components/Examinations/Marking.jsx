@@ -33,7 +33,6 @@ const Marking = () => {
         withCredentials: true,
       });
       const data = response.data.data;
-      console.log(data);
 
       // Check if user is super admin
       const isSuperAdmin = userRole === "super admin";

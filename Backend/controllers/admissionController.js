@@ -72,6 +72,7 @@ export const getAllAdmissions = async (req, res) => {
         CONCAT(p.first_name, ' ', p.last_name) AS student_name,
         p.cnic AS cnic,
         p.roll_no,
+        p.cgpa,
         p.form_status AS status,
         f.name AS father_name,
         g.name AS guardian_name,
@@ -105,7 +106,7 @@ export const getAdmissionById = async (req, res) => {
         p.id AS form_id, p.cnic, p.first_name, p.last_name, p.gender, p.dob,
         p.religion, p.disability, p.disability_description, p.native_language,
         p.blood_group, p.province, p.city, p.postal_address, p.permanent_address,
-        p.remarks, p.roll_no, p.form_status,
+        p.remarks, p.roll_no, p.form_status, p.cgpa,
 
         f.name AS father_name, f.cnic_number AS father_cnic_number,
         f.mobile_number AS father_mobile, f.occupation AS father_occupation,
@@ -185,6 +186,7 @@ export const getAdmissionById = async (req, res) => {
           permanent_address: row.permanent_address,
           remarks: row.remarks,
           roll_no: row.roll_no,
+          cgpa: row.cgpa,
         },
         father_info: {
           name: row.father_name,
@@ -528,7 +530,7 @@ export const getDocumentsById = async (req, res) => {
 export const updateFormStatus = async (req, res) => {
   try {
     const { form_id } = req.params;
-    const { status, remarks } = req.body;
+    const { status, remarks, cgpa } = req.body;
 
     if (!status) {
       return res
@@ -549,8 +551,8 @@ export const updateFormStatus = async (req, res) => {
 
     // Update both status and remarks
     await sequelize.query(
-      `UPDATE \`${DB}\`.personal_info SET form_status = ?, remarks = ? WHERE id = ?`,
-      { replacements: [enumStatus, remarks || null, form_id] } // Use null if remarks is not provided
+      `UPDATE \`${DB}\`.personal_info SET form_status = ?, remarks = ?, cgpa = ? WHERE id = ?`,
+      { replacements: [enumStatus, remarks || null, cgpa || null, form_id] } // Use null if remarks is not provided
     );
 
     res.json({
