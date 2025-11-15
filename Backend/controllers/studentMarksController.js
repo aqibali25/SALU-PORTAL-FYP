@@ -10,10 +10,7 @@ const toInt = (v, def = 0) => {
   return Number.isFinite(n) ? Math.trunc(n) : def;
 };
 
-const clamp = (x, lo, hi) => Math.min(Math.max(x, lo), hi);
-
-/** Derive obtained + gpa if any part marks/total provided or changed */
-const deriveTotals = ({
+const deriveMarks = ({
   sessional_marks,
   mid_term_marks,
   final_term_marks,
@@ -24,37 +21,23 @@ const deriveTotals = ({
   const m = toInt(mid_term_marks, 0);
   const f = toInt(final_term_marks, 0);
 
-  // If obtained not provided, compute from parts
   const obtained =
     obtained_marks !== undefined && obtained_marks !== null
       ? toInt(obtained_marks, s + m + f)
       : s + m + f;
 
-  // total default to 100 if not provided
   const total = toInt(total_marks, 100);
 
-  // simple 4.00 scale GPA; adjust if you have another rule
-  const pct = total > 0 ? obtained / total : 0;
-  const gpa = Number(clamp(pct * 4, 0, 4).toFixed(2));
-
-  return { s, m, f, obtained, total, gpa };
+  return { s, m, f, obtained, total };
 };
 
-/* 
+/* =======================================================================
    POST /api/student-marks/upsert
-   Creates or updates a row identified by (student_roll_no, subject, semester, department)
-   Body accepts the exact column names; also accepts frontend aliases:
-   - rollNo -> student_roll_no
-   - studentName -> student_name
-   - sessional -> sessional_marks
-   - mid -> mid_term_marks
-   - finalMarks -> final_term_marks
-   */
+   ======================================================================= */
 export const upsertStudentMarks = async (req, res) => {
   try {
     const b = req.body || {};
 
-    // Accept both DB keys and FE aliases
     const student_roll_no = b.student_roll_no ?? b.rollNo ?? "";
     const student_name = b.student_name ?? b.studentName ?? "";
     const department = b.department ?? "";
@@ -69,7 +52,7 @@ export const upsertStudentMarks = async (req, res) => {
       });
     }
 
-    const { s, m, f, obtained, total, gpa } = deriveTotals({
+    const { s, m, f, obtained, total } = deriveMarks({
       sessional_marks: b.sessional_marks ?? b.sessional,
       mid_term_marks: b.mid_term_marks ?? b.mid,
       final_term_marks: b.final_term_marks ?? b.finalMarks,
@@ -77,7 +60,11 @@ export const upsertStudentMarks = async (req, res) => {
       total_marks: b.total_marks,
     });
 
-    // Check if record exists for (roll_no + subject + semester + department)
+    const gpa =
+      b.gpa !== undefined && b.gpa !== null && b.gpa !== ""
+        ? Number(b.gpa)
+        : null;
+
     const [[existing]] = await sequelize.query(
       `
       SELECT mark_id
@@ -92,7 +79,6 @@ export const upsertStudentMarks = async (req, res) => {
     );
 
     if (existing) {
-      // UPDATE
       await sequelize.query(
         `
         UPDATE \`${DB}\`.student_marks
@@ -119,7 +105,6 @@ export const upsertStudentMarks = async (req, res) => {
         }
       );
     } else {
-      // INSERT
       await sequelize.query(
         `
         INSERT INTO \`${DB}\`.student_marks
@@ -146,7 +131,6 @@ export const upsertStudentMarks = async (req, res) => {
       );
     }
 
-    // return latest row for this key
     const [[row]] = await sequelize.query(
       `
       SELECT *
@@ -172,12 +156,22 @@ export const upsertStudentMarks = async (req, res) => {
   }
 };
 
-/* 
-   GET /api/student-marks
-   Optional filters: ?roll_no=...&subject=...&semester=...&department=...&mark_id=...*/
+/* =======================================================================
+   GET /api/student-marks   (filters + roll no support)
+   ======================================================================= */
 export const getStudentMarks = async (req, res) => {
   try {
-    const { roll_no, subject, semester, department, mark_id } = req.query;
+    const {
+      roll_no,
+      rollNumber,
+      student_roll_no, // just in case
+      subject,
+      semester,
+      department,
+      mark_id,
+    } = req.query;
+
+    const rollFilter = roll_no || rollNumber || student_roll_no;
 
     const where = [];
     const params = [];
@@ -186,9 +180,9 @@ export const getStudentMarks = async (req, res) => {
       where.push("m.mark_id = ?");
       params.push(mark_id);
     }
-    if (roll_no) {
+    if (rollFilter) {
       where.push("m.student_roll_no = ?");
-      params.push(roll_no);
+      params.push(rollFilter);
     }
     if (subject) {
       where.push("m.subject = ?");
@@ -234,10 +228,84 @@ export const getStudentMarks = async (req, res) => {
   }
 };
 
-/* 
-   PUT /api/student-marks/:mark_id
-   Body: any updatable fields; if any marks change, obtained/gpa auto-recomputed */
+/* =======================================================================
+   NEW: GET /api/student-marks/all    (pure table – no filters)
+   ======================================================================= */
+export const getAllStudentMarks = async (req, res) => {
+  try {
+    const [rows] = await sequelize.query(
+      `
+      SELECT
+        m.mark_id,
+        m.student_name,
+        m.student_roll_no,
+        m.department,
+        m.semester,
+        m.subject,
+        m.sessional_marks,
+        m.mid_term_marks,
+        m.final_term_marks,
+        m.obtained_marks,
+        m.total_marks,
+        m.gpa
+      FROM \`${DB}\`.student_marks m
+      ORDER BY m.mark_id DESC
+      `
+    );
 
+    res.json({ success: true, total: rows.length, data: rows });
+  } catch (err) {
+    console.error("getAllStudentMarks error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+/* =======================================================================
+   NEW: GET /api/student-marks/by-roll/:roll_no
+   (saare subjects / semesters is roll number ke)
+   ======================================================================= */
+export const getStudentMarksByRoll = async (req, res) => {
+  try {
+    const { roll_no } = req.params;
+
+    if (!roll_no) {
+      return res
+        .status(400)
+        .json({ success: false, message: "roll_no is required." });
+    }
+
+    const [rows] = await sequelize.query(
+      `
+      SELECT
+        m.mark_id,
+        m.student_name,
+        m.student_roll_no,
+        m.department,
+        m.semester,
+        m.subject,
+        m.sessional_marks,
+        m.mid_term_marks,
+        m.final_term_marks,
+        m.obtained_marks,
+        m.total_marks,
+        m.gpa
+      FROM \`${DB}\`.student_marks m
+      WHERE m.student_roll_no = ?
+      ORDER BY m.mark_id DESC
+      `,
+      { replacements: [roll_no] }
+    );
+
+    res.json({ success: true, total: rows.length, data: rows });
+  } catch (err) {
+    console.error("getStudentMarksByRoll error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+/* =======================================================================
+   PUT /api/student-marks/:mark_id
+   ======================================================================= */
 export const updateStudentMarks = async (req, res) => {
   try {
     const { mark_id } = req.params;
@@ -247,7 +315,6 @@ export const updateStudentMarks = async (req, res) => {
 
     const b = req.body || {};
 
-    // Prepare fields to update
     const fields = [];
     const params = [];
 
@@ -265,13 +332,12 @@ export const updateStudentMarks = async (req, res) => {
       }
     });
 
-    // If any marks provided, recompute obtained + gpa
     const anyMarkProvided =
       ["sessional_marks", "mid_term_marks", "final_term_marks", "obtained_marks", "total_marks"]
         .some((k) => b[k] !== undefined);
 
     if (anyMarkProvided) {
-      const { s, m, f, obtained, total, gpa } = deriveTotals({
+      const { s, m, f, obtained, total } = deriveMarks({
         sessional_marks: b.sessional_marks,
         mid_term_marks: b.mid_term_marks,
         final_term_marks: b.final_term_marks,
@@ -289,8 +355,11 @@ export const updateStudentMarks = async (req, res) => {
       params.push(obtained);
       fields.push("total_marks = ?");
       params.push(total);
+    }
+
+    if (b.gpa !== undefined) {
       fields.push("gpa = ?");
-      params.push(gpa);
+      params.push(b.gpa === null || b.gpa === "" ? null : Number(b.gpa));
     }
 
     if (!fields.length) {
