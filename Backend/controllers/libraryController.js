@@ -6,18 +6,21 @@ const DB = process.env.DB_NAME || "u291434058_SALU_GC";
 /* --------------------------- helpers --------------------------- */
 
 const mapBookStatus = (status) => {
-  const s = String(status || "").toLowerCase().trim();
+  const s = String(status || "")
+    .toLowerCase()
+    .trim();
   const map = {
     available: "Available",
+    outofstock: "Out of stock",
     lended: "Lended",
-    lent: "Lended",
-    damaged: "Damaged",
   };
   return map[s] || "Available";
 };
 
 const mapIssueStatus = (status) => {
-  const s = String(status || "").toLowerCase().trim();
+  const s = String(status || "")
+    .toLowerCase()
+    .trim();
   const map = {
     issued: "Issued",
     returned: "Returned",
@@ -25,6 +28,40 @@ const mapIssueStatus = (status) => {
     lost: "Lost",
   };
   return map[s] || "Issued";
+};
+
+/* ===================================================================
+   OVERDUE BOOKS UPDATE FUNCTION
+   =================================================================== */
+
+/** PUT /api/book-issues/update-overdue  -> update status to Overdue for overdue books */
+export const updateOverdueBooks = async (req, res) => {
+  try {
+    const currentDate = new Date();
+
+    // Update books where return_date is NULL and due_date has passed and status is not Returned/Overdue
+    const [result] = await sequelize.query(
+      `UPDATE \`${DB}\`.issued_books 
+       SET status = 'Overdue' 
+       WHERE book_return_date IS NULL 
+       AND book_due_date < ? 
+       AND status != 'Returned' 
+       AND status != 'Overdue'`,
+      { replacements: [currentDate] }
+    );
+
+    res.json({
+      success: true,
+      updatedCount: result.affectedRows,
+      message: `Updated ${result.affectedRows} books to overdue status`,
+    });
+  } catch (error) {
+    console.error("Error updating overdue books:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating overdue books",
+    });
+  }
 };
 
 /* ===================================================================
@@ -57,7 +94,9 @@ export const createBook = async (req, res) => {
         ? Number(availableCopies)
         : total;
 
-    const enumStatus = mapBookStatus(status);
+    // Auto-set status based on available copies
+    const autoStatus = available === 0 ? "Out of stock" : status || "Available";
+    const enumStatus = mapBookStatus(autoStatus);
 
     await sequelize.query(
       `
@@ -207,7 +246,14 @@ export const updateBookById = async (req, res) => {
         .json({ success: false, message: "Book not found." });
     }
 
-    const enumStatus = status ? mapBookStatus(status) : null;
+    // Auto-set status based on available copies if availableCopies is being updated
+    let finalStatus = status;
+    if (availableCopies !== undefined && availableCopies !== null) {
+      finalStatus =
+        Number(availableCopies) === 0 ? "Out of stock" : status || "Available";
+    }
+
+    const enumStatus = finalStatus ? mapBookStatus(finalStatus) : null;
 
     await sequelize.query(
       `
@@ -275,10 +321,12 @@ export const deleteBook = async (req, res) => {
     );
 
     if (!book) {
-      return res.status(404).json({ success: false, message: "Book not found." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Book not found." });
     }
 
-    if (book.status === "Lended") {
+    if (book.available_copies !== book.total_copies) {
       return res.status(400).json({
         success: false,
         message: "Cannot delete. Book is currently issued (Lended).",
@@ -358,20 +406,20 @@ export const issueBook = async (req, res) => {
       }
     );
 
-    // 3) decrement available copies & maybe update status
+    // 3) Calculate new values first, then update
+    const newAvailableCopies = book.available_copies - 1;
+    const newStatus = newAvailableCopies > 0 ? book.status : "Out of stock";
+
     await sequelize.query(
       `
       UPDATE \`${DB}\`.library_books
       SET
-        available_copies = available_copies - 1,
-        status = CASE
-                   WHEN available_copies - 1 <= 0 THEN 'Lended'
-                   ELSE status
-                 END,
+        available_copies = ?,
+        status = ?,
         updated_at = NOW()
       WHERE book_id = ?
       `,
-      { replacements: [bookId] }
+      { replacements: [newAvailableCopies, newStatus, bookId] }
     );
 
     res.json({ success: true, message: "Book issued successfully." });
@@ -467,55 +515,121 @@ export const getBookIssuesByBookId = async (req, res) => {
 /** PUT /api/book-issues/status  -> update status (Returned / Overdue / Lost) */
 export const updateBookIssueStatus = async (req, res) => {
   try {
-    const { rollNo, bookId, status } = req.body;
+    const { rollNo, bookId, status, returnDate } = req.body;
 
-    if (!rollNo || !bookId || !status) {
+    if (!rollNo || !bookId || !status || !returnDate) {
       return res.status(400).json({
         success: false,
-        message: "rollNo, bookId and status are required.",
+        message: "rollNo, bookId, status and returnDate are required.",
       });
     }
 
     const enumStatus = mapIssueStatus(status);
 
+    console.log("Updating book issue status:", {
+      rollNo,
+      bookId,
+      status: enumStatus,
+      returnDate,
+    });
+
+    // First, check if the issue record exists
+    const [[existingIssue]] = await sequelize.query(
+      `
+      SELECT * FROM \`${DB}\`.issued_books 
+      WHERE student_roll_no = ? 
+        AND book_id = ? 
+        AND status != 'Returned'
+      ORDER BY book_issue_date DESC 
+      LIMIT 1
+      `,
+      { replacements: [rollNo, bookId] }
+    );
+
+    console.log("Existing issue record:", existingIssue);
+
+    if (!existingIssue) {
+      return res.status(404).json({
+        success: false,
+        message: "No active issue record found for this student and book.",
+      });
+    }
+
     // update latest issue record for this student+book
     const [result] = await sequelize.query(
       `
       UPDATE \`${DB}\`.issued_books
-      SET status = ?
+      SET status = ?,
+        book_return_date = ?
       WHERE student_roll_no = ?
         AND book_id = ?
+        AND status != 'Returned'
       ORDER BY book_issue_date DESC
       LIMIT 1
       `,
-      { replacements: [enumStatus, rollNo, bookId] }
+      { replacements: [enumStatus, returnDate, rollNo, bookId] }
     );
 
+    console.log("Update result:", result);
+
     if (!result.affectedRows) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Issue record not found." });
+      return res.status(404).json({
+        success: false,
+        message: "Issue record not found or already returned.",
+      });
     }
 
-    // if returned, increase available copies again
+    // if returned, increase available copies again and update status
     if (enumStatus === "Returned") {
-      await sequelize.query(
-        `
-        UPDATE \`${DB}\`.library_books
-        SET
-          available_copies = available_copies + 1,
-          status = 'Available',
-          updated_at = NOW()
-        WHERE book_id = ?
-        `,
+      // First, get the current available copies
+      const [[currentBook]] = await sequelize.query(
+        `SELECT available_copies, status FROM \`${DB}\`.library_books WHERE book_id = ? LIMIT 1`,
         { replacements: [bookId] }
       );
+
+      console.log("Current book before return:", currentBook);
+
+      if (currentBook) {
+        const newAvailableCopies = currentBook.available_copies + 1;
+        const newStatus = newAvailableCopies > 0 ? "Available" : "Out of stock";
+
+        console.log("Updating book after return:", {
+          newAvailableCopies,
+          newStatus,
+        });
+
+        await sequelize.query(
+          `
+          UPDATE \`${DB}\`.library_books
+          SET
+            available_copies = ?,
+            status = ?,
+            updated_at = NOW()
+          WHERE book_id = ?
+          `,
+          { replacements: [newAvailableCopies, newStatus, bookId] }
+        );
+
+        console.log("Book inventory updated successfully");
+      }
     }
 
-    res.json({ success: true, message: "Issue status updated." });
+    res.json({
+      success: true,
+      message: "Book returned successfully.",
+      data: {
+        rollNo,
+        bookId,
+        status: enumStatus,
+        returnDate,
+      },
+    });
   } catch (err) {
     console.error("updateBookIssueStatus error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({
+      success: false,
+      message: "Server error: " + err.message,
+    });
   }
 };
 
@@ -542,13 +656,16 @@ export const deleteIssuedBook = async (req, res) => {
       });
     }
 
-    // book is effectively "returned" -> increase copies
+    // book is effectively "returned" -> increase copies and update status
     await sequelize.query(
       `
       UPDATE \`${DB}\`.library_books
       SET
         available_copies = available_copies + 1,
-        status = 'Available',
+        status = CASE 
+                   WHEN available_copies + 1 > 0 THEN 'Available'
+                   ELSE 'Out of stock'
+                 END,
         updated_at = NOW()
       WHERE book_id = ?
       `,

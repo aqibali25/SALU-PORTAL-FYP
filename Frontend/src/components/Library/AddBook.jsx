@@ -160,11 +160,8 @@ const AddBook = ({ Title }) => {
         return;
       }
 
-      console.log("Submitting book payload:", payload);
-
       // Choose between update or create based on whether we're editing
       if (editingBook) {
-        console.log("Updating book with ID:", editingBook);
         await axios.put(
           `${API}/api/library/books/${editingBook.bookId}`,
           payload,

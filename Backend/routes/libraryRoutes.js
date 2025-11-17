@@ -13,6 +13,7 @@ import {
   updateBookIssueStatus,
   deleteIssuedBook,
   deleteAllIssuesForBook,
+  updateOverdueBooks,
 } from "../controllers/libraryController.js";
 
 const router = express.Router();
@@ -58,5 +59,8 @@ router.delete("/book-issues/student/:rollNo/:bookId", deleteIssuedBook);
 
 // Delete ALL issue history of a book
 router.delete("/book-issues/book/:bookId", deleteAllIssuesForBook);
+
+// Update all overdue books
+router.put("/book-issues/update-overdue", updateOverdueBooks);
 
 export default router;

@@ -27,6 +27,33 @@ export default function BookIssues({ title = "Issued Books" }) {
     return "light";
   };
 
+  // ✅ Update overdue books status
+  const updateOverdueBooks = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+      const response = await axios.put(
+        `${API}/api/library/book-issues/update-overdue`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
+
+      if (response.data.updatedCount > 0) {
+        console.log(
+          `Updated ${response.data.updatedCount} books to overdue status`
+        );
+      }
+    } catch (err) {
+      console.error("Error updating overdue books:", err);
+    }
+  };
+
   // ✅ Fetch issued books using Axios
   useEffect(() => {
     const fetchIssuedBooks = async () => {
@@ -35,6 +62,11 @@ export default function BookIssues({ title = "Issued Books" }) {
         const token = localStorage.getItem("token");
         const API =
           import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+        // First update overdue books status
+        await updateOverdueBooks();
+
+        // Then fetch all book issues
         const res = await axios.get(`${API}/api/library/book-issues`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -126,10 +158,15 @@ export default function BookIssues({ title = "Issued Books" }) {
       const token = localStorage.getItem("token");
       const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
+      // Get current date in YYYY-MM-DD format
+      const today = new Date();
+      const returnDate = today.toISOString().split("T")[0];
+
       const payload = {
         rollNo: book.rollNo,
         bookId: book.bookId,
         status: "Returned",
+        returnDate: returnDate,
       };
 
       // Update book status to Returned
@@ -145,12 +182,8 @@ export default function BookIssues({ title = "Issued Books" }) {
         }
       );
 
-      // Update local state
-      setIssuedBooks((prev) =>
-        prev.map((item) =>
-          item._id === book._id ? { ...item, status: "Returned" } : item
-        )
-      );
+      // ✅ Refresh the table data by fetching updated book issues
+      await refreshBookIssues();
 
       // Success message based on previous status
       const successMessage =
@@ -163,14 +196,13 @@ export default function BookIssues({ title = "Issued Books" }) {
       toast.success(
         <div className="!p-3 !m-1">
           <div className="flex items-center gap-2">
-            <FaCheckCircle className="text-green-500" />
             <span className="font-medium text-gray-900 dark:text-gray-100">
               {successMessage}
             </span>
           </div>
         </div>,
         {
-          position: "top-right",
+          position: "top-center", // Changed to top-center for consistency
           autoClose: 3000,
           style: {
             backgroundColor: theme === "dark" ? "#1f2937" : "#ffffff",
@@ -191,7 +223,7 @@ export default function BookIssues({ title = "Issued Books" }) {
           </div>
         </div>,
         {
-          position: "top-right",
+          position: "top-center", // Changed to top-center for consistency
           autoClose: 5000,
           style: {
             backgroundColor: theme === "dark" ? "#1f2937" : "#ffffff",
@@ -201,6 +233,37 @@ export default function BookIssues({ title = "Issued Books" }) {
       );
     } finally {
       setReturningBook(null);
+    }
+  };
+
+  // ✅ Function to refresh book issues data
+  const refreshBookIssues = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+      // Fetch updated book issues
+      const res = await axios.get(`${API}/api/library/book-issues`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Map the data to match the expected structure
+      const data = res.data.map((issue) => ({
+        ...issue,
+        rollNo: issue.rollNo || "",
+        bookId: issue.bookId || "",
+        bookName: issue.bookName || issue.title || "",
+        issueDate: issue.issueDate || "",
+        dueDate: issue.dueDate || "",
+        status: issue.status || "Issued",
+      }));
+
+      setIssuedBooks(data);
+    } catch (err) {
+      console.error("Error refreshing book issues:", err);
+      toast.error("Error refreshing data: " + err.message, {
+        position: "top-center",
+      });
     }
   };
 
@@ -265,7 +328,7 @@ export default function BookIssues({ title = "Issued Books" }) {
       label: "Status",
       render: (row) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${
+          className={`!px-2 !py-1 rounded-full text-sm font-medium ${
             row.status === "Issued"
               ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
               : row.status === "Returned"

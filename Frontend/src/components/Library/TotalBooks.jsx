@@ -15,47 +15,173 @@ export default function TotalBooks() {
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [deletingBook, setDeletingBook] = useState(null);
   const pageSize = 10;
   const navigate = useNavigate();
 
+  // ✅ Get current theme
+  const getCurrentTheme = () => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("theme") || "light";
+    }
+    return "light";
+  };
+
+  // ✅ Function to fetch books (extracted for reusability)
+  const fetchBooks = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+      const res = await axios.get(`${API}/api/library/books`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Map the data to match the expected structure
+      const data = res.data.data.map((book, index) => ({
+        ...book,
+        serialno: index + 1,
+        // All data including status should come from DB
+        bookId: book.bookId || book.isbn || "", // Support both bookId and isbn
+        title: book.title || "",
+        authors: book.authors || "",
+        genre: book.genre || book.category || "", // Support both genre and category
+        language: book.language || "",
+        totalCopies: book.totalCopies || 0,
+        availableCopies: book.availableCopies || 0,
+        status:
+          book.status ||
+          (book.availableCopies > 0 ? "Available" : "Out of Stock"), // Use status from DB if available
+      }));
+      setBooks(data);
+    } catch (err) {
+      console.error(err);
+      toast.error("Error loading books: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ✅ Fetch books using Axios
   useEffect(() => {
-    const fetchBooks = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem("token");
-        const API =
-          import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-        const res = await axios.get(`${API}/api/library/books`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        // Map the data to match the expected structure
-        const data = res.data.data.map((book, index) => ({
-          ...book,
-          serialno: index + 1,
-          // All data including status should come from DB
-          bookId: book.bookId || book.isbn || "", // Support both bookId and isbn
-          title: book.title || "",
-          authors: book.authors || "",
-          genre: book.genre || book.category || "", // Support both genre and category
-          language: book.language || "",
-          totalCopies: book.totalCopies || 0,
-          availableCopies: book.availableCopies || 0,
-          status:
-            book.status ||
-            (book.availableCopies > 0 ? "Available" : "Out of Stock"), // Status from DB or calculated
-        }));
-        setBooks(data);
-      } catch (err) {
-        console.error(err);
-        toast.error("Error loading books: " + err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchBooks();
   }, []);
+
+  // ✅ Handle book delete
+  const handleDeleteBook = async (book) => {
+    if (deletingBook) return; // Prevent multiple clicks
+
+    const theme = getCurrentTheme();
+
+    // Custom toast for confirmation
+    toast.info(
+      <div className="!p-4 !m-2">
+        <div className="flex items-center gap-3 !mb-3">
+          <FaTrash className="text-red-500 text-xl" />
+          <span className="font-semibold text-gray-900 dark:text-gray-100">
+            Confirm Book Deletion
+          </span>
+        </div>
+        <p className="!mb-4 text-gray-700 dark:text-gray-300">
+          Are you sure you want to delete the book "{book.title}"? This action
+          cannot be undone.
+        </p>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={() => {
+              toast.dismiss();
+              processBookDelete(book);
+            }}
+            className="!px-4 !py-2 bg-red-500 hover:bg-red-600 text-white cursor-pointer font-medium transition-colors"
+          >
+            Yes, Delete Book
+          </button>
+          <button
+            onClick={() => toast.dismiss()}
+            className="!px-4 !py-2 bg-gray-500 hover:bg-gray-600 text-white cursor-pointer font-medium transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>,
+      {
+        position: "top-center",
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        style: {
+          minWidth: "400px",
+          backgroundColor: theme === "dark" ? "#1f2937" : "#ffffff",
+          color: theme === "dark" ? "#f9fafb" : "#1f2937",
+          border: theme === "dark" ? "1px solid #374151" : "1px solid #e5e7eb",
+        },
+      }
+    );
+  };
+
+  // ✅ Process book delete API call
+  const processBookDelete = async (book) => {
+    try {
+      setDeletingBook(book._id);
+      const token = localStorage.getItem("token");
+      const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+      // Delete the book from the server
+      await axios.delete(`${API}/api/library/books/${book.bookId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // ✅ Option 1: Remove from local state immediately for better UX
+      setBooks((prev) => prev.filter((b) => b.bookId !== book.bookId));
+
+      // ✅ Option 2: Refresh data in background to ensure consistency
+      setTimeout(() => {
+        fetchBooks();
+      }, 500);
+
+      const theme = getCurrentTheme();
+      toast.success(
+        <div className="!p-3 !m-1">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-gray-900 dark:text-gray-100">
+              Book "{book.title}" deleted successfully!
+            </span>
+          </div>
+        </div>,
+        {
+          position: "top-center",
+          autoClose: 3000,
+          style: {
+            backgroundColor: theme === "dark" ? "#1f2937" : "#ffffff",
+            color: theme === "dark" ? "#f9fafb" : "#1f2937",
+          },
+        }
+      );
+    } catch (err) {
+      console.error(err);
+      const theme = getCurrentTheme();
+      toast.error(
+        <div className="!p-3 !m-1">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-gray-900 dark:text-gray-100">
+              {err.response?.data?.message || err.message}
+            </span>
+          </div>
+        </div>,
+        {
+          position: "top-center",
+          autoClose: 5000,
+          style: {
+            backgroundColor: theme === "dark" ? "#1f2937" : "#ffffff",
+            color: theme === "dark" ? "#f9fafb" : "#1f2937",
+          },
+        }
+      );
+    } finally {
+      setDeletingBook(null);
+    }
+  };
 
   // Get unique genres for filter
   const genres = [...new Set(books.map((book) => book.genre).filter(Boolean))];
@@ -105,12 +231,12 @@ export default function TotalBooks() {
       label: "Status",
       render: (row) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${
+          className={`!px-2 !py-1 rounded-full text-sm font-medium ${
             row.status === "Available"
-              ? "bg-green-100 text-green-800"
+              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
               : row.status === "Out of Stock"
-              ? "bg-red-100 text-red-800"
-              : "bg-yellow-100 text-yellow-800"
+              ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+              : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
           }`}
         >
           {row.status}
@@ -137,27 +263,13 @@ export default function TotalBooks() {
     },
     {
       label: "Delete",
-      onClick: async (row) => {
-        if (!window.confirm(`Delete book "${row.title}"?`)) return;
-        try {
-          setLoading(true);
-          console.log("Deleting book with ID:", row.bookId);
-          const token = localStorage.getItem("token");
-          const API =
-            import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-          await axios.delete(`${API}/api/library/books/${row.bookId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          setBooks((prev) => prev.filter((book) => book._id !== row._id));
-          toast.success("Book deleted successfully!");
-        } catch (err) {
-          console.error(err);
-          toast.error("Error deleting book: " + err.message);
-        } finally {
-          setLoading(false);
-        }
-      },
-      icon: <FaTrash size={20} className="text-red-500 hover:text-red-600" />,
+      onClick: (row) => handleDeleteBook(row),
+      icon: (
+        <FaTrash
+          size={20}
+          className="text-red-500 hover:text-red-600 cursor-pointer"
+        />
+      ),
     },
   ];
 

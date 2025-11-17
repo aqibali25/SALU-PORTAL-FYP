@@ -26,6 +26,7 @@ const IssueBook = () => {
   const [validatingBookId, setValidatingBookId] = useState(false);
   const [studentInfo, setStudentInfo] = useState(null);
   const [bookInfo, setBookInfo] = useState(null);
+  const [lastValidatedBookId, setLastValidatedBookId] = useState(""); // Track last validated book to prevent duplicate toasts
 
   // Get today's date in YYYY-MM-DD format
   const getTodayDate = () => {
@@ -49,9 +50,18 @@ const IssueBook = () => {
     return rollNoRegex.test(rollNo);
   };
 
-  // ✅ Book ID validation (basic format check)
   const isValidBookIdFormat = (bookId) => {
     return bookId && bookId.trim().length > 0;
+  };
+
+  // ✅ Check if book is available for issuing - FIXED LOGIC
+  const isBookAvailable = (book) => {
+    if (!book) return false;
+
+    // Book is available only if:
+    // 1. availableCopies > 0 AND
+    // 2. status is NOT "Out of stock"
+    return book.availableCopies > 0 && book.status !== "Out of stock";
   };
 
   // ✅ Extract department from roll number
@@ -65,7 +75,6 @@ const IssueBook = () => {
         BSCS: "Computer Science",
         BBA: "Business Administration",
         BSENG: "English Linguistics and Literature",
-        BCCS: "Computer Science",
         BSE: "Software Engineering",
         BIT: "Information Technology",
         // Add more mappings as needed
@@ -102,7 +111,7 @@ const IssueBook = () => {
     return false;
   };
 
-  // ✅ Validate Book ID and get book info
+  // ✅ Validate Book ID and get book info - REMOVED TOAST FROM HERE
   const validateBookId = async (bookIdToValidate) => {
     if (!bookIdToValidate || !isValidBookIdFormat(bookIdToValidate)) {
       setBookInfo(null);
@@ -128,6 +137,7 @@ const IssueBook = () => {
           title: book.title,
           authors: book.authors,
           availableCopies: book.availableCopies,
+          status: book.status, // Include status in book info
         };
         setBookInfo(bookData);
 
@@ -164,12 +174,32 @@ const IssueBook = () => {
     }
   }, [rollNo]);
 
-  // ✅ Auto-validate when book ID changes
+  // ✅ Auto-validate when book ID changes - MOVED TOAST LOGIC HERE ONLY
   useEffect(() => {
     if (bookId && isValidBookIdFormat(bookId)) {
+      // Store current book ID before validation
+      const currentBookId = bookId;
+
       setValidatingBookId(true);
-      setTimeout(() => {
-        validateBookId(bookId);
+      setTimeout(async () => {
+        const bookData = await validateBookId(bookId);
+
+        // Only process if the book ID hasn't changed during validation
+        if (bookData && currentBookId === bookId) {
+          setLastValidatedBookId(currentBookId);
+
+          // Show out of stock toast if applicable - ONLY ONCE HERE
+          if (!isBookAvailable(bookData)) {
+            toast.warning(
+              "⚠️ This book is currently out of stock and cannot be issued!",
+              {
+                position: "top-center",
+                autoClose: 5000,
+              }
+            );
+          }
+        }
+
         setValidatingBookId(false);
       }, 500);
     } else if (!bookId) {
@@ -178,6 +208,7 @@ const IssueBook = () => {
         ...f,
         bookName: "",
       }));
+      setLastValidatedBookId("");
     }
   }, [bookId]);
 
@@ -214,53 +245,81 @@ const IssueBook = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation with Toastify
+    // Validation with Toastify - All messages top-center
     if (!rollNo) {
-      toast.error("Student Roll No. is required.");
+      toast.error("Student Roll No. is required.", {
+        position: "top-center",
+        autoClose: 4000,
+      });
       return;
     }
 
     if (!isValidRollNoFormat(rollNo)) {
       toast.error(
-        "Roll No must be in format GCYY-XXXX-01 or GCYY-XXXX-011 (e.g., GC22-BSCS-01, GC23-BBA-015)"
+        "Roll No must be in format GCYY-XXXX-01 or GCYY-XXXX-011 (e.g., GC22-BSCS-01, GC23-BBA-015)",
+        {
+          position: "top-center",
+          autoClose: 5000,
+        }
       );
       return;
     }
 
     if (!bookId) {
-      toast.error("Book ID is required.");
+      toast.error("Book ID is required.", {
+        position: "top-center",
+        autoClose: 4000,
+      });
       return;
     }
 
     if (!form.bookName) {
-      toast.error("Book Name is required.");
+      toast.error("Book Name is required.", {
+        position: "top-center",
+        autoClose: 4000,
+      });
       return;
     }
 
     if (!form.issueDate) {
-      toast.error("Book Issue Date is required.");
+      toast.error("Book Issue Date is required.", {
+        position: "top-center",
+        autoClose: 4000,
+      });
       return;
     }
 
     if (!form.dueDate) {
-      toast.error("Book Due Date is required.");
+      toast.error("Book Due Date is required.", {
+        position: "top-center",
+        autoClose: 4000,
+      });
       return;
     }
 
     // Validate student exists
     if (!studentInfo) {
-      toast.error("Student not found. Please check Roll No.");
+      toast.error("Student not found. Please check Roll No.", {
+        position: "top-center",
+        autoClose: 4000,
+      });
       return;
     }
 
     // Validate book exists and is available
     if (!bookInfo) {
-      toast.error("Book not found. Please check Book ID.");
+      toast.error("Book not found. Please check Book ID.", {
+        position: "top-center",
+        autoClose: 4000,
+      });
       return;
     }
 
-    if (bookInfo.availableCopies <= 0) {
-      toast.error("This book is currently not available for issue.");
+    if (!isBookAvailable(bookInfo)) {
+      toast.error("This book is currently out of stock and cannot be issued.", {
+        position: "top-center",
+        autoClose: 5000,
+      });
       return;
     }
 
@@ -296,15 +355,15 @@ const IssueBook = () => {
 
       console.log("API Response:", response.data);
 
-      // Success toast with auto navigation
+      // Success toast with auto navigation - top-center
       toast.success("Book issued successfully!", {
-        position: "top-right",
+        position: "top-center",
         autoClose: 2000,
       });
 
       // Navigate after success message
       setTimeout(() => {
-        navigate("/SALU-PORTAL-FYP/Library/IssuedBooks");
+        navigate("/SALU-PORTAL-FYP/Library");
       }, 2000);
     } catch (err) {
       console.error("Submission error:", err);
@@ -314,7 +373,7 @@ const IssueBook = () => {
         "Error issuing book. Please try again.";
 
       toast.error(errorMessage, {
-        position: "top-right",
+        position: "top-center",
         autoClose: 5000,
       });
     } finally {
@@ -413,9 +472,23 @@ const IssueBook = () => {
                 </div>
               )}
               {bookInfo && (
-                <div className="text-xs text-green-600 !mt-2">
-                  ✓ {bookInfo.title} by {bookInfo.authors} -{" "}
-                  {bookInfo.availableCopies} available
+                <div
+                  className={`text-xs !mt-2 ${
+                    !isBookAvailable(bookInfo)
+                      ? "text-red-600"
+                      : "text-green-600"
+                  }`}
+                >
+                  {!isBookAvailable(bookInfo) ? (
+                    <>
+                      ✗ {bookInfo.title} by {bookInfo.authors} - OUT OF STOCK
+                    </>
+                  ) : (
+                    <>
+                      ✓ {bookInfo.title} by {bookInfo.authors} -{" "}
+                      {bookInfo.availableCopies} available
+                    </>
+                  )}
                 </div>
               )}
               {!bookInfo && bookId && isValidBookIdFormat(bookId) && (
@@ -479,7 +552,7 @@ const IssueBook = () => {
                 validatingBookId ||
                 !studentInfo ||
                 !bookInfo ||
-                bookInfo.availableCopies <= 0
+                !isBookAvailable(bookInfo)
               }
               className="cursor-pointer relative overflow-hidden !px-[15px] !py-[5px] border-2 border-[#e5b300] text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
                          before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#e5b300] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60"

@@ -39,7 +39,7 @@ const Profile = () => {
   return (
     <div
       ref={dropdownRef}
-      className="relative flex justify-end items-center gap-3 cursor-pointer text-right z-[9999]"
+      className="relative flex justify-end items-center gap-3 cursor-pointer text-right"
     >
       {/* Profile Image */}
       <div

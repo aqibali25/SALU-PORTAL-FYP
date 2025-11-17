@@ -24,6 +24,25 @@ export default function DataTable({
     ? actions.filter((a) => a !== null && a !== undefined)
     : [];
 
+  // ✅ Function to get text color class
+  const getTextColorClass = (column, row) => {
+    // If column has a color property, use it
+    if (column.color) {
+      return column.color;
+    }
+
+    // If column has a getColor function, use it to determine color based on row data
+    if (typeof column.getColor === "function") {
+      const dynamicColor = column.getColor(row);
+      if (dynamicColor) {
+        return dynamicColor;
+      }
+    }
+
+    // Default text color for light and dark mode
+    return "text-gray-900 dark:text-gray-100";
+  };
+
   return (
     <div className="w-full overflow-x-auto bg-white dark:bg-gray-900 rounded-md">
       <table className="w-full border-collapse table-auto">
@@ -61,9 +80,12 @@ export default function DataTable({
                 {columns.map((col) => (
                   <td
                     key={col.key}
-                    className="!px-6 !py-3 text-md font-medium tracking-wider text-gray-900 text-center dark:text-gray-100 whitespace-nowrap"
+                    className={`!px-6 !py-3 text-md font-medium tracking-wider whitespace-nowrap text-center ${getTextColorClass(
+                      col,
+                      row
+                    )}`}
                   >
-                    {row[col.key]}
+                    {col.render ? col.render(row) : row[col.key]}
                   </td>
                 ))}
 
