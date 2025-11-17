@@ -8,10 +8,11 @@ const AdmissionCard = ({
   Icon,
   to,
   subjectsData,
+  btntext,
 }) => {
   return (
     <div
-      className="flex flex-col items-center justify-center gap-5 w-60 h-75 !p-6 rounded-lg shadow-sm"
+      className="flex flex-col items-center justify-center gap-5 w-60 h-75 !p-4 rounded-lg shadow-sm"
       style={{ backgroundColor: bgColor, border: `1px solid ${borderColor}` }}
     >
       {/* Icon Section */}
@@ -29,11 +30,12 @@ const AdmissionCard = ({
       <Link
         to={`/SALU-PORTAL-FYP/${to}`}
         state={subjectsData && subjectsData.length > 0 ? subjectsData : null}
-        className="!px-4 !py-1 bg-white border border-gray-300 text-gray-800 "
+        className={`!px-4 !py-1 bg-white border text-gray-800 text-center `}
+        style={{ borderColor: iconBg }}
         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = bgColor)}
         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
       >
-        View All
+        {btntext || "View All"}
       </Link>
     </div>
   );

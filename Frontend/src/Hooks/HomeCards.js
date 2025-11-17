@@ -11,6 +11,7 @@ import {
   faMoneyBillWave,
   faBuilding,
   faUserGraduate,
+  faBookReader,
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 
@@ -31,7 +32,7 @@ export const cards = [
     isImg: false,
     Icon: faUserPlus,
     color1: "#FDDE09",
-    color2: "#f5f5f5",
+    color2: "#FFF9C4",
     roles: ["super admin", "admin"],
   },
   {
@@ -41,7 +42,7 @@ export const cards = [
     isImg: false,
     Icon: faUsers,
     color1: "#E40070",
-    color2: "#f5f5f5",
+    color2: "#FCE4EC",
     roles: ["super admin", "admin"],
   },
   {
@@ -49,7 +50,7 @@ export const cards = [
     Heading: "Enrolled Students",
     link: "EnrolledStudents",
     isImg: false,
-    Icon: faUserGraduate, // Perfect icon for enrolled students
+    Icon: faUserGraduate,
     color1: "#10B981",
     color2: "#ECFDF5",
     roles: ["super admin", "admin", "hod"],
@@ -61,7 +62,7 @@ export const cards = [
     isImg: false,
     Icon: faComputer,
     color1: "#22b508",
-    color2: "#f5f5f5",
+    color2: "#F0F9E8",
     roles: ["super admin", "admin", "clerk"],
   },
   {
@@ -70,8 +71,8 @@ export const cards = [
     link: "Fees",
     isImg: false,
     Icon: faMoneyBillWave,
-    color1: "#10B981",
-    color2: "#ECFDF5",
+    color1: "#059669",
+    color2: "#F0FDF9",
     roles: ["super admin", "admin", "clerk"],
   },
   {
@@ -81,7 +82,7 @@ export const cards = [
     isImg: false,
     Icon: faBookOpen,
     color1: "#CA4DFF",
-    color2: "#f5f5f5",
+    color2: "#FAF5FF",
     roles: ["super admin", "hod"],
   },
   {
@@ -91,7 +92,7 @@ export const cards = [
     isImg: false,
     Icon: faCalendarAlt,
     color1: "#007BFF",
-    color2: "#f5f5f5",
+    color2: "#EFF6FF",
     roles: ["super admin", "teacher", "hod"],
   },
   {
@@ -126,12 +127,22 @@ export const cards = [
   },
   {
     id: 12,
+    Heading: "Library",
+    link: "Library",
+    isImg: false,
+    Icon: faBookReader,
+    color1: "#1E40AF",
+    color2: "#EFF6FF",
+    roles: ["super admin", "librarian"],
+  },
+  {
+    id: 13,
     Heading: "Settings",
     link: "Settings",
     isImg: false,
     Icon: faCog,
-    color1: "#09FDEE",
-    color2: "#f5f5f5",
+    color1: "#6B7280",
+    color2: "#F9FAFB",
     roles: ["super admin", "admin", "teacher", "hod"],
   },
 ];

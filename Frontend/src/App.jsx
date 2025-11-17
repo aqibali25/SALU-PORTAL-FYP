@@ -1,4 +1,3 @@
-import "./App.css";
 import Home from "./components/Home/Home";
 import Navbar from "./components/navbar/Navbar";
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
@@ -41,6 +40,11 @@ import Attendance from "./components/Attendance/Attendance";
 import ViewAttendance from "./components/Attendance/ViewAttendance";
 import StudentAttendance from "./components/Attendance/StudentAttendance";
 import UpdateStudentAttendance from "./components/Attendance/UpdateStudentAttendance";
+import Library from "./components/Library/Library";
+import AddBook from "./components/Library/AddBook";
+import TotalBooks from "./components/Library/TotalBooks";
+import IssuedBooks from "./components/Library/IssuedBooks";
+import IssueBook from "./components/Library/IssueBook";
 
 // Helper function to get roles for a specific route
 const getRolesForRoute = (routePath) => {
@@ -408,6 +412,62 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={getRolesForRoute("departments")}>
                   <ViewDepartments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Library"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("library")}>
+                  <Library />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Library/AddBook"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("library")}>
+                  <AddBook Title="Add Book" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Library/UpdateBook/:bookId"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("library")}>
+                  <AddBook Title="Update Book" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Library/TotalBooks"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("library")}>
+                  <TotalBooks />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Library/IssueBook"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("library")}>
+                  <IssueBook />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Library/IssuedBooks"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("library")}>
+                  <IssuedBooks title="Issued Books" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/Library/OverdueBooks"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("library")}>
+                  <IssuedBooks title="Overdue Books" />
                 </ProtectedRoute>
               }
             />
