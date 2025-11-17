@@ -46,7 +46,7 @@ app.use("/api/departments", departmentsRoutes); // Add this line
 app.use("/api/fees", feesRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/student-marks", studentMarksRoutes);
-app.use("/api", libraryRoutes);
+app.use("/api/library", libraryRoutes);
 // Error handler
 app.use((err, _req, res, _next) => {
   console.error(err);

@@ -155,20 +155,29 @@ const AddBook = ({ Title }) => {
         status: "Available",
         // For file upload, you might need to use FormData instead
       };
+      if (payload.availableCopies > payload.totalCopies) {
+        toast.error("Available copies cannot exceed total copies.");
+        return;
+      }
 
       console.log("Submitting book payload:", payload);
 
       // Choose between update or create based on whether we're editing
       if (editingBook) {
-        await axios.put(`${API}/api/books/${editingBook._id}`, payload, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        });
+        console.log("Updating book with ID:", editingBook);
+        await axios.put(
+          `${API}/api/library/books/${editingBook.bookId}`,
+          payload,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            withCredentials: true,
+          }
+        );
       } else {
-        await axios.post(`${API}/api/books`, payload, {
+        await axios.post(`${API}/api/library/books`, payload, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
@@ -190,7 +199,9 @@ const AddBook = ({ Title }) => {
 
       // Navigate after success message
       setTimeout(() => {
-        navigate("/SALU-PORTAL-FYP/Library/TotalBooks");
+        Title === "Update Book"
+          ? navigate("/SALU-PORTAL-FYP/Library/TotalBooks")
+          : navigate("/SALU-PORTAL-FYP/Library");
       }, 3000);
     } catch (err) {
       console.error(err);

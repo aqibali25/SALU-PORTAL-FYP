@@ -22,7 +22,6 @@ const Library = () => {
       borderColor: "#3B82F6",
       iconBg: "#3B82F6",
       Icon: FaBookOpen,
-      btntext: "View Total Books",
     },
     {
       id: 3,
@@ -40,7 +39,6 @@ const Library = () => {
       borderColor: "#F59E0B",
       iconBg: "#F59E0B",
       Icon: FaBookOpen,
-      btntext: "View Issued Books",
     },
     {
       id: 5,
@@ -49,7 +47,6 @@ const Library = () => {
       borderColor: "#EF4444",
       iconBg: "#EF4444",
       Icon: FaBookOpen,
-      btntext: "View Overdue Books",
     },
   ];
 
@@ -74,7 +71,7 @@ const Library = () => {
 
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 
-        <div className="flex flex-wrap items-center justify-start gap-5 min-h-[60vh] w-full bg-white dark:bg-gray-900 rounded-md overflow-x-auto !p-5">
+        <div className="flex flex-wrap items-center justify-center gap-5 min-h-[60vh] w-full bg-white dark:bg-gray-900 rounded-md overflow-x-auto !p-5">
           {libraryCards.length === 0 ? (
             <h1 className="w-full text-center text-2xl text-red-600">
               You don't have any Library options available yet!

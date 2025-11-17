@@ -26,12 +26,12 @@ export default function TotalBooks() {
         const token = localStorage.getItem("token");
         const API =
           import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-        const res = await axios.get(`${API}/api/books`, {
+        const res = await axios.get(`${API}/api/library/books`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         // Map the data to match the expected structure
-        const data = res.data.map((book, index) => ({
+        const data = res.data.data.map((book, index) => ({
           ...book,
           serialno: index + 1,
           // All data including status should come from DB
@@ -99,6 +99,7 @@ export default function TotalBooks() {
     { key: "genre", label: "Genre/Category" },
     { key: "language", label: "Language" },
     { key: "totalCopies", label: "Total Copies" },
+    { key: "availableCopies", label: "Available Copies" },
     {
       key: "status",
       label: "Status",
@@ -140,10 +141,11 @@ export default function TotalBooks() {
         if (!window.confirm(`Delete book "${row.title}"?`)) return;
         try {
           setLoading(true);
+          console.log("Deleting book with ID:", row.bookId);
           const token = localStorage.getItem("token");
           const API =
             import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-          await axios.delete(`${API}/api/books/${row._id}`, {
+          await axios.delete(`${API}/api/library/books/${row.bookId}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           setBooks((prev) => prev.filter((book) => book._id !== row._id));

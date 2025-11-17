@@ -5,16 +5,27 @@ import Pagination from "../Pagination";
 import Background from "./../../assets/Background.png";
 import BackButton from "../BackButton";
 import { toast } from "react-toastify";
+import { FaCheckCircle } from "react-icons/fa";
 
 export default function BookIssues({ title = "Issued Books" }) {
   const [issuedBooks, setIssuedBooks] = useState([]);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [returningBook, setReturningBook] = useState(null);
   const pageSize = 10;
 
   // Determine which status to filter by based on title
   const isOverdueView = title === "Overdue Books";
+  const isIssuedView = title === "Issued Books";
+
+  // ✅ Get current theme
+  const getCurrentTheme = () => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("theme") || "light";
+    }
+    return "light";
+  };
 
   // ✅ Fetch issued books using Axios
   useEffect(() => {
@@ -24,7 +35,7 @@ export default function BookIssues({ title = "Issued Books" }) {
         const token = localStorage.getItem("token");
         const API =
           import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-        const res = await axios.get(`${API}/api/book-issues`, {
+        const res = await axios.get(`${API}/api/library/book-issues`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -51,6 +62,148 @@ export default function BookIssues({ title = "Issued Books" }) {
     fetchIssuedBooks();
   }, []);
 
+  // ✅ Handle book return
+  const handleReturnBook = async (book) => {
+    if (returningBook) return; // Prevent multiple clicks
+
+    const isOverdue = book.status === "Overdue";
+    const theme = getCurrentTheme();
+
+    const confirmMessage = isOverdue
+      ? "Are you sure the book is returned with the overdue fees?"
+      : "Are you sure the book is returned within due date?";
+
+    // Custom toast for confirmation
+    toast.info(
+      <div className="!p-4 !m-2">
+        <div className="flex items-center gap-3 !mb-3">
+          <FaCheckCircle className="text-blue-500 text-xl" />
+          <span className="font-semibold text-gray-900 dark:text-gray-100">
+            Confirm Book Return
+          </span>
+        </div>
+        <p className="!mb-4 text-gray-700 dark:text-gray-300">
+          {confirmMessage}
+        </p>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={() => {
+              toast.dismiss();
+              processBookReturn(book);
+            }}
+            className="!px-4 !py-2 bg-green-500 hover:bg-green-600 text-white cursor-pointer font-medium transition-colors"
+          >
+            Yes, Return Book
+          </button>
+          <button
+            onClick={() => toast.dismiss()}
+            className="!px-4 !py-2 bg-gray-500 hover:bg-gray-600 text-white cursor-pointer font-medium transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>,
+      {
+        position: "top-center",
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        style: {
+          minWidth: "400px",
+          backgroundColor: theme === "dark" ? "#1f2937" : "#ffffff",
+          color: theme === "dark" ? "#f9fafb" : "#1f2937",
+          border: theme === "dark" ? "1px solid #374151" : "1px solid #e5e7eb",
+        },
+      }
+    );
+  };
+
+  // ✅ Process book return API call
+  const processBookReturn = async (book) => {
+    try {
+      setReturningBook(book._id);
+      const token = localStorage.getItem("token");
+      const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+      const payload = {
+        rollNo: book.rollNo,
+        bookId: book.bookId,
+        status: "Returned",
+      };
+
+      // Update book status to Returned
+      const response = await axios.put(
+        `${API}/api/library/book-issues/status`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
+
+      // Update local state
+      setIssuedBooks((prev) =>
+        prev.map((item) =>
+          item._id === book._id ? { ...item, status: "Returned" } : item
+        )
+      );
+
+      // Success message based on previous status
+      const successMessage =
+        book.status === "Overdue"
+          ? "Book returned successfully with overdue fees!"
+          : "Book returned successfully within due date!";
+
+      const theme = getCurrentTheme();
+
+      toast.success(
+        <div className="!p-3 !m-1">
+          <div className="flex items-center gap-2">
+            <FaCheckCircle className="text-green-500" />
+            <span className="font-medium text-gray-900 dark:text-gray-100">
+              {successMessage}
+            </span>
+          </div>
+        </div>,
+        {
+          position: "top-right",
+          autoClose: 3000,
+          style: {
+            backgroundColor: theme === "dark" ? "#1f2937" : "#ffffff",
+            color: theme === "dark" ? "#f9fafb" : "#1f2937",
+          },
+        }
+      );
+    } catch (err) {
+      console.error("Error returning book:", err);
+      const theme = getCurrentTheme();
+
+      toast.error(
+        <div className="!p-3 !m-1">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-gray-900 dark:text-gray-100">
+              Error returning book: {err.response?.data?.message || err.message}
+            </span>
+          </div>
+        </div>,
+        {
+          position: "top-right",
+          autoClose: 5000,
+          style: {
+            backgroundColor: theme === "dark" ? "#1f2937" : "#ffffff",
+            color: theme === "dark" ? "#f9fafb" : "#1f2937",
+          },
+        }
+      );
+    } finally {
+      setReturningBook(null);
+    }
+  };
+
   // ✅ Filter books based on title and search query
   const filteredBooks = issuedBooks.filter((issue) => {
     const matchesSearch = [
@@ -63,9 +216,17 @@ export default function BookIssues({ title = "Issued Books" }) {
       .toLowerCase()
       .includes(query.toLowerCase());
 
-    // For Overdue Books view, automatically filter by "Overdue" status
-    // For Issued Books view, show all books
-    const matchesStatus = isOverdueView ? issue.status === "Overdue" : true;
+    // Filter by status based on title
+    let matchesStatus = true;
+
+    if (isIssuedView) {
+      // For Issued Books view, show only books with "Issued" status
+      matchesStatus = issue.status === "Issued";
+    } else if (isOverdueView) {
+      // For Overdue Books view, show only books with "Overdue" status
+      matchesStatus = issue.status === "Overdue";
+    }
+    // If it's any other title, show all books
 
     return matchesSearch && matchesStatus;
   });
@@ -106,16 +267,44 @@ export default function BookIssues({ title = "Issued Books" }) {
         <span
           className={`px-2 py-1 rounded-full text-xs font-medium ${
             row.status === "Issued"
-              ? "bg-blue-100 text-blue-800"
+              ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
               : row.status === "Returned"
-              ? "bg-green-100 text-green-800"
+              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
               : row.status === "Overdue"
-              ? "bg-red-100 text-red-800"
-              : "bg-yellow-100 text-yellow-800"
+              ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+              : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
           }`}
         >
           {row.status}
         </span>
+      ),
+    },
+  ];
+
+  // ✅ Table actions
+  const actions = [
+    {
+      label: "Return",
+      onClick: (row) => handleReturnBook(row),
+      render: (row) => (
+        <button
+          onClick={() => handleReturnBook(row)}
+          disabled={returningBook === row._id || row.status === "Returned"}
+          className={`flex items-center gap-1 !px-3 !py-1 font-medium transition-colors cursor-pointer ${
+            row.status === "Returned"
+              ? "bg-gray-300 text-gray-500 dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed"
+              : row.status === "Issued"
+              ? "bg-green-500 hover:bg-green-600 text-white dark:bg-green-600 dark:hover:bg-green-700"
+              : row.status === "Overdue"
+              ? "bg-red-500 hover:bg-red-600 text-white dark:bg-red-600 dark:hover:bg-red-700"
+              : "bg-blue-500 hover:bg-blue-600 text-white dark:bg-blue-600 dark:hover:bg-blue-700"
+          } ${
+            returningBook === row._id ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+        >
+          <FaCheckCircle size={14} />
+          <span>{returningBook === row._id ? "Returning..." : "Return"}</span>
+        </button>
       ),
     },
   ];
@@ -176,12 +365,16 @@ export default function BookIssues({ title = "Issued Books" }) {
         )}
 
         {/* Table */}
-        <DataTable columns={columns} rows={currentPageRows} />
+        <DataTable columns={columns} rows={currentPageRows} actions={actions} />
 
         <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
           <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
-            {isOverdueView ? "Total Overdue Books" : "Total Issued Books"} :{" "}
-            {filteredBooks.length}
+            {isIssuedView
+              ? "Total Issued Books"
+              : isOverdueView
+              ? "Total Overdue Books"
+              : "Total Book Issues"}{" "}
+            : {filteredBooks.length}
           </span>
           <Pagination
             totalPages={pageCount}

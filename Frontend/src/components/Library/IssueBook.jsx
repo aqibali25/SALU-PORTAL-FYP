@@ -114,9 +114,12 @@ const IssueBook = () => {
       const token = localStorage.getItem("token");
       const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-      const response = await axios.get(`${API}/api/books/${bookIdToValidate}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        `${API}/api/library/books/${bookIdToValidate}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.data) {
         const book = response.data;
@@ -164,7 +167,11 @@ const IssueBook = () => {
   // ✅ Auto-validate when book ID changes
   useEffect(() => {
     if (bookId && isValidBookIdFormat(bookId)) {
-      validateBookId(bookId);
+      setValidatingBookId(true);
+      setTimeout(() => {
+        validateBookId(bookId);
+        setValidatingBookId(false);
+      }, 500);
     } else if (!bookId) {
       setBookInfo(null);
       setForm((f) => ({
@@ -275,13 +282,17 @@ const IssueBook = () => {
       console.log("Submitting book issue payload:", payload);
 
       // API call
-      const response = await axios.post(`${API}/api/book-issues`, payload, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
+      const response = await axios.post(
+        `${API}/api/library/book-issues`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
 
       console.log("API Response:", response.data);
 
@@ -350,6 +361,7 @@ const IssueBook = () => {
                 type="text"
                 value={rollNo}
                 onChange={handleRollNoChange}
+                autoComplete="off"
                 placeholder="GCYY-XXXX-01 or GCYY-XXXX-011"
                 className="w-full min-w-0 !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 uppercase"
               />
