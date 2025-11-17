@@ -13,6 +13,7 @@ import feesRoutes from "./routes/fees.js";
 import attendanceRoutes from "./routes/attendance.js";
 import departmentsRoutes from "./routes/departments.js";
 import studentMarksRoutes from "./routes/studentMarks.js";
+import libraryRoutes from "./routes/libraryRoutes.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -45,6 +46,7 @@ app.use("/api/departments", departmentsRoutes); // Add this line
 app.use("/api/fees", feesRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/student-marks", studentMarksRoutes);
+app.use("/api", libraryRoutes);
 // Error handler
 app.use((err, _req, res, _next) => {
   console.error(err);
