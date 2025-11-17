@@ -3,7 +3,7 @@ import { sequelize } from "../db.js";
 
 const DB = process.env.DB_NAME || "u291434058_SALU_GC";
 
-/* --------------------------- status helpers --------------------------- */
+/* --------------------------- helpers --------------------------- */
 
 const mapBookStatus = (status) => {
   const s = String(status || "").toLowerCase().trim();
@@ -27,7 +27,10 @@ const mapIssueStatus = (status) => {
   return map[s] || "Issued";
 };
 
-/* =========================== LIBRARY BOOKS ============================ */
+/* ===================================================================
+   LIBRARY BOOKS
+   =================================================================== */
+
 /** POST /api/books  -> add new book */
 export const createBook = async (req, res) => {
   try {
@@ -50,15 +53,18 @@ export const createBook = async (req, res) => {
 
     const total = Number(totalCopies ?? 0);
     const available =
-      availableCopies != null ? Number(availableCopies) : total;
+      availableCopies !== undefined && availableCopies !== null
+        ? Number(availableCopies)
+        : total;
+
     const enumStatus = mapBookStatus(status);
 
     await sequelize.query(
       `
       INSERT INTO \`${DB}\`.library_books
         (book_id, book_title, authors, genre_category, language,
-         total_copies, available_copies, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+         total_copies, available_copies, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `,
       {
         replacements: [
@@ -77,16 +83,16 @@ export const createBook = async (req, res) => {
     const [[book]] = await sequelize.query(
       `
       SELECT
-        book_id       AS bookId,
-        book_title    AS title,
+        book_id          AS bookId,
+        book_title       AS title,
         authors,
-        genre_category AS genre,
+        genre_category   AS genre,
         language,
-        total_copies  AS totalCopies,
+        total_copies     AS totalCopies,
         available_copies AS availableCopies,
         status,
-        created_at    AS createdAt,
-        updated_at    AS updatedAt
+        created_at       AS createdAt,
+        updated_at       AS updatedAt
       FROM \`${DB}\`.library_books
       WHERE book_id = ?
       LIMIT 1
@@ -103,7 +109,7 @@ export const createBook = async (req, res) => {
   }
 };
 
-/** GET /api/books  -> all books (optionally ?status=Available) */
+/** GET /api/books  -> all books (optional ?status=Available) */
 export const getAllBooks = async (req, res) => {
   try {
     const { status } = req.query;
@@ -113,16 +119,16 @@ export const getAllBooks = async (req, res) => {
     const [rows] = await sequelize.query(
       `
       SELECT
-        book_id       AS bookId,
-        book_title    AS title,
+        book_id          AS bookId,
+        book_title       AS title,
         authors,
-        genre_category AS genre,
+        genre_category   AS genre,
         language,
-        total_copies  AS totalCopies,
+        total_copies     AS totalCopies,
         available_copies AS availableCopies,
         status,
-        created_at    AS createdAt,
-        updated_at    AS updatedAt
+        created_at       AS createdAt,
+        updated_at       AS updatedAt
       FROM \`${DB}\`.library_books
       ${where}
       ORDER BY created_at DESC
@@ -137,7 +143,7 @@ export const getAllBooks = async (req, res) => {
   }
 };
 
-/** GET /api/books/:bookId  -> single book by ID (used in IssueBook.jsx) */
+/** GET /api/books/:bookId  -> single book by ID */
 export const getBookById = async (req, res) => {
   try {
     const { bookId } = req.params;
@@ -145,16 +151,16 @@ export const getBookById = async (req, res) => {
     const [rows] = await sequelize.query(
       `
       SELECT
-        book_id       AS bookId,
-        book_title    AS title,
+        book_id          AS bookId,
+        book_title       AS title,
         authors,
-        genre_category AS genre,
+        genre_category   AS genre,
         language,
-        total_copies  AS totalCopies,
+        total_copies     AS totalCopies,
         available_copies AS availableCopies,
         status,
-        created_at    AS createdAt,
-        updated_at    AS updatedAt
+        created_at       AS createdAt,
+        updated_at       AS updatedAt
       FROM \`${DB}\`.library_books
       WHERE book_id = ?
       LIMIT 1
@@ -168,7 +174,8 @@ export const getBookById = async (req, res) => {
         .json({ success: false, message: "Book not found." });
     }
 
-    res.json(rows[0]); // front-end expects direct object
+    // many front-ends just expect the object directly:
+    res.json(rows[0]);
   } catch (err) {
     console.error("getBookById error:", err);
     res.status(500).json({ success: false, message: "Server error" });
@@ -193,16 +200,13 @@ export const updateBookById = async (req, res) => {
       `SELECT book_id FROM \`${DB}\`.library_books WHERE book_id = ? LIMIT 1`,
       { replacements: [bookId] }
     );
+
     if (!exists) {
       return res
         .status(404)
         .json({ success: false, message: "Book not found." });
     }
 
-    const total =
-      totalCopies != null ? Number(totalCopies) : Number(exists.total_copies);
-    const available =
-      availableCopies != null ? Number(availableCopies) : null;
     const enumStatus = status ? mapBookStatus(status) : null;
 
     await sequelize.query(
@@ -225,8 +229,8 @@ export const updateBookById = async (req, res) => {
           authors || null,
           genre || null,
           language || null,
-          totalCopies != null ? total : null,
-          available,
+          totalCopies !== undefined ? Number(totalCopies) : null,
+          availableCopies !== undefined ? Number(availableCopies) : null,
           enumStatus,
           bookId,
         ],
@@ -236,16 +240,16 @@ export const updateBookById = async (req, res) => {
     const [[book]] = await sequelize.query(
       `
       SELECT
-        book_id       AS bookId,
-        book_title    AS title,
+        book_id          AS bookId,
+        book_title       AS title,
         authors,
-        genre_category AS genre,
+        genre_category   AS genre,
         language,
-        total_copies  AS totalCopies,
+        total_copies     AS totalCopies,
         available_copies AS availableCopies,
         status,
-        created_at    AS createdAt,
-        updated_at    AS updatedAt
+        created_at       AS createdAt,
+        updated_at       AS updatedAt
       FROM \`${DB}\`.library_books
       WHERE book_id = ?
       LIMIT 1
@@ -260,7 +264,43 @@ export const updateBookById = async (req, res) => {
   }
 };
 
-/* ============================= ISSUED BOOKS ============================= */
+/** DELETE /api/books/:bookId  -> delete book (if not lended) */
+export const deleteBook = async (req, res) => {
+  try {
+    const { bookId } = req.params;
+
+    const [[book]] = await sequelize.query(
+      `SELECT * FROM \`${DB}\`.library_books WHERE book_id = ? LIMIT 1`,
+      { replacements: [bookId] }
+    );
+
+    if (!book) {
+      return res.status(404).json({ success: false, message: "Book not found." });
+    }
+
+    if (book.status === "Lended") {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete. Book is currently issued (Lended).",
+      });
+    }
+
+    await sequelize.query(
+      `DELETE FROM \`${DB}\`.library_books WHERE book_id = ?`,
+      { replacements: [bookId] }
+    );
+
+    res.json({ success: true, message: "Book deleted successfully." });
+  } catch (err) {
+    console.error("deleteBook error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+/* ===================================================================
+   ISSUED BOOKS
+   =================================================================== */
+
 /** POST /api/book-issues  -> issue a book */
 export const issueBook = async (req, res) => {
   try {
@@ -273,7 +313,7 @@ export const issueBook = async (req, res) => {
       });
     }
 
-    // 1) check book exists and available
+    // 1) check book exists & is available
     const [[book]] = await sequelize.query(
       `
       SELECT book_id, book_title, available_copies, status
@@ -318,7 +358,7 @@ export const issueBook = async (req, res) => {
       }
     );
 
-    // 3) decrement available_copies and update library_books status
+    // 3) decrement available copies & maybe update status
     await sequelize.query(
       `
       UPDATE \`${DB}\`.library_books
@@ -343,7 +383,7 @@ export const issueBook = async (req, res) => {
   }
 };
 
-/** GET /api/book-issues  -> ALL issued records (for IssuedBooks.jsx) */
+/** GET /api/book-issues  -> all issued records */
 export const getAllBookIssues = async (_req, res) => {
   try {
     const [rows] = await sequelize.query(
@@ -360,14 +400,15 @@ export const getAllBookIssues = async (_req, res) => {
       `
     );
 
-    res.json(rows); // IssuedBooks.jsx expects an array
+    // IssuedBooks.jsx usually expects array:
+    res.json(rows);
   } catch (err) {
     console.error("getAllBookIssues error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-/** GET /api/book-issues/student/:rollNo  -> all issues for one student */
+/** GET /api/book-issues/student/:rollNo  -> issues for a student */
 export const getBookIssuesByRollNo = async (req, res) => {
   try {
     const { rollNo } = req.params;
@@ -395,7 +436,7 @@ export const getBookIssuesByRollNo = async (req, res) => {
   }
 };
 
-/** GET /api/book-issues/book/:bookId  -> all issues for specific book */
+/** GET /api/book-issues/book/:bookId  -> issues for a book */
 export const getBookIssuesByBookId = async (req, res) => {
   try {
     const { bookId } = req.params;
@@ -423,7 +464,7 @@ export const getBookIssuesByBookId = async (req, res) => {
   }
 };
 
-/** PUT /api/book-issues/status  -> update status (e.g. Returned/Overdue) */
+/** PUT /api/book-issues/status  -> update status (Returned / Overdue / Lost) */
 export const updateBookIssueStatus = async (req, res) => {
   try {
     const { rollNo, bookId, status } = req.body;
@@ -437,7 +478,7 @@ export const updateBookIssueStatus = async (req, res) => {
 
     const enumStatus = mapIssueStatus(status);
 
-    // update latest record for this student + book
+    // update latest issue record for this student+book
     const [result] = await sequelize.query(
       `
       UPDATE \`${DB}\`.issued_books
@@ -450,14 +491,13 @@ export const updateBookIssueStatus = async (req, res) => {
       { replacements: [enumStatus, rollNo, bookId] }
     );
 
-    // mysql2 returns { affectedRows } in result
     if (!result.affectedRows) {
       return res
         .status(404)
         .json({ success: false, message: "Issue record not found." });
     }
 
-    // If returned => increment available copies again
+    // if returned, increase available copies again
     if (enumStatus === "Returned") {
       await sequelize.query(
         `
@@ -475,6 +515,72 @@ export const updateBookIssueStatus = async (req, res) => {
     res.json({ success: true, message: "Issue status updated." });
   } catch (err) {
     console.error("updateBookIssueStatus error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+/** DELETE /api/book-issues/student/:rollNo/:bookId  -> delete latest issue record */
+export const deleteIssuedBook = async (req, res) => {
+  try {
+    const { rollNo, bookId } = req.params;
+
+    const [result] = await sequelize.query(
+      `
+      DELETE FROM \`${DB}\`.issued_books
+      WHERE student_roll_no = ?
+        AND book_id = ?
+      ORDER BY book_issue_date DESC
+      LIMIT 1
+      `,
+      { replacements: [rollNo, bookId] }
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({
+        success: false,
+        message: "No issue record found for this student & book.",
+      });
+    }
+
+    // book is effectively "returned" -> increase copies
+    await sequelize.query(
+      `
+      UPDATE \`${DB}\`.library_books
+      SET
+        available_copies = available_copies + 1,
+        status = 'Available',
+        updated_at = NOW()
+      WHERE book_id = ?
+      `,
+      { replacements: [bookId] }
+    );
+
+    res.json({ success: true, message: "Issue record deleted." });
+  } catch (err) {
+    console.error("deleteIssuedBook error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+/** DELETE /api/book-issues/book/:bookId  -> delete ALL issue history for a book */
+export const deleteAllIssuesForBook = async (req, res) => {
+  try {
+    const { bookId } = req.params;
+
+    const [result] = await sequelize.query(
+      `
+      DELETE FROM \`${DB}\`.issued_books
+      WHERE book_id = ?
+      `,
+      { replacements: [bookId] }
+    );
+
+    res.json({
+      success: true,
+      message: `${result.affectedRows} issue record(s) deleted for book ${bookId}.`,
+    });
+  } catch (err) {
+    console.error("deleteAllIssuesForBook error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
