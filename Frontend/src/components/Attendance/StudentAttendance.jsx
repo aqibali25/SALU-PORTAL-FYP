@@ -40,13 +40,28 @@ const StudentAttendance = () => {
   const { student, attendanceRecords, subject, overallPercentage } =
     studentData;
 
+  // Safe value extraction function
+  const getSafeStringValue = (value) => {
+    if (value === null || value === undefined) return "";
+    if (typeof value === "object") {
+      // If it's an object, try to get the status property or stringify it
+      return value.status || JSON.stringify(value);
+    }
+    return String(value);
+  };
+
   // Filter attendance records based on search query
   const filteredRecords = attendanceRecords.filter((record) => {
     const searchTerm = query.toLowerCase();
+
+    const date = getSafeStringValue(record.attendance_date);
+    const status = getSafeStringValue(record.status);
+    const subjectName = getSafeStringValue(record.subject_name);
+
     return (
-      record.attendance_date.toLowerCase().includes(searchTerm) ||
-      record.status.toLowerCase().includes(searchTerm) ||
-      record.subject_name.toLowerCase().includes(searchTerm)
+      date.toLowerCase().includes(searchTerm) ||
+      status.toLowerCase().includes(searchTerm) ||
+      subjectName.toLowerCase().includes(searchTerm)
     );
   });
 
@@ -59,11 +74,45 @@ const StudentAttendance = () => {
 
   // Format date for display
   const formatDisplayDate = (dateString) => {
-    const date = new Date(dateString + "T00:00:00+05:00");
-    const day = date.getDate();
-    const month = date.toLocaleString("default", { month: "short" });
-    const year = date.getFullYear();
-    return `${day} ${month} ${year}`;
+    const safeDate = getSafeStringValue(dateString);
+    if (!safeDate) return "N/A";
+
+    try {
+      const date = new Date(safeDate + "T00:00:00+05:00");
+      if (isNaN(date.getTime())) return "Invalid Date";
+
+      const day = date.getDate();
+      const month = date.toLocaleString("default", { month: "short" });
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
+    } catch (error) {
+      return "Invalid Date";
+    }
+  };
+
+  // Safe status display function
+  const renderStatus = (value) => {
+    const statusValue = getSafeStringValue(value);
+    const lowerStatus = statusValue.toLowerCase();
+
+    let displayText = statusValue || "N/A";
+    let colorClass = "text-gray-600";
+
+    if (lowerStatus === "present") {
+      colorClass = "text-green-600";
+    } else if (lowerStatus === "leave") {
+      colorClass = "text-yellow-600";
+    } else if (lowerStatus === "absent") {
+      colorClass = "text-red-600";
+    }
+
+    return <span className={`font-semibold ${colorClass}`}>{displayText}</span>;
+  };
+
+  // Safe subject name display
+  const renderSubjectName = (value) => {
+    const subjectValue = getSafeStringValue(value);
+    return subjectValue || "N/A";
   };
 
   // Columns configuration
@@ -76,21 +125,13 @@ const StudentAttendance = () => {
     {
       key: "status",
       label: "Status",
-      render: (value) => (
-        <span
-          className={`font-semibold ${
-            value?.toLowerCase() === "present"
-              ? "text-green-600"
-              : value?.toLowerCase() === "leave"
-              ? "text-yellow-600"
-              : "text-red-600"
-          }`}
-        >
-          {value}
-        </span>
-      ),
+      render: (value) => renderStatus(value),
     },
-    { key: "subject_name", label: "Subject Name" },
+    {
+      key: "subject_name",
+      label: "Subject Name",
+      render: (value) => renderSubjectName(value),
+    },
   ];
 
   // Actions configuration
