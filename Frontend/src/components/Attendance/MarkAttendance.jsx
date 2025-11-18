@@ -234,7 +234,7 @@ export default function MarkAttendance() {
                 1 Class
               </button>
               {subject.creditHours > 1 && (
-                <div>
+                <>
                   <button
                     onClick={() => handleClassInput(2)}
                     className="bg-green-500 hover:bg-green-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
@@ -247,7 +247,7 @@ export default function MarkAttendance() {
                   >
                     3 Classes
                   </button>
-                </div>
+                </>
               )}
             </div>
           </div>,

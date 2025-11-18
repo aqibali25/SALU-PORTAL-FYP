@@ -40,28 +40,56 @@ const StudentAttendance = () => {
   const { student, attendanceRecords, subject, overallPercentage } =
     studentData;
 
-  // Safe value extraction function
-  const getSafeStringValue = (value) => {
-    if (value === null || value === undefined) return "";
-    if (typeof value === "object") {
-      // If it's an object, try to get the status property or stringify it
-      return value.status || JSON.stringify(value);
+  // Debug: Check the actual data structure
+  useEffect(() => {
+    console.log("Attendance Records:", attendanceRecords);
+    if (attendanceRecords.length > 0) {
+      console.log("First record structure:", attendanceRecords[0]);
     }
-    return String(value);
+  }, [attendanceRecords]);
+
+  // Safe value extraction function
+  const getSafeValue = (row, key) => {
+    if (!row || typeof row !== "object") return "";
+
+    // Direct property access
+    if (row[key] !== undefined && row[key] !== null) {
+      return String(row[key]);
+    }
+
+    // Nested object access
+    if (typeof row === "object") {
+      const value = row[key];
+      if (value !== undefined && value !== null) {
+        return String(value);
+      }
+    }
+
+    return "";
   };
 
+  // Add serial numbers to records
+  const recordsWithSerialNo = attendanceRecords.map((record, index) => ({
+    ...record,
+    serialno: index + 1,
+  }));
+
   // Filter attendance records based on search query
-  const filteredRecords = attendanceRecords.filter((record) => {
+  const filteredRecords = recordsWithSerialNo.filter((record) => {
+    if (!query.trim()) return true;
+
     const searchTerm = query.toLowerCase();
 
-    const date = getSafeStringValue(record.attendance_date);
-    const status = getSafeStringValue(record.status);
-    const subjectName = getSafeStringValue(record.subject_name);
+    const serialNo = String(record.serialno).toLowerCase();
+    const date = getSafeValue(record, "attendance_date").toLowerCase();
+    const status = getSafeValue(record, "status").toLowerCase();
+    const subjectName = getSafeValue(record, "subject_name").toLowerCase();
 
     return (
-      date.toLowerCase().includes(searchTerm) ||
-      status.toLowerCase().includes(searchTerm) ||
-      subjectName.toLowerCase().includes(searchTerm)
+      serialNo.includes(searchTerm) ||
+      date.includes(searchTerm) ||
+      status.includes(searchTerm) ||
+      subjectName.includes(searchTerm)
     );
   });
 
@@ -72,27 +100,9 @@ const StudentAttendance = () => {
     page * pageSize
   );
 
-  // Format date for display
-  const formatDisplayDate = (dateString) => {
-    const safeDate = getSafeStringValue(dateString);
-    if (!safeDate) return "N/A";
-
-    try {
-      const date = new Date(safeDate + "T00:00:00+05:00");
-      if (isNaN(date.getTime())) return "Invalid Date";
-
-      const day = date.getDate();
-      const month = date.toLocaleString("default", { month: "short" });
-      const year = date.getFullYear();
-      return `${day} ${month} ${year}`;
-    } catch (error) {
-      return "Invalid Date";
-    }
-  };
-
   // Safe status display function
-  const renderStatus = (value) => {
-    const statusValue = getSafeStringValue(value);
+  const renderStatus = (row) => {
+    const statusValue = getSafeValue(row, "status");
     const lowerStatus = statusValue.toLowerCase();
 
     let displayText = statusValue || "N/A";
@@ -109,28 +119,39 @@ const StudentAttendance = () => {
     return <span className={`font-semibold ${colorClass}`}>{displayText}</span>;
   };
 
-  // Safe subject name display
-  const renderSubjectName = (value) => {
-    const subjectValue = getSafeStringValue(value);
-    return subjectValue || "N/A";
+  // Safe text renderer for all values
+  const renderText = (row, key) => {
+    const textValue = getSafeValue(row, key);
+    return <span>{textValue}</span>;
+  };
+
+  // Render serial number
+  const renderSerialNo = (row) => {
+    return <span className="font-semibold">{row.serialno}</span>;
+  };
+
+  // Render date
+  const renderDate = (row) => {
+    const dateValue = getSafeValue(row, "attendance_date");
+    return <span>{dateValue}</span>;
   };
 
   // Columns configuration
   const columns = [
     {
+      key: "serialno",
+      label: "Serial No.",
+      render: (row) => renderSerialNo(row),
+    },
+    {
       key: "attendance_date",
       label: "Date",
-      render: (value) => formatDisplayDate(value),
+      render: (row) => renderDate(row),
     },
     {
       key: "status",
       label: "Status",
-      render: (value) => renderStatus(value),
-    },
-    {
-      key: "subject_name",
-      label: "Subject Name",
-      render: (value) => renderSubjectName(value),
+      render: (row) => renderStatus(row),
     },
   ];
 
@@ -227,7 +248,7 @@ const StudentAttendance = () => {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by date, status, or subject..."
+              placeholder="Search by serial no, date, status, or subject..."
               className="w-full !px-3 !py-2 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
             />
           </div>

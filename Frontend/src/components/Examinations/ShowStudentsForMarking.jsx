@@ -18,6 +18,7 @@ export default function ShowStudentsForMarking() {
   const [studentsEnrolledinSubject, setStudentsEnrolledinSubject] = useState(
     []
   );
+  console.log(studentsEnrolledinSubject);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -98,13 +99,13 @@ export default function ShowStudentsForMarking() {
   );
 
   // Transform students for table display
-  const transformedRows = currentPageRows.map((student) => ({
+  const transformedRows = currentPageRows.map((student, index) => ({
+    serialNo: index + 1,
     rollNo: getStudentRollNo(student),
     studentName: getStudentDisplayName(student),
     department: student.department || "N/A",
     semester: student.current_semester || subject?.semester || "N/A",
     subject: subject?.subName || subjectId,
-    academicYear: student.academic_year || "2024-2025",
     // Include original student data for passing to next component
     originalStudent: student,
     subjectData: subject,
@@ -112,12 +113,9 @@ export default function ShowStudentsForMarking() {
 
   // Table Columns
   const columns = [
+    { key: "serialNo", label: "Serial No" },
     { key: "rollNo", label: "Roll No" },
     { key: "studentName", label: "Student Name" },
-    { key: "department", label: "Department" },
-    { key: "semester", label: "Semester" },
-    { key: "subject", label: "Subject" },
-    { key: "academicYear", label: "Academic Year" },
   ];
 
   // Actions
@@ -215,17 +213,46 @@ export default function ShowStudentsForMarking() {
 
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 
-        {/* Search */}
-        <div className="w-full flex justify-end">
-          <input
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Search students by name, roll number, or department..."
-            className="max-w-[100%] !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-          />
+        {/* Department, Year, and Semester Information */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-4">
+          <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 !p-3 flex-1 min-w-0">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Department
+            </p>
+            <p className="font-semibold text-gray-900 dark:text-white truncate">
+              {subject?.department || "N/A"}
+            </p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 !p-3 flex-1 min-w-0">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Semester</p>
+            <p className="font-semibold text-gray-900 dark:text-white">
+              {subject?.semester || "N/A"}
+            </p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 !p-3 flex-1 min-w-0">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Year</p>
+            <p className="font-semibold text-gray-900 dark:text-white">
+              {subject?.year ||
+                Math.ceil((subject?.semester || 1) / 2) ||
+                "N/A"}
+            </p>
+          </div>
+        </div>
+
+        {/* Search and Table Section */}
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 !mb-4">
+          {/* Search Input - Now on the right side */}
+          <div className="w-full xl:w-80 flex-shrink-0">
+            <input
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Search students by name, roll number, or department..."
+              className="w-full !px-3 !py-2 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            />
+          </div>
         </div>
 
         {/* Table */}
