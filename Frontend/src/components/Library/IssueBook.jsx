@@ -135,6 +135,7 @@ const IssueBook = () => {
         const bookData = {
           id: book.bookId || book._id,
           title: book.title,
+          bookAddition: book.bookAddition,
           authors: book.authors,
           availableCopies: book.availableCopies,
           status: book.status, // Include status in book info
@@ -333,12 +334,12 @@ const IssueBook = () => {
         rollNo: rollNo,
         bookId: bookId,
         bookName: form.bookName,
+        bookAddition: form.bookAddition || "",
         issueDate: form.issueDate,
         dueDate: form.dueDate,
         status: form.status, // Only extra field besides inputs
       };
-
-      console.log("Submitting book issue payload:", payload);
+      console.log("Payload:", payload);
 
       // API call
       const response = await axios.post(
@@ -481,12 +482,15 @@ const IssueBook = () => {
                 >
                   {!isBookAvailable(bookInfo) ? (
                     <>
-                      ✗ {bookInfo.title} by {bookInfo.authors} - OUT OF STOCK
+                      ✗ {bookInfo.title} - {bookInfo.bookAddition} by{" "}
+                      {bookInfo.authors} - OUT OF STOCK
                     </>
                   ) : (
                     <>
-                      ✓ {bookInfo.title} by {bookInfo.authors} -{" "}
-                      {bookInfo.availableCopies} available
+                      ✓ {bookInfo.title}{" "}
+                      {bookInfo.bookAddition && `-${bookInfo.bookAddition}`} by
+                      {"    "}
+                      {bookInfo.authors} - {bookInfo.availableCopies} available
                     </>
                   )}
                 </div>

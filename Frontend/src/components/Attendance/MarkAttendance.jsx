@@ -38,17 +38,35 @@ export default function MarkAttendance() {
   const [classesTakenToday, setClassesTakenToday] = useState(0);
   const [showClassInput, setShowClassInput] = useState(false);
   const [hasCheckedAttendance, setHasCheckedAttendance] = useState(false);
+  const [classStartTime, setClassStartTime] = useState("");
+  const [classEndTime, setClassEndTime] = useState("");
+  const [timeSlotError, setTimeSlotError] = useState("");
   const pageSize = 10;
   const toastShownRef = useRef(false);
+  const classCountToastIdRef = useRef(null);
 
   const token = localStorage.getItem("token");
 
   // Get current Pakistan date as string in YYYY-MM-DD format
   function getPakistanDateString() {
     const now = new Date();
-    // Convert to Pakistan time (UTC+5)
-    const pakistanTime = new Date(now.getTime() + 5 * 60 * 60 * 1000);
-    return pakistanTime.toISOString().split("T")[0];
+    return now.toLocaleDateString("en-CA", {
+      timeZone: "Asia/Karachi",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+  }
+
+  // Get current Pakistan time in HH:MM format
+  function getCurrentPakistanTime() {
+    const now = new Date();
+    return now.toLocaleTimeString("en-GB", {
+      timeZone: "Asia/Karachi",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
   }
 
   // Get today's date in YYYY-MM-DD format in Pakistan timezone
@@ -65,12 +83,20 @@ export default function MarkAttendance() {
   // Get current Pakistan time for midnight calculation
   function getPakistanTime() {
     const now = new Date();
-    return new Date(now.getTime() + 5 * 60 * 60 * 1000); // UTC+5
+    // Convert to Pakistan time string and back to Date object
+    const pakistanTimeString = now.toLocaleString("en-US", {
+      timeZone: "Asia/Karachi",
+    });
+    return new Date(pakistanTimeString);
   }
 
   // Storage key for class count
   const getStorageKey = () =>
     `attendance_classes_${subjectId}_${getTodayDate()}`;
+
+  // Storage key for class time
+  const getClassTimeStorageKey = (sessionIndex) =>
+    `attendance_class_time_${subjectId}_${getTodayDate()}_${sessionIndex}`;
 
   const formatSubjectName = (urlString) => {
     return urlString
@@ -110,6 +136,70 @@ export default function MarkAttendance() {
     // Each complete set of attendance for all students counts as one session
     const sessions = Math.floor(todayRecords.length / studentCount);
     return sessions;
+  };
+
+  // Check for duplicate time slots
+  const checkDuplicateTimeSlot = (startTime, endTime) => {
+    if (!startTime || !endTime || !subject) return false;
+
+    const today = getTodayDate();
+
+    // Check if there's any attendance record for the same department, date, and overlapping time
+    const duplicateRecord = attendanceRecords.find((record) => {
+      // Check if same department, same date
+      if (
+        record.department === subject.department &&
+        record.attendance_date === today
+      ) {
+        const recordStart = record.class_start_time;
+        const recordEnd = record.class_end_time;
+
+        // Check for time overlap
+        if (recordStart && recordEnd) {
+          // Convert times to minutes for easy comparison
+          const startMinutes = convertTimeToMinutes(startTime);
+          const endMinutes = convertTimeToMinutes(endTime);
+          const recordStartMinutes = convertTimeToMinutes(recordStart);
+          const recordEndMinutes = convertTimeToMinutes(recordEnd);
+
+          // Check for overlap
+          return (
+            startMinutes < recordEndMinutes && endMinutes > recordStartMinutes
+          );
+        }
+      }
+      return false;
+    });
+
+    return duplicateRecord;
+  };
+
+  // Convert time string (HH:MM) to minutes
+  const convertTimeToMinutes = (timeString) => {
+    const [hours, minutes] = timeString.split(":").map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // Handle end time blur to check for duplicates
+  const handleEndTimeBlur = () => {
+    if (!classStartTime || !classEndTime || !subject) return;
+
+    const duplicate = checkDuplicateTimeSlot(classStartTime, classEndTime);
+
+    if (duplicate) {
+      setTimeSlotError(
+        `Time slot conflict! Class already scheduled for ${subject.department} department from ${duplicate.class_start_time} to ${duplicate.class_end_time}. Please choose a different time slot.`
+      );
+      toast.warning(
+        `Time slot conflict! ${subject.department} department already has a class from ${duplicate.class_start_time} to ${duplicate.class_end_time}.`,
+        {
+          position: "top-center",
+          autoClose: 6000,
+        }
+      );
+    } else {
+      setTimeSlotError("");
+    }
   };
 
   // Fetch attendance records from API
@@ -171,18 +261,26 @@ export default function MarkAttendance() {
   const resetForNewDay = () => {
     const today = getTodayDate();
     if (today !== currentDate) {
-      console.log("🔄 New day detected! Resetting attendance data...");
-      console.log("Previous date:", currentDate, "New date:", today);
-
       setCurrentDate(today);
       setSubmitted(false);
       setClassesToday(0);
       setClassesTakenToday(0);
       setShowClassInput(false);
       setAttendanceData({});
+      setClassStartTime("");
+      setClassEndTime("");
+      setTimeSlotError("");
+
+      // Reset toast flag for new day
+      toastShownRef.current = false;
+      classCountToastIdRef.current = null;
 
       // Clear all attendance-related localStorage for this subject
       localStorage.removeItem(getStorageKey());
+      // Clear class time storage for all sessions
+      for (let i = 1; i <= 3; i++) {
+        localStorage.removeItem(getClassTimeStorageKey(i));
+      }
 
       // Show new day notification
       toast.info(`New day started! Today's date: ${formatDisplayDate(today)}`, {
@@ -195,6 +293,172 @@ export default function MarkAttendance() {
     }
   };
 
+  // Show class count input message (initial setup)
+  const showClassCountMessage = () => {
+    const today = getTodayDate();
+
+    // Clear any existing class count toast
+    if (classCountToastIdRef.current) {
+      toast.dismiss(classCountToastIdRef.current);
+    }
+
+    classCountToastIdRef.current = toast.info(
+      <div className="text-center w-full">
+        <h3 className="font-bold text-lg !mb-2 sm:text-base">
+          How many classes do you have today? ({formatDisplayDate(today)})
+        </h3>
+        <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 !mt-4">
+          <button
+            onClick={() => handleClassInput(1)}
+            className="bg-blue-500 hover:bg-blue-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
+          >
+            1 Class
+          </button>
+          {subject.creditHours > 1 && (
+            <>
+              <button
+                onClick={() => handleClassInput(2)}
+                className="bg-green-500 hover:bg-green-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
+              >
+                2 Classes
+              </button>
+              <button
+                onClick={() => handleClassInput(3)}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
+              >
+                3 Classes
+              </button>
+            </>
+          )}
+        </div>
+      </div>,
+      {
+        position: "top-center",
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        style: {
+          minWidth: "min(450px, 90vw)",
+          maxWidth: "95vw",
+        },
+      }
+    );
+  };
+
+  // Show session message with change count button
+  const showSessionMessage = () => {
+    const today = getTodayDate();
+    const storedClasses = localStorage.getItem(getStorageKey());
+
+    // Clear any existing class count toast
+    if (classCountToastIdRef.current) {
+      toast.dismiss(classCountToastIdRef.current);
+    }
+
+    if (classesTakenToday >= classesToday && classesToday > 0) {
+      // All attendance taken - show only change count button
+      classCountToastIdRef.current = toast.info(
+        <div className="text-center w-full">
+          <h3 className="font-bold text-lg !mb-2 sm:text-base">
+            Attendance Complete for Today
+          </h3>
+          <p className="text-sm !mb-3">
+            You have taken all {storedClasses} class
+            {parseInt(storedClasses) > 1 ? "es" : ""} for today.
+          </p>
+          <div className="flex justify-center !mt-2">
+            <button
+              onClick={handleChangeCountRequest}
+              className="bg-blue-500 hover:bg-blue-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
+            >
+              Change Class Count
+            </button>
+          </div>
+        </div>,
+        {
+          position: "top-center",
+          autoClose: false,
+          closeOnClick: false,
+          draggable: false,
+          closeButton: false,
+          style: {
+            minWidth: "min(450px, 90vw)",
+            maxWidth: "95vw",
+          },
+        }
+      );
+    } else {
+      // Some attendance taken - show start session + change count
+      classCountToastIdRef.current = toast.info(
+        <div className="text-center w-full">
+          <h3 className="font-bold text-lg !mb-2 sm:text-base">
+            Ready to take attendance?
+          </h3>
+          <p className="text-sm !mb-3">
+            Session {classesTakenToday + 1} of {storedClasses}
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 !mt-2">
+            <button
+              onClick={() => {
+                toast.dismiss(classCountToastIdRef.current);
+                setShowClassInput(false);
+              }}
+              className="bg-green-500 hover:bg-green-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
+            >
+              Start Session {classesTakenToday + 1}
+            </button>
+            <button
+              onClick={handleChangeCountRequest}
+              className="bg-blue-500 hover:bg-blue-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
+            >
+              Change Class Count
+            </button>
+          </div>
+        </div>,
+        {
+          position: "top-center",
+          autoClose: false,
+          closeOnClick: false,
+          draggable: false,
+          closeButton: false,
+          style: {
+            minWidth: "min(450px, 90vw)",
+            maxWidth: "95vw",
+          },
+        }
+      );
+    }
+  };
+
+  // Handle change count request
+  const handleChangeCountRequest = () => {
+    // Dismiss the current toast
+    if (classCountToastIdRef.current) {
+      toast.dismiss(classCountToastIdRef.current);
+      classCountToastIdRef.current = null;
+    }
+
+    // Show success message that request is sent to HOD
+    toast.info(
+      <div className="text-center w-full">
+        <h3 className="font-bold text-lg !mb-2">Change Request Sent</h3>
+        <p className="text-sm">
+          Your request to change class count has been sent to HOD.
+        </p>
+        <p className="text-sm !mt-1">
+          You can change the count when HOD approves it.
+        </p>
+      </div>,
+      {
+        position: "top-center",
+        autoClose: 5000,
+        closeButton: true,
+      }
+    );
+  };
+
+  // CORRECTED LOGIC - This is the key fix
   useEffect(() => {
     if (
       hasCheckedAttendance &&
@@ -202,81 +466,16 @@ export default function MarkAttendance() {
       studentsEnrolledinSubject.length > 0 &&
       !toastShownRef.current
     ) {
-      const today = getTodayDate();
-      const storedClasses = localStorage.getItem(getStorageKey());
-
-      if (classesTakenToday >= classesToday && classesToday > 0) {
-        // Limit reached
-        toastShownRef.current = true;
-        toast.warning(
-          `You have already taken attendance for all ${classesToday} class${
-            classesToday > 1 ? "es" : ""
-          } today.`,
-          {
-            position: "top-center",
-            autoClose: 6000,
-          }
-        );
-      } else if (!storedClasses && classesTakenToday === 0) {
-        // No classes set and no attendance taken - show class input
+      if (classesTakenToday === 0) {
+        // No attendance taken today - ALWAYS show class count message
         toastShownRef.current = true;
         setShowClassInput(true);
-        toast.info(
-          <div className="text-center w-full">
-            <h3 className="font-bold text-lg !mb-2 sm:text-base">
-              How many classes do you have today? ({formatDisplayDate(today)})
-            </h3>
-            <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 !mt-4">
-              <button
-                onClick={() => handleClassInput(1)}
-                className="bg-blue-500 hover:bg-blue-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
-              >
-                1 Class
-              </button>
-              {subject.creditHours > 1 && (
-                <>
-                  <button
-                    onClick={() => handleClassInput(2)}
-                    className="bg-green-500 hover:bg-green-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
-                  >
-                    2 Classes
-                  </button>
-                  <button
-                    onClick={() => handleClassInput(3)}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
-                  >
-                    3 Classes
-                  </button>
-                </>
-              )}
-            </div>
-          </div>,
-          {
-            position: "top-center",
-            autoClose: false,
-            closeOnClick: false,
-            draggable: false,
-            closeButton: false,
-            style: {
-              minWidth: "min(450px, 90vw)",
-              maxWidth: "95vw",
-            },
-          }
-        );
-      } else if (storedClasses && classesTakenToday > 0) {
-        // Show current status
+        showClassCountMessage();
+      } else if (classesTakenToday > 0) {
+        // At least 1 attendance taken - show session message
         toastShownRef.current = true;
-        toast.info(
-          `Today (${formatDisplayDate(
-            today
-          )}): ${classesTakenToday}/${storedClasses} class${
-            parseInt(storedClasses) > 1 ? "es" : ""
-          } taken`,
-          {
-            position: "top-center",
-            autoClose: 4000,
-          }
-        );
+        setShowClassInput(false);
+        showSessionMessage();
       }
     }
   }, [
@@ -290,23 +489,46 @@ export default function MarkAttendance() {
   // Reset the toast shown flag when date changes
   useEffect(() => {
     toastShownRef.current = false;
+    classCountToastIdRef.current = null;
   }, [currentDate]);
 
   const handleClassInput = (classCount) => {
     setClassesToday(classCount);
     setShowClassInput(false);
     localStorage.setItem(getStorageKey(), classCount.toString());
-    toast.dismiss();
+
+    // Dismiss the class count toast
+    if (classCountToastIdRef.current) {
+      toast.dismiss(classCountToastIdRef.current);
+      classCountToastIdRef.current = null;
+    }
+
     toast.success(
-      `Set to ${classCount} class${
-        classCount > 1 ? "es" : ""
-      } for today (${formatDisplayDate(getTodayDate())})!`,
+      `Set to ${classCount} class${classCount > 1 ? "es" : ""} for today!`,
       {
         position: "top-center",
         autoClose: 3000,
       }
     );
   };
+
+  // Load saved class time for current session
+  useEffect(() => {
+    if (classesToday > 0 && classesTakenToday < classesToday) {
+      const currentSession = classesTakenToday + 1;
+      const savedTime = localStorage.getItem(
+        getClassTimeStorageKey(currentSession)
+      );
+      if (savedTime) {
+        const { startTime, endTime } = JSON.parse(savedTime);
+        setClassStartTime(startTime);
+        setClassEndTime(endTime);
+      } else {
+        setClassStartTime("");
+        setClassEndTime("");
+      }
+    }
+  }, [classesToday, classesTakenToday, subjectId]);
 
   useEffect(() => {
     if (students && subject) {
@@ -477,6 +699,43 @@ export default function MarkAttendance() {
       attendanceData[getStudentRollNo(student)]?.status !== ""
   );
 
+  // Validate class time inputs
+  const validateClassTime = () => {
+    if (!classStartTime) {
+      toast.error("Class start time is required!", {
+        position: "top-center",
+        autoClose: 4000,
+      });
+      return false;
+    }
+
+    if (!classEndTime) {
+      toast.error("Class end time is required!", {
+        position: "top-center",
+        autoClose: 4000,
+      });
+      return false;
+    }
+
+    if (classStartTime >= classEndTime) {
+      toast.error("Class end time must be after start time!", {
+        position: "top-center",
+        autoClose: 4000,
+      });
+      return false;
+    }
+
+    if (timeSlotError) {
+      toast.error("Please resolve the time slot conflict before saving.", {
+        position: "top-center",
+        autoClose: 4000,
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSaveAttendance = async () => {
     if (isAttendanceLimitReached) {
       toast.warning(
@@ -508,6 +767,11 @@ export default function MarkAttendance() {
       return;
     }
 
+    // Validate class time
+    if (!validateClassTime()) {
+      return;
+    }
+
     setSubmitting(true);
     try {
       // Create array of attendance records with all required fields
@@ -518,21 +782,21 @@ export default function MarkAttendance() {
         );
 
         return {
-          subject_name: subject?.subName, // from subject
-          roll_no: record.rollNo, // from current row
-          department: student?.department || subject?.department, // department from enrolled student or subject
-          attendance_date: getTodayDate(), // current date in Pakistan timezone
-          status: record.status, // status from action select options
+          subject_name: subject?.subName,
+          roll_no: record.rollNo,
+          department: student?.department || subject?.department,
+          attendance_date: getTodayDate(),
+          status: record.status,
+          class_start_time: classStartTime,
+          class_end_time: classEndTime,
+          session_number: classesTakenToday + 1,
         };
       });
-
-      console.log("✅ Saving Attendance Data:", attendancePayload);
-      console.log("📅 Using Pakistan date:", getTodayDate());
 
       // Send attendance data to API - Send array directly, not wrapped in object
       const response = await axios.post(
         `${backendBaseUrl}/api/attendance`,
-        attendancePayload, // Send array directly here
+        attendancePayload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -541,14 +805,25 @@ export default function MarkAttendance() {
         }
       );
 
-      console.log("✅ Attendance saved successfully:", response.data);
+      // Save class time for this session
+      const currentSession = classesTakenToday + 1;
+      localStorage.setItem(
+        getClassTimeStorageKey(currentSession),
+        JSON.stringify({
+          startTime: classStartTime,
+          endTime: classEndTime,
+        })
+      );
 
       // Refresh attendance records to get updated count
       await fetchAttendanceRecords();
 
       setSubmitting(false);
       setSubmitted(true);
-      setAttendanceData({}); // Clear current attendance data
+      setAttendanceData({});
+      setClassStartTime("");
+      setClassEndTime("");
+      setTimeSlotError("");
 
       toast.success("Attendance saved successfully!", {
         position: "top-center",
@@ -647,51 +922,35 @@ export default function MarkAttendance() {
                       {loadingAttendance ? (
                         <div className="text-gray-500">Loading...</div>
                       ) : last5Attendance.length > 0 ? (
-                        <table className="min-w-[350px] text-sm text-center mx-auto">
-                          <thead>
-                            <tr>
-                              {last5Attendance.map((attendance, idx) => (
-                                <th
-                                  key={idx}
-                                  className="!px-2 !py-1 font-semibold text-gray-900 dark:text-gray-100"
-                                >
-                                  {formatDisplayDate(attendance.date)}
-                                </th>
-                              ))}
-                              {/* Fill empty spaces if less than 5 records */}
-                              {Array.from({
-                                length: 5 - last5Attendance.length,
-                              }).map((_, idx) => (
-                                <th
-                                  key={`empty-${idx}`}
-                                  className="!px-2 !py-1 font-semibold text-gray-900 dark:text-gray-100"
-                                >
-                                  -
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              {last5Attendance.map((attendance, idx) => (
-                                <td key={idx} className="!px-2 !py-1">
-                                  {renderStatusIcon(attendance.status)}
-                                </td>
-                              ))}
-                              {/* Fill empty spaces if less than 5 records */}
-                              {Array.from({
-                                length: 5 - last5Attendance.length,
-                              }).map((_, idx) => (
-                                <td
-                                  key={`empty-${idx}`}
-                                  className="!px-2 !py-1"
-                                >
-                                  -
-                                </td>
-                              ))}
-                            </tr>
-                          </tbody>
-                        </table>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+                          {last5Attendance.map((attendance, idx) => (
+                            <div
+                              key={idx}
+                              className="flex flex-col items-center"
+                            >
+                              <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                                {formatDisplayDate(attendance.date)}
+                              </span>
+                              <div className="!mt-1">
+                                {renderStatusIcon(attendance.status)}
+                              </div>
+                            </div>
+                          ))}
+                          {/* Fill empty spaces if less than 5 records */}
+                          {Array.from({
+                            length: 5 - last5Attendance.length,
+                          }).map((_, idx) => (
+                            <div
+                              key={`empty-${idx}`}
+                              className="flex flex-col items-center"
+                            >
+                              <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                                -
+                              </span>
+                              <div className="!mt-1">-</div>
+                            </div>
+                          ))}
+                        </div>
                       ) : (
                         <div className="text-gray-500 text-sm">
                           No attendance taken yet
@@ -791,44 +1050,105 @@ export default function MarkAttendance() {
         }}
       >
         <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
-          <div className="flex justify-between items-center">
-            <div className="flex justify-start items-center gap-3">
+          {/* Header Section - Made Responsive */}
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1">
               <BackButton url={"/SALU-PORTAL-FYP/Attendance/TakeAttendance"} />
-              <h1 className="text-2xl sm:text-3xl md:text!-4xl !py-3 font-bold text-gray-900 dark:text-white">
+              <h1 className="text-xl sm:text-2xl md:text-3xl !py-3 font-bold text-gray-900 dark:text-white break-words">
                 Mark Attendance ({displaySubjectName}) -{" "}
                 {formatDisplayDate(getTodayDate())}
               </h1>
             </div>
 
-            {/* Class Info Display */}
+            {/* Class Info Display - Made Responsive */}
             {classesToday > 0 && (
               <div
-                className={`border !px-4 !py-2 ${
+                className={`border !px-3 sm:!px-4 !py-2 rounded-lg ${
                   isAttendanceLimitReached
                     ? "bg-red-100 border-red-300"
                     : "bg-blue-100 border-blue-300"
                 }`}
               >
-                <p
-                  className={`font-semibold ${
-                    isAttendanceLimitReached ? "text-red-800" : "text-blue-800"
-                  }`}
-                >
-                  Today: {classesTakenToday}/{classesToday} class
-                  {classesToday > 1 ? "es" : ""} taken
-                </p>
-                {isAttendanceLimitReached && (
-                  <p className="text-red-600 text-sm font-medium">
-                    Limit reached for today
+                <div className="flex flex-col sm:flex-row items-center gap-2">
+                  <p
+                    className={`font-semibold text-sm sm:text-base ${
+                      isAttendanceLimitReached
+                        ? "text-red-800"
+                        : "text-blue-800"
+                    }`}
+                  >
+                    Today: {classesTakenToday}/{classesToday} class
+                    {classesToday > 1 ? "es" : ""} taken
                   </p>
-                )}
+                  {isAttendanceLimitReached && (
+                    <p className="text-red-600 text-xs sm:text-sm font-medium">
+                      Limit reached
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </div>
 
           <hr className="border-t-[3px] border-gray-900 dark:border-white !mb-4" />
 
-          <div className="w-full flex justify-end overflow-hidden">
+          {/* Class Slot Time Input Section - Made Responsive */}
+          {classesToday > 0 && classesTakenToday < classesToday && (
+            <div className="w-full bg-white dark:bg-gray-900 text-black dark:text-white border border-blue-200 !p-4 !mb-4 rounded-lg">
+              <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-300 mb-3">
+                Class Slot Time (Session {classesTakenToday + 1})
+              </h3>
+              <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
+                <div className="flex-1 w-full">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white !mb-1">
+                    Start Time *
+                  </label>
+                  <input
+                    type="time"
+                    value={classStartTime}
+                    onChange={(e) => setClassStartTime(e.target.value)}
+                    className="w-full !px-3 !py-2 border-2 border-gray-800 dark:border-gray-300 focus:outline-none focus:border-yellow-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    required
+                  />
+                </div>
+                <div className="flex-1 w-full">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white !mb-1">
+                    End Time *
+                  </label>
+                  <input
+                    type="time"
+                    value={classEndTime}
+                    onChange={(e) => setClassEndTime(e.target.value)}
+                    onBlur={handleEndTimeBlur}
+                    className={`w-full !px-3 !py-2 border-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white ${
+                      timeSlotError
+                        ? "border-red-500 focus:border-red-500"
+                        : "border-gray-800 dark:border-gray-300 focus:border-yellow-500"
+                    }`}
+                    required
+                  />
+                  {timeSlotError && (
+                    <p className="text-red-600 text-sm !mt-2">
+                      {timeSlotError}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex-1 w-full">
+                <p className="text-sm text-gray-700 dark:text-white !mt-2">
+                  Current Pakistan Time: {getCurrentPakistanTime()}
+                </p>
+              </div>
+              {(!classStartTime || !classEndTime) && !timeSlotError && (
+                <p className="text-red-600 text-sm !mt-2">
+                  * Class start and end time are required to save attendance
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Search Input - Made Responsive */}
+          <div className="w-full flex justify-end">
             <input
               value={query}
               onChange={(e) => {
@@ -836,7 +1156,7 @@ export default function MarkAttendance() {
                 setPage(1);
               }}
               placeholder="Search students by name or roll number..."
-              className="max-w-[100%] !px-2 !py-1 border-2 border-[#a5a5a5] outline-none
+              className="w-full sm:w-80 !px-3 !py-2 border-2 border-[#a5a5a5] outline-none rounded
                 bg-[#f9f9f9] text-[#2a2a2a]
                 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100
                 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -845,33 +1165,38 @@ export default function MarkAttendance() {
 
           <DataTable columns={columns} students={paginatedStudents} />
 
-          <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
-            <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
+          {/* Footer Section - Made Responsive */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 !mt-4">
+            <span className="font-bold text-lg sm:text-xl text-gray-900 dark:text-white text-center sm:text-left">
               Total Students: {filteredStudents.length}
             </span>
-            <div>
-              <button
-                type="button"
-                onClick={handleSaveAttendance}
-                disabled={
-                  submitting ||
-                  studentsEnrolledinSubject.length === 0 ||
-                  isAttendanceLimitReached ||
-                  classesToday === 0
-                }
-                className="cursor-pointer relative overflow-hidden !px-[15px] !py-[5px] border-2 border-[#22c55e] text-white text-[0.9rem] font-medium bg-transparent transition-all duration-300 ease-linear
+
+            <button
+              type="button"
+              onClick={handleSaveAttendance}
+              disabled={
+                submitting ||
+                studentsEnrolledinSubject.length === 0 ||
+                isAttendanceLimitReached ||
+                classesToday === 0 ||
+                !classStartTime ||
+                !classEndTime ||
+                timeSlotError
+              }
+              className="cursor-pointer relative overflow-hidden !px-4 !py-2 border-2 border-[#22c55e] text-white text-base font-medium bg-transparent transition-all duration-300 ease-linear min-w-[140px]
                   before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#22c55e] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                <span className="relative z-10">
-                  {submitting ? "Saving..." : "Save Attendance"}
-                </span>
-              </button>
+            >
+              <span className="relative z-10">
+                {submitting ? "Saving..." : "Save Attendance"}
+              </span>
+            </button>
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <Pagination
+                totalPages={pageCount}
+                currentPage={page}
+                onPageChange={setPage}
+              />
             </div>
-            <Pagination
-              totalPages={pageCount}
-              currentPage={page}
-              onPageChange={setPage}
-            />
           </div>
         </div>
       </div>

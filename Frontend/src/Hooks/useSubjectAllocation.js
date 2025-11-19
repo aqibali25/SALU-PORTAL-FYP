@@ -33,8 +33,6 @@ export default function useSubjectAllocation({ pageSize = 10 }) {
             withCredentials: true,
           }),
         ]);
-        console.log("Allocations Data:", allocationsRes.data.data);
-        console.log("Subjects Data:", subjectsRes.data.data);
 
         // Create a map of subjectId/subjectName to teacherName from allocations
         const allocationMap = new Map();
@@ -112,9 +110,9 @@ export default function useSubjectAllocation({ pageSize = 10 }) {
               subName: subject.subjectName || subject.name || "Unknown Subject",
               teacherName: teacherName,
               department: subject.department,
-              semester: subject.semester,
+              semester: subject.semester || "N/A",
               creditHours: subject.creditHours,
-              year: subject.year,
+              year: subject.year || "N/A",
               createdAt: subject.createdAt,
               updatedAt: subject.updatedAt,
               source: "subject",
@@ -127,7 +125,6 @@ export default function useSubjectAllocation({ pageSize = 10 }) {
           ...subjectsTransformed,
         ].sort((a, b) => a.saId.toString().localeCompare(b.saId.toString()));
 
-        console.log("Combined Data:", combinedData);
         setSubjects(combinedData);
       } catch (error) {
         console.error("Error fetching data:", error);

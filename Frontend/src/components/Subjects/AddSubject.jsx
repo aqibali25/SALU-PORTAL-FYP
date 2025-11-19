@@ -42,9 +42,7 @@ const AddSubject = ({ Title }) => {
       : isSuperAdmin
       ? ""
       : userDepartment,
-    semester: "",
     creditHours: "",
-    year: "",
   });
 
   const [loading, setLoading] = useState(true);
@@ -60,9 +58,7 @@ const AddSubject = ({ Title }) => {
             subjectName: editingSubject.subjectName || "",
             subjectType: editingSubject.subjectType || "",
             department: editingSubject.department || "",
-            semester: editingSubject.semester || "",
             creditHours: editingSubject.creditHours || "",
-            year: editingSubject.year || "",
           });
         } else if (isSpecificDepartment || (!isSuperAdmin && userDepartment)) {
           // Auto-set department for specific department users when adding new subject
@@ -91,7 +87,6 @@ const AddSubject = ({ Title }) => {
 
       const payload = {
         ...form,
-        semester: form.semester.toLowerCase(),
       };
 
       Title === "Add Subject"
@@ -249,17 +244,6 @@ const AddSubject = ({ Title }) => {
             </select>
           </div>
 
-          {/* Semester */}
-          <InputContainer
-            placeholder="Enter Semester (1st, 2nd, 3rd, 4th, 5th, 6th, 7th, 8th)"
-            title="Semester"
-            htmlFor="semester"
-            inputType="text"
-            required
-            value={form.semester}
-            onChange={onChange("semester")}
-          />
-
           {/* Credit Hours */}
           <InputContainer
             placeholder="Enter Credit Hours (1-9)"
@@ -277,25 +261,6 @@ const AddSubject = ({ Title }) => {
             }}
             min={0}
             max={9}
-          />
-
-          {/* Year */}
-          <InputContainer
-            placeholder="Enter Year (current academic year)"
-            title="Year"
-            htmlFor="year"
-            inputType="number"
-            required
-            value={form.year}
-            onChange={(e) => {
-              const val = e.target.value;
-              // Allow only up to 4 digits
-              if (/^\d{0,4}$/.test(val)) {
-                onChange("year")(e);
-              }
-            }}
-            min={1000}
-            max={9999}
           />
 
           {/* Submit Button */}

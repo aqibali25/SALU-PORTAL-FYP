@@ -196,6 +196,7 @@ export default function TotalBooks() {
     const matchesSearch = [
       book.bookId,
       book.title,
+      book.bookAddition || "N/A",
       book.authors,
       book.genre,
       book.language,
@@ -221,6 +222,7 @@ export default function TotalBooks() {
   const columns = [
     { key: "bookId", label: "Book ID" },
     { key: "title", label: "Book Title" },
+    { key: "bookAddition", label: "Book Addition" },
     { key: "authors", label: "Author(s)" },
     { key: "genre", label: "Genre/Category" },
     { key: "language", label: "Language" },

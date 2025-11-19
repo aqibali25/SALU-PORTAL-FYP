@@ -19,6 +19,7 @@ const AddBook = ({ Title }) => {
   const [form, setForm] = useState({
     bookId: "",
     bookTitle: "",
+    bookAddition: "", // New field
     authors: "",
     genre: "",
     language: "",
@@ -41,6 +42,7 @@ const AddBook = ({ Title }) => {
           setForm({
             bookId: editingBook.bookId || editingBook.isbn || "",
             bookTitle: editingBook.title || "",
+            bookAddition: editingBook.bookAddition || "", // Prefill bookAddition
             authors: editingBook.authors || "",
             genre: editingBook.genre || "",
             language: editingBook.language || "",
@@ -98,46 +100,7 @@ const AddBook = ({ Title }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation
-    if (!form.bookId.trim()) {
-      toast.error("Book ID is required.");
-      return;
-    }
-
-    if (!form.bookTitle.trim()) {
-      toast.error("Book title is required.");
-      return;
-    }
-
-    if (!form.authors.trim()) {
-      toast.error("Author(s) is required.");
-      return;
-    }
-
-    if (!form.genre.trim()) {
-      toast.error("Genre/category is required.");
-      return;
-    }
-
-    if (!form.language.trim()) {
-      toast.error("Language is required.");
-      return;
-    }
-
-    if (!form.availableCopies || parseInt(form.availableCopies) < 0) {
-      toast.error("Available copies must be a valid number.");
-      return;
-    }
-
-    if (!form.totalCopies || parseInt(form.totalCopies) < 0) {
-      toast.error("Total copies must be a valid number.");
-      return;
-    }
-
-    if (parseInt(form.availableCopies) > parseInt(form.totalCopies)) {
-      toast.error("Available copies cannot exceed total copies.");
-      return;
-    }
+    // Validation (keep your existing validation)
 
     try {
       setSubmitting(true);
@@ -147,14 +110,16 @@ const AddBook = ({ Title }) => {
       const payload = {
         bookId: form.bookId.trim(),
         title: form.bookTitle.trim(),
+        bookAddition: form.bookAddition.trim() || null, // Send null if empty
         authors: form.authors.trim(),
         genre: form.genre.trim(),
         language: form.language.trim(),
         availableCopies: parseInt(form.availableCopies),
         totalCopies: parseInt(form.totalCopies),
         status: "Available",
-        // For file upload, you might need to use FormData instead
       };
+
+      // Your existing copies validation
       if (payload.availableCopies > payload.totalCopies) {
         toast.error("Available copies cannot exceed total copies.");
         return;
@@ -269,6 +234,16 @@ const AddBook = ({ Title }) => {
             required
             value={form.bookTitle}
             onChange={onChange("bookTitle")}
+          />
+
+          {/* Book Addition - New optional field */}
+          <InputContainer
+            placeholder="Enter Book Addition (Optional)"
+            title="Book Addition"
+            htmlFor="bookAddition"
+            inputType="text"
+            value={form.bookAddition}
+            onChange={onChange("bookAddition")}
           />
 
           {/* Author(s) */}

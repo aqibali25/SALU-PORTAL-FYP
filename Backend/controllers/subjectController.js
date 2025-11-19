@@ -2,23 +2,21 @@
 import { sequelize } from "../db.js";
 
 const DB = process.env.DB_NAME || "u291434058_SALU_GC";
-const TABLE = `\`${DB}\`.subjects`;
+const TABLE = `${DB}.subjects`;
 
 // allowed sort columns (DB names)
 const ALLOWED_SORTS = new Set([
   "subject_allocation_id",
   "subject_name",
   "department",
-  "semester",
   "credit_hours",
-  "year",
   "subject_type",
 ]);
 
 /**
  * GET /api/subjects
  * Query:
- *   search   - matches subject_name / department / semester / year / type
+ *   search   - matches subject_name / department / credit_hours / type
  *   sortBy   - any of ALLOWED_SORTS (default subject_allocation_id)
  *   sortDir  - ASC|DESC (default DESC)
  *   No pagination - returns all entries
@@ -35,10 +33,15 @@ export const listSubjects = async (req, res) => {
     const dir = String(sortDir).toUpperCase() === "ASC" ? "ASC" : "DESC";
 
     const where = search
-      ? `WHERE (subject_name LIKE ? OR department LIKE ? OR semester LIKE ? OR subject_type LIKE ? OR CAST(year AS CHAR) LIKE ?)`
+      ? `WHERE (
+            subject_name LIKE ?
+         OR department   LIKE ?
+         OR subject_type LIKE ?
+         OR credit_hours LIKE ?
+        )`
       : "";
 
-    const params = search ? Array(5).fill(`%${search}%`) : [];
+    const params = search ? Array(4).fill(`${search}`) : [];
 
     const [rows] = await sequelize.query(
       `
@@ -47,9 +50,7 @@ export const listSubjects = async (req, res) => {
         subject_name          AS subjectName,
         subject_type          AS subjectType,
         department,
-        semester,
-        credit_hours          AS creditHours,
-        year
+        credit_hours          AS creditHours
       FROM ${TABLE}
       ${where}
       ORDER BY ${sort} ${dir}
@@ -81,9 +82,7 @@ export const getSubjectById = async (req, res) => {
         subject_name          AS subjectName,
         subject_type          AS subjectType,
         department,
-        semester,
-        credit_hours          AS creditHours,
-        year
+        credit_hours          AS creditHours
       FROM ${TABLE}
       WHERE subject_allocation_id = ?
       LIMIT 1
@@ -109,7 +108,7 @@ export const getSubjectById = async (req, res) => {
  * Body (from AddSubject.jsx):
  * {
  *   subjectId, subjectName, subjectType, department,
- *   semester, creditHours, year
+ *   creditHours
  * }
  * If subjectId exists -> UPDATE, else INSERT
  */
@@ -120,19 +119,11 @@ export const upsertSubject = async (req, res) => {
       subjectName,
       subjectType,
       department,
-      semester,
       creditHours,
-      year,
+      // semester, year may still come from FE but are ignored now
     } = req.body;
 
-    if (
-      !subjectName ||
-      !subjectType ||
-      !department ||
-      !semester ||
-      !creditHours ||
-      !year
-    ) {
+    if (!subjectName || !subjectType || !department || !creditHours) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -144,10 +135,8 @@ export const upsertSubject = async (req, res) => {
         SET 
           subject_name = ?,
           subject_type = ?,
-          department = ?,
-          semester = ?,
-          credit_hours = ?, 
-          year = ?
+          department   = ?,
+          credit_hours = ?
         WHERE subject_allocation_id = ?
         `,
         {
@@ -155,9 +144,7 @@ export const upsertSubject = async (req, res) => {
             subjectName,
             subjectType,
             department,
-            semester,
             creditHours,
-            year,
             subjectId,
           ],
         }
@@ -169,18 +156,11 @@ export const upsertSubject = async (req, res) => {
     // ✅ INSERT
     await sequelize.query(
       `
-      INSERT INTO ${TABLE} (subject_name, subject_type, department, semester, credit_hours, year)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO ${TABLE} (subject_name, subject_type, department, credit_hours)
+      VALUES (?, ?, ?, ?)
       `,
       {
-        replacements: [
-          subjectName,
-          subjectType,
-          department,
-          semester,
-          creditHours,
-          year,
-        ],
+        replacements: [subjectName, subjectType, department, creditHours],
       }
     );
 
@@ -198,7 +178,9 @@ export const deleteSubject = async (req, res) => {
   try {
     const { id } = req.params;
     await sequelize.query(
-      `DELETE FROM ${TABLE} WHERE subject_allocation_id = ?`,
+      `
+      DELETE FROM ${TABLE} WHERE subject_allocation_id = ?
+      `,
       { replacements: [id] }
     );
     res.json({ success: true });

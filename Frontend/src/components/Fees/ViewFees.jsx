@@ -22,7 +22,6 @@ export default function ViewFees() {
 
   // Get user role from localStorage or cookies
   const getUserRole = () => {
-    // Try to get from localStorage first
     try {
       const userData = localStorage.getItem("user");
       if (userData) {
@@ -33,7 +32,6 @@ export default function ViewFees() {
       console.error("Error parsing user data from localStorage:", error);
     }
 
-    // Fallback to cookies
     const roleFromCookie = document.cookie
       .split("; ")
       .find((row) => row.startsWith("role="))
@@ -59,7 +57,7 @@ export default function ViewFees() {
   // Status options
   const statusOptions = ["Partial Pay", "Full Pay"];
 
-  // ✅ Fetch fees using Axios
+  // ✅ Fetch fees only once on component mount and when filters change (excluding search)
   useEffect(() => {
     const fetchFees = async () => {
       try {
@@ -68,20 +66,11 @@ export default function ViewFees() {
         const API =
           import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-        // Build query parameters for filters
+        // Build query parameters for filters (EXCLUDE search from API call)
         const params = {};
         if (departmentFilter) params.department = departmentFilter;
         if (yearFilter) params.year = yearFilter;
         if (statusFilter) params.status = statusFilter;
-        if (query) {
-          // If query looks like a CNIC, search by CNIC
-          if (query.replace(/\D/g, "").length === 13) {
-            params.cnic = query;
-          } else {
-            // Otherwise search in challan_no
-            params.challan_no = query;
-          }
-        }
 
         const res = await axios.get(`${API}/api/fees`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -107,21 +96,22 @@ export default function ViewFees() {
       }
     };
     fetchFees();
-  }, [departmentFilter, yearFilter, statusFilter, query]); // Re-fetch when filters change
+  }, [departmentFilter, yearFilter, statusFilter]); // REMOVED query from dependencies
 
-  // ✅ Filter fees by search query and filters (client-side filtering as fallback)
+  // ✅ Filter fees by search query and filters (CLIENT-SIDE ONLY)
   const filteredFees = fees.filter((fee) => {
-    const matchesSearch = [
+    const searchableFields = [
       fee.cnic,
       fee.challan_no,
       fee.amount?.toString(),
       fee.year,
       fee.status,
       fee.department,
-    ]
-      .join(" ")
-      .toLowerCase()
-      .includes(query.toLowerCase());
+    ].map((field) => field?.toString().toLowerCase() || "");
+
+    const matchesSearch =
+      !query ||
+      searchableFields.some((field) => field.includes(query.toLowerCase()));
 
     const matchesDepartment =
       !departmentFilter || fee.department === departmentFilter;
@@ -188,7 +178,6 @@ export default function ViewFees() {
       });
 
       if (response.data.success) {
-        // Remove the deleted fee from state
         setFees((prev) => prev.filter((fee) => fee.fee_id !== feeId));
         toast.success("Fee record deleted successfully!");
       } else {
@@ -222,19 +211,8 @@ export default function ViewFees() {
             />
           ),
         },
-        // {
-        //   label: "Delete",
-        //   onClick: (row) => handleDeleteFee(row.fee_id, row.challan_no),
-        //   icon: (
-        //     <FaTrash
-        //       size={20}
-        //       className="cursor-pointer text-red-500 hover:text-red-600"
-        //     />
-        //   ),
-        // },
       ]
     : [
-        // View only action for non-admin users
         {
           label: "View",
           onClick: (row) => {
@@ -291,7 +269,7 @@ export default function ViewFees() {
 
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 
-        {/* Search Input */}
+        {/* Search Input - Now only does client-side filtering */}
         <div className="w-full flex justify-end mb-4">
           <input
             value={query}
@@ -396,7 +374,7 @@ export default function ViewFees() {
             </div>
           </div>
 
-          {/* Clear All Button - Only show when filters are active */}
+          {/* Clear All Button */}
           {(query || departmentFilter || yearFilter || statusFilter) && (
             <button
               onClick={() => {
@@ -417,7 +395,7 @@ export default function ViewFees() {
           rows={currentPageRows.map((row) => ({
             ...row,
             paid_date: formatDate(row.paid_date),
-            amount: formatAmount(row.amount), // No currency symbol, just formatted number
+            amount: formatAmount(row.amount),
           }))}
           actions={actions}
         />

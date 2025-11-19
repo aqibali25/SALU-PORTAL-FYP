@@ -21,26 +21,64 @@ const AssigningSubject = () => {
   const subjectName = subjectId.replace(/-\d+$/, "");
   const subjectFromState = location.state?.subjectData;
 
-  const [formData, setFormData] = useState(
-    subjectFromState || {
-      saId: "",
-      subName: subjectName,
-      teacherName: "",
-      department: "",
-      semester: "",
-      creditHours: "",
-      year: "",
-    }
-  );
+  const [formData, setFormData] = useState({
+    saId: "",
+    subName: subjectName,
+    teacherName: "",
+    department: "",
+    semester: "",
+    creditHours: "",
+    year: "",
+  });
 
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // Semester options
+  const semesterOptions = [
+    "1st",
+    "2nd",
+    "3rd",
+    "4th",
+    "5th",
+    "6th",
+    "7th",
+    "8th",
+  ];
+
+  // Generate year options from 1950 to current year
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from(
+    { length: currentYear - 1950 + 1 },
+    (_, index) => (currentYear - index).toString()
+  );
+
   // Check if this is an update (already assigned) or create (new assignment)
   const isUpdate =
     subjectFromState && subjectFromState.teacherName !== "Yet to assign";
   const isNewAssignment = !isUpdate;
+
+  // Initialize form data when subjectFromState changes
+  useEffect(() => {
+    if (subjectFromState) {
+      setFormData({
+        saId: subjectFromState.saId || "",
+        subName: subjectFromState.subName || subjectName,
+        teacherName: subjectFromState.teacherName || "",
+        department: subjectFromState.department || "",
+        semester:
+          subjectFromState.semester === "N/A" || !subjectFromState.semester
+            ? ""
+            : subjectFromState.semester,
+        creditHours: subjectFromState.creditHours || "",
+        year:
+          subjectFromState.year === "N/A" || !subjectFromState.year
+            ? ""
+            : subjectFromState.year,
+      });
+    }
+  }, [subjectFromState, subjectName]);
 
   // Fetch teachers
   useEffect(() => {
@@ -153,7 +191,12 @@ const AssigningSubject = () => {
       const yearNum = Number(formData.year);
 
       // Validate fields
-      if (!formData.subName || !formData.department || !formData.semester) {
+      if (
+        !formData.subName ||
+        !formData.department ||
+        !formData.semester ||
+        !formData.year
+      ) {
         toast.error("Please fill in all required fields.");
         setSubmitting(false);
         return;
@@ -165,8 +208,8 @@ const AssigningSubject = () => {
         return;
       }
 
-      if (isNaN(yearNum) || yearNum <= 0) {
-        toast.error("Year must be a valid number.");
+      if (isNaN(yearNum) || yearNum < 1950 || yearNum > currentYear) {
+        toast.error(`Year must be between 1950 and ${currentYear}.`);
         setSubmitting(false);
         return;
       }
@@ -377,27 +420,73 @@ const AssigningSubject = () => {
             value={formData.department}
             disabled
           />
-          <InputContainer
-            title="Semester"
-            name="semester"
-            inputType="text"
-            value={formData.semester}
-            disabled
-          />
+
+          {/* Semester Dropdown */}
+          <div className="flex w-full max-w-[800px] items-start md:items-center justify-start flex-col md:flex-row gap-[8px] md:gap-5">
+            <label
+              htmlFor="semester"
+              className="w-auto md:w-1/4 text-start md:text-right text-gray-900 dark:text-white"
+            >
+              <span className="text-[#ff0000] mr-1">*</span>
+              Semester:
+            </label>
+            <select
+              id="semester"
+              name="semester"
+              required
+              value={formData.semester}
+              onChange={handleChange}
+              className="w-[40%] [@media(max-width:768px)]:!w-full min-w-0 !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            >
+              <option value="" disabled={!formData.semester}>
+                {formData.semester
+                  ? "Select Semester"
+                  : "No semester data available"}
+              </option>
+              {semesterOptions.map((semester) => (
+                <option key={semester} value={semester}>
+                  {semester}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <InputContainer
             title="Credit Hours"
             name="creditHours"
             inputType="text"
             value={formData.creditHours}
+            width="20%"
             disabled
           />
-          <InputContainer
-            title="Year"
-            name="year"
-            inputType="text"
-            value={formData.year}
-            disabled
-          />
+
+          {/* Year Dropdown */}
+          <div className="flex w-full max-w-[800px] items-start md:items-center justify-start flex-col md:flex-row gap-[8px] md:gap-5">
+            <label
+              htmlFor="year"
+              className="w-auto md:w-1/4 text-start md:text-right text-gray-900 dark:text-white"
+            >
+              <span className="text-[#ff0000] mr-1">*</span>
+              Year:
+            </label>
+            <select
+              id="year"
+              name="year"
+              required
+              value={formData.year}
+              onChange={handleChange}
+              className="w-[40%] [@media(max-width:768px)]:!w-full min-w-0 !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            >
+              <option value="" disabled={!formData.year}>
+                {formData.year ? "Select Year" : "No year data available"}
+              </option>
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="w-full flex justify-end gap-4">
             {/* Unassign button - only show for update operations */}

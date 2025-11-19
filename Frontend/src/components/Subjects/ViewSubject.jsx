@@ -60,15 +60,7 @@ export default function ViewSubject() {
   // ✅ Filter subjects by search query
   const filteredSubjects = subjects
     .filter((s) =>
-      [
-        s.subjectId,
-        s.subjectName,
-        s.subjectType,
-        s.department,
-        s.semester,
-        s.creditHours,
-        s.year,
-      ]
+      [s.subjectId, s.subjectName, s.subjectType, s.creditHours, s.year]
         .join(" ")
         .toLowerCase()
         .includes(query.toLowerCase())
@@ -88,9 +80,7 @@ export default function ViewSubject() {
     { key: "subjectName", label: "Subject Name" },
     { key: "subjectType", label: "Subject Type" },
     { key: "department", label: "Department" },
-    { key: "semester", label: "Semester" },
     { key: "creditHours", label: "Credit Hours" },
-    { key: "year", label: "Year" },
   ];
 
   // ✅ Table actions (Edit & Delete)

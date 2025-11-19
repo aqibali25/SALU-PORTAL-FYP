@@ -35,6 +35,8 @@ export const createAttendance = async (req, res) => {
         roll_no,
         department,
         attendance_date,
+        class_start_time,
+        class_end_time,
         status,
       } = rec || {};
 
@@ -43,6 +45,8 @@ export const createAttendance = async (req, res) => {
         !roll_no ||
         !department ||
         !attendance_date ||
+        !class_start_time ||
+        !class_end_time ||
         !status
       ) {
         continue; // skip invalid rows silently
@@ -52,12 +56,14 @@ export const createAttendance = async (req, res) => {
       await sequelize.query(
         `
         INSERT INTO \`${DB}\`.mark_attendance
-          (attendance_date, status, subject_name, roll_no, department)
-        VALUES (?, ?, ?, ?, ?)
+          (attendance_date, class_start_time, class_end_time, status, subject_name, roll_no, department)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         `,
         {
           replacements: [
             attendance_date,
+            class_start_time,
+            class_end_time,
             status,
             subject_name,
             roll_no,
@@ -88,7 +94,14 @@ export const createAttendance = async (req, res) => {
  */
 export const getAttendance = async (req, res) => {
   try {
-    const { subject_name, roll_no, department, date } = req.query;
+    const {
+      subject_name,
+      roll_no,
+      department,
+      date,
+      class_start_time,
+      class_end_time,
+    } = req.query;
 
     const filters = [];
     const params = [];
@@ -109,6 +122,14 @@ export const getAttendance = async (req, res) => {
       filters.push("a.attendance_date = ?");
       params.push(date);
     }
+    if (class_start_time) {
+      filters.push("a.class_start_time = ?");
+      params.push(class_start_time);
+    }
+    if (class_end_time) {
+      filters.push("a.class_end_time = ?");
+      params.push(class_end_time);
+    }
 
     const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
 
@@ -117,6 +138,8 @@ export const getAttendance = async (req, res) => {
       SELECT
         a.attendance_id,
         a.attendance_date,
+        a.class_start_time,
+        a.class_end_time,
         a.status,
         a.subject_name,
         a.roll_no,
@@ -153,6 +176,8 @@ export const updateAttendance = async (req, res) => {
       roll_no,
       department,
       attendance_date,
+      class_start_time,
+      class_end_time,
     } = req.body || {};
 
     if (!attendance_id) {
@@ -189,6 +214,14 @@ export const updateAttendance = async (req, res) => {
     if (attendance_date !== undefined) {
       fields.push("attendance_date = ?");
       params.push(attendance_date);
+    }
+    if (class_start_time !== undefined) {
+      fields.push("class_start_time = ?");
+      params.push(class_start_time);
+    }
+    if (class_end_time !== undefined) {
+      fields.push("class_end_time = ?");
+      params.push(class_end_time);
     }
 
     if (!fields.length) {

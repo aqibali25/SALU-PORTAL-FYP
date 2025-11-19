@@ -149,6 +149,16 @@ const StudentAttendance = () => {
       render: (row) => renderDate(row),
     },
     {
+      key: "class_start_time",
+      label: "Class Start Time",
+      render: (row) => renderText(row, "class_start_time"),
+    },
+    {
+      key: "class_end_time",
+      label: "Class End Time",
+      render: (row) => renderText(row, "class_end_time"),
+    },
+    {
       key: "status",
       label: "Status",
       render: (row) => renderStatus(row),

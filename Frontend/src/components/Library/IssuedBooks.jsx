@@ -78,6 +78,7 @@ export default function BookIssues({ title = "Issued Books" }) {
           rollNo: issue.rollNo || "",
           bookId: issue.bookId || "",
           bookName: issue.bookName || issue.title || "",
+          bookAddition: issue.bookAddition || "N/A",
           issueDate: issue.issueDate || "",
           dueDate: issue.dueDate || "",
           status: issue.status || "Issued",
@@ -305,6 +306,7 @@ export default function BookIssues({ title = "Issued Books" }) {
     { key: "rollNo", label: "Student Roll No" },
     { key: "bookId", label: "Book ID" },
     { key: "bookName", label: "Book Name" },
+    { key: "bookAddition", label: "Book Addition" },
     {
       key: "issueDate",
       label: "Issue Date",
