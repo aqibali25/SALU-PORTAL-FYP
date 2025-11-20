@@ -19,7 +19,7 @@ const AddBook = ({ Title }) => {
   const [form, setForm] = useState({
     bookId: "",
     bookTitle: "",
-    bookAddition: "", // New field
+    bookEdition: "", // New field
     authors: "",
     genre: "",
     language: "",
@@ -42,7 +42,7 @@ const AddBook = ({ Title }) => {
           setForm({
             bookId: editingBook.bookId || editingBook.isbn || "",
             bookTitle: editingBook.title || "",
-            bookAddition: editingBook.bookAddition || "", // Prefill bookAddition
+            bookEdition: editingBook.bookEdition || "", // Prefill bookEdition
             authors: editingBook.authors || "",
             genre: editingBook.genre || "",
             language: editingBook.language || "",
@@ -110,7 +110,7 @@ const AddBook = ({ Title }) => {
       const payload = {
         bookId: form.bookId.trim(),
         title: form.bookTitle.trim(),
-        bookAddition: form.bookAddition.trim() || null, // Send null if empty
+        bookEdition: form.bookEdition.trim() || null, // Send null if empty
         authors: form.authors.trim(),
         genre: form.genre.trim(),
         language: form.language.trim(),
@@ -236,14 +236,14 @@ const AddBook = ({ Title }) => {
             onChange={onChange("bookTitle")}
           />
 
-          {/* Book Addition - New optional field */}
+          {/* Book Edition - New optional field */}
           <InputContainer
-            placeholder="Enter Book Addition (Optional)"
-            title="Book Addition"
-            htmlFor="bookAddition"
+            placeholder="Enter Book Edition (Optional)"
+            title="Book Edition"
+            htmlFor="bookEdition"
             inputType="text"
-            value={form.bookAddition}
-            onChange={onChange("bookAddition")}
+            value={form.bookEdition}
+            onChange={onChange("bookEdition")}
           />
 
           {/* Author(s) */}

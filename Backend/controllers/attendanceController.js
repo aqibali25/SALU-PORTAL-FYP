@@ -37,6 +37,7 @@ export const createAttendance = async (req, res) => {
         attendance_date,
         class_start_time,
         class_end_time,
+        semester,
         status,
       } = rec || {};
 
@@ -47,6 +48,7 @@ export const createAttendance = async (req, res) => {
         !attendance_date ||
         !class_start_time ||
         !class_end_time ||
+        !semester ||
         !status
       ) {
         continue; // skip invalid rows silently
@@ -56,14 +58,15 @@ export const createAttendance = async (req, res) => {
       await sequelize.query(
         `
         INSERT INTO \`${DB}\`.mark_attendance
-          (attendance_date, class_start_time, class_end_time, status, subject_name, roll_no, department)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+          (attendance_date, class_start_time, class_end_time, semester, status, subject_name, roll_no, department)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `,
         {
           replacements: [
             attendance_date,
             class_start_time,
             class_end_time,
+            semester,
             status,
             subject_name,
             roll_no,
@@ -98,6 +101,7 @@ export const getAttendance = async (req, res) => {
       subject_name,
       roll_no,
       department,
+      semester,
       date,
       class_start_time,
       class_end_time,
@@ -130,6 +134,10 @@ export const getAttendance = async (req, res) => {
       filters.push("a.class_end_time = ?");
       params.push(class_end_time);
     }
+    if (semester) {
+      filters.push("a.semester = ?");
+      params.push(semester);
+    }
 
     const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
 
@@ -140,6 +148,7 @@ export const getAttendance = async (req, res) => {
         a.attendance_date,
         a.class_start_time,
         a.class_end_time,
+        a.semester,
         a.status,
         a.subject_name,
         a.roll_no,
@@ -178,6 +187,7 @@ export const updateAttendance = async (req, res) => {
       attendance_date,
       class_start_time,
       class_end_time,
+      semester,
     } = req.body || {};
 
     if (!attendance_id) {
@@ -222,6 +232,10 @@ export const updateAttendance = async (req, res) => {
     if (class_end_time !== undefined) {
       fields.push("class_end_time = ?");
       params.push(class_end_time);
+    }
+    if (semester !== undefined) {
+      fields.push("semester = ?");
+      params.push(semester);
     }
 
     if (!fields.length) {

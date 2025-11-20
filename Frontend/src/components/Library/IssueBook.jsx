@@ -135,7 +135,7 @@ const IssueBook = () => {
         const bookData = {
           id: book.bookId || book._id,
           title: book.title,
-          bookAddition: book.bookAddition,
+          bookEdition: book.bookEdition,
           authors: book.authors,
           availableCopies: book.availableCopies,
           status: book.status, // Include status in book info
@@ -334,7 +334,7 @@ const IssueBook = () => {
         rollNo: rollNo,
         bookId: bookId,
         bookName: form.bookName,
-        bookAddition: form.bookAddition || "",
+        bookEdition: form.bookEdition || "",
         issueDate: form.issueDate,
         dueDate: form.dueDate,
         status: form.status, // Only extra field besides inputs
@@ -482,13 +482,13 @@ const IssueBook = () => {
                 >
                   {!isBookAvailable(bookInfo) ? (
                     <>
-                      ✗ {bookInfo.title} - {bookInfo.bookAddition} by{" "}
+                      ✗ {bookInfo.title} - {bookInfo.bookEdition} by{" "}
                       {bookInfo.authors} - OUT OF STOCK
                     </>
                   ) : (
                     <>
                       ✓ {bookInfo.title}{" "}
-                      {bookInfo.bookAddition && `-${bookInfo.bookAddition}`} by
+                      {bookInfo.bookEdition && `-${bookInfo.bookEdition}`} by
                       {"    "}
                       {bookInfo.authors} - {bookInfo.availableCopies} available
                     </>

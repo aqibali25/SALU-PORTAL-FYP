@@ -74,7 +74,7 @@ export const createBook = async (req, res) => {
     const {
       bookId,
       title,
-      bookAddition,
+      bookEdition,
       authors,
       genre,
       language,
@@ -102,7 +102,7 @@ export const createBook = async (req, res) => {
     await sequelize.query(
       `
       INSERT INTO \`${DB}\`.library_books
-        (book_id, book_title, book_addition,authors, genre_category, language,
+        (book_id, book_title, book_edition,authors, genre_category, language,
          total_copies, available_copies, status)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
@@ -110,7 +110,7 @@ export const createBook = async (req, res) => {
         replacements: [
           bookId,
           title,
-          bookAddition || "",
+          bookEdition || "",
           authors || "",
           genre || "",
           language || "",
@@ -126,7 +126,7 @@ export const createBook = async (req, res) => {
       SELECT
         book_id          AS bookId,
         book_title       AS title,
-        book_addition    AS bookAddition,
+        book_edition    AS bookEdition,
         authors,
         genre_category   AS genre,
         language,
@@ -163,7 +163,7 @@ export const getAllBooks = async (req, res) => {
       SELECT
         book_id          AS bookId,
         book_title       AS title,
-        book_addition    AS bookAddition,
+        book_edition    AS bookEdition,
         authors,
         genre_category   AS genre,
         language,
@@ -196,7 +196,7 @@ export const getBookById = async (req, res) => {
       SELECT
         book_id          AS bookId,
         book_title       AS title,
-        book_addition    AS bookAddition,
+        book_edition    AS bookEdition,
         authors,
         genre_category   AS genre,
         language,
@@ -232,7 +232,7 @@ export const updateBookById = async (req, res) => {
     const { bookId } = req.params;
     const {
       title,
-      bookAddition,
+      bookEdition,
       authors,
       genre,
       language,
@@ -266,7 +266,7 @@ export const updateBookById = async (req, res) => {
       UPDATE \`${DB}\`.library_books
       SET
         book_title       = COALESCE(?, book_title),
-        book_addition    = COALESCE(?, book_addition),
+        book_edition    = COALESCE(?, book_edition),
         authors          = COALESCE(?, authors),
         genre_category   = COALESCE(?, genre_category),
         language         = COALESCE(?, language),
@@ -279,7 +279,7 @@ export const updateBookById = async (req, res) => {
       {
         replacements: [
           title || null,
-          bookAddition || null,
+          bookEdition || null,
           authors || null,
           genre || null,
           language || null,
@@ -296,7 +296,7 @@ export const updateBookById = async (req, res) => {
       SELECT
         book_id          AS bookId,
         book_title       AS title,
-        book_addition    AS bookAddition,
+        book_edition    AS bookEdition,
         authors,
         genre_category   AS genre,
         language,
@@ -368,7 +368,7 @@ export const issueBook = async (req, res) => {
       issueDate,
       dueDate,
       status,
-      bookAddition,
+      bookEdition,
     } = req.body;
 
     if (!rollNo || !bookId || !issueDate || !dueDate || !status) {
@@ -381,7 +381,7 @@ export const issueBook = async (req, res) => {
     // 1) check book exists & is available
     const [[book]] = await sequelize.query(
       `
-      SELECT book_id, book_title, book_addition, authors, genre_category, language,
+      SELECT book_id, book_title, book_edition, authors, genre_category, language,
         total_copies,available_copies, status
       FROM \`${DB}\`.library_books
       WHERE book_id = ?
@@ -409,7 +409,7 @@ export const issueBook = async (req, res) => {
     await sequelize.query(
       `
       INSERT INTO \`${DB}\`.issued_books
-        (student_roll_no, book_id, book_name, book_addition, book_issue_date, book_due_date, status)
+        (student_roll_no, book_id, book_name, book_edition, book_issue_date, book_due_date, status)
       VALUES (?, ?, ?, ?, ?, ?, ?)
       `,
       {
@@ -417,7 +417,7 @@ export const issueBook = async (req, res) => {
           rollNo,
           bookId,
           bookName || book.book_title,
-          bookAddition || book.book_addition,
+          bookEdition || book.book_edition,
           issueDate,
           dueDate,
           enumStatus,
@@ -459,7 +459,7 @@ export const getAllBookIssues = async (_req, res) => {
         student_roll_no AS rollNo,
         book_id         AS bookId,
         book_name       AS bookName,
-        book_addition   AS bookAddition,
+        book_edition   AS bookEdition,
         book_issue_date AS issueDate,
         book_due_date   AS dueDate,
         status
@@ -487,7 +487,7 @@ export const getBookIssuesByRollNo = async (req, res) => {
         student_roll_no AS rollNo,
         book_id         AS bookId,
         book_name       AS bookName,
-        book_addition   AS bookAddition,
+        book_edition   AS bookEdition,
         book_issue_date AS issueDate,
         book_due_date   AS dueDate,
         status
@@ -516,7 +516,7 @@ export const getBookIssuesByBookId = async (req, res) => {
         student_roll_no AS rollNo,
         book_id         AS bookId,
         book_name       AS bookName,
-        book_addition   AS bookAddition,
+        book_edition   AS bookEdition,
         book_issue_date AS issueDate,
         book_due_date   AS dueDate,
         status

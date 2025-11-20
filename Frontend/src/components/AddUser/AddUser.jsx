@@ -7,11 +7,12 @@ import Background from "../../assets/Background.png";
 import CnicInput from "../CNICInput";
 import InputContainer from "../InputContainer";
 import BackButton from "../BackButton";
-import { rolesArray, useDepartments } from "../../Hooks/HomeCards"; // Import the hook
+import { rolesArray, useDepartments } from "../../Hooks/HomeCards";
 
 const AddUser = ({ Title }) => {
   const [cnic, setCnic] = useState("");
   const [loading, setLoading] = useState(true);
+  const [allUsers, setAllUsers] = useState([]); // Store all users for validation
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -43,6 +44,27 @@ const AddUser = ({ Title }) => {
   });
   const [submitting, setSubmitting] = useState(false);
 
+  // ✅ Fetch all users for validation
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const API =
+          import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+        const res = await axios.get(`${API}/api/users`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setAllUsers(res.data || []);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        toast.error("Failed to load users data for validation");
+        setAllUsers([]);
+      }
+    };
+
+    fetchAllUsers();
+  }, []);
+
   // ✅ If editing, prefill the form
   useEffect(() => {
     const initData = async () => {
@@ -53,7 +75,6 @@ const AddUser = ({ Title }) => {
           // Fix role mapping to match frontend rolesArray
           const mapRoleToFrontend = (backendRole = "") => {
             const roleMap = {
-              // Map backend roles to frontend rolesArray values
               "super admin": "Super Admin",
               admin: "Admin",
               "examination officer": "Examination Officer",
@@ -90,6 +111,101 @@ const AddUser = ({ Title }) => {
     initData();
   }, [editingUser]);
 
+  // ✅ Role validation function
+  const validateRoleConstraints = (role, department, currentUserId = null) => {
+    const backendRole = mapRoleToBackend(role);
+
+    // Filter out the current user if editing
+    const otherUsers = currentUserId
+      ? allUsers.filter((user) => user._id !== currentUserId)
+      : allUsers;
+
+    switch (backendRole) {
+      case "hod":
+        // Check if department already has a HOD
+        const existingHod = otherUsers.find(
+          (user) => user.role === "hod" && user.department === department
+        );
+        if (existingHod) {
+          return `Department '${department}' already has a HOD (${existingHod.username}). Only one HOD per department is allowed.`;
+        }
+        break;
+
+      case "admin":
+        // Check if admin already exists
+        const existingAdmin = otherUsers.find((user) => user.role === "admin");
+        if (existingAdmin) {
+          return `Admin already exists (${existingAdmin.username}). Only one Admin is allowed.`;
+        }
+        break;
+
+      case "examination officer":
+        // Check if examination officer already exists
+        const existingExamOfficer = otherUsers.find(
+          (user) => user.role === "examination officer"
+        );
+        if (existingExamOfficer) {
+          return `Examination Officer already exists (${existingExamOfficer.username}). Only one Examination Officer is allowed.`;
+        }
+        break;
+
+      case "librarian":
+        // Check if librarian already exists
+        const existingLibrarian = otherUsers.find(
+          (user) => user.role === "librarian"
+        );
+        if (existingLibrarian) {
+          return `Librarian already exists (${existingLibrarian.username}). Only one Librarian is allowed.`;
+        }
+        break;
+
+      case "transport incharge":
+        // Check if transport incharge already exists
+        const existingTransport = otherUsers.find(
+          (user) => user.role === "transport incharge"
+        );
+        if (existingTransport) {
+          return `Transport Incharge already exists (${existingTransport.username}). Only one Transport Incharge is allowed.`;
+        }
+        break;
+
+      case "focal person admin":
+        // Check if focal person admin already exists
+        const existingFocalAdmin = otherUsers.find(
+          (user) => user.role === "focal person admin"
+        );
+        if (existingFocalAdmin) {
+          return `Focal Person Admin already exists (${existingFocalAdmin.username}). Only one Focal Person Admin is allowed.`;
+        }
+        break;
+
+      default:
+        return null; // No constraints for other roles
+    }
+
+    return null; // No validation errors
+  };
+
+  // ✅ Map role to backend format
+  const mapRoleToBackend = (frontendRole = "") => {
+    const roleMap = {
+      "Super Admin": "super admin",
+      Admin: "admin",
+      "Examination Officer": "examination officer",
+      HOD: "hod",
+      "Focal Person Admin": "focal person admin",
+      "Focal Person Teacher": "focal person teacher",
+      Teacher: "teacher",
+      "Transport Incharge": "transport incharge",
+      Librarian: "librarian",
+      "It Support": "it support",
+      Clerk: "clerk",
+      Peon: "peon",
+    };
+
+    return roleMap[frontendRole] || frontendRole.toLowerCase();
+  };
+
   const onChange = (key) => (e) => {
     const value = e.target.value;
     setForm((f) => {
@@ -125,7 +241,7 @@ const AddUser = ({ Title }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation with Toastify
+    // Basic validation with Toastify
     if (!cnic) {
       toast.error("CNIC is required.");
       return;
@@ -141,31 +257,24 @@ const AddUser = ({ Title }) => {
       return;
     }
 
+    // Role-specific validation
+    if (form.userRole && form.userDepartment) {
+      const validationError = validateRoleConstraints(
+        form.userRole,
+        form.userDepartment,
+        editingUser?._id // Pass current user ID if editing
+      );
+
+      if (validationError) {
+        toast.error(validationError);
+        return;
+      }
+    }
+
     try {
       setSubmitting(true);
       const token = localStorage.getItem("token");
       const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-
-      // Map frontend role to backend role format
-      const mapRoleToBackend = (frontendRole = "") => {
-        const roleMap = {
-          // Map frontend roles to backend ENUM values
-          "Super Admin": "super admin",
-          Admin: "admin",
-          "Examination Officer": "examination officer",
-          HOD: "hod",
-          "Focal Person Admin": "focal person admin",
-          "Focal Person Teacher": "focal person teacher",
-          Teacher: "teacher",
-          "Transport Incharge": "transport incharge",
-          Librarian: "librarian",
-          "It Support": "it support",
-          Clerk: "clerk",
-          Peon: "peon",
-        };
-
-        return roleMap[frontendRole] || frontendRole.toLowerCase();
-      };
 
       // Auto-set department to "Super Admin" if role is "Super Admin"
       const finalDepartment =

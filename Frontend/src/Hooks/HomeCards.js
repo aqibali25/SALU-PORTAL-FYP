@@ -8,10 +8,11 @@ import {
   faPenFancy,
   faCog,
   faBook,
-  faMoneyBillWave,
   faBuilding,
   faUserGraduate,
   faBookReader,
+  faDollarSign,
+  faCalendarCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 
@@ -57,6 +58,16 @@ export const cards = [
   },
   {
     id: 5,
+    Heading: "Admission Schedule",
+    link: "AddAdmissionSchedule",
+    isImg: false,
+    Icon: faCalendarCheck, // You can use faCalendarAlt or faCalendarPlus
+    color1: "#7C3AED", // Purple color - different from all others
+    color2: "#F5F3FF", // Light purple background
+    roles: ["super admin", "admin"],
+  },
+  {
+    id: 6,
     Heading: "Admissions",
     link: "Admissions",
     isImg: false,
@@ -66,17 +77,17 @@ export const cards = [
     roles: ["super admin", "admin", "clerk"],
   },
   {
-    id: 6,
+    id: 7,
     Heading: "Fees",
     link: "Fees",
     isImg: false,
-    Icon: faMoneyBillWave,
+    Icon: faDollarSign,
     color1: "#059669",
     color2: "#F0FDF9",
     roles: ["super admin", "admin", "clerk"],
   },
   {
-    id: 7,
+    id: 8,
     Heading: "Subject Allocation",
     link: "SubjectAllocation",
     isImg: false,
@@ -86,7 +97,7 @@ export const cards = [
     roles: ["super admin", "hod"],
   },
   {
-    id: 8,
+    id: 9,
     Heading: "Attendance",
     link: "Attendance",
     isImg: false,
@@ -96,7 +107,7 @@ export const cards = [
     roles: ["super admin", "teacher", "hod"],
   },
   {
-    id: 9,
+    id: 10,
     Heading: "Enter Marks",
     link: "EnterMarks",
     isImg: false,
@@ -106,7 +117,7 @@ export const cards = [
     roles: ["super admin", "hod", "teacher"],
   },
   {
-    id: 10,
+    id: 11,
     Heading: "Subjects",
     link: "Subjects",
     isImg: false,
@@ -116,7 +127,7 @@ export const cards = [
     roles: ["super admin", "hod"],
   },
   {
-    id: 11,
+    id: 12,
     Heading: "Departments",
     link: "Departments",
     isImg: false,
@@ -126,7 +137,7 @@ export const cards = [
     roles: ["super admin", "admin"],
   },
   {
-    id: 12,
+    id: 13,
     Heading: "Library",
     link: "Library",
     isImg: false,
@@ -136,7 +147,7 @@ export const cards = [
     roles: ["super admin", "librarian"],
   },
   {
-    id: 13,
+    id: 14,
     Heading: "Settings",
     link: "Settings",
     isImg: false,
@@ -160,6 +171,7 @@ export const rolesArray = [
   "It Support",
   "Clerk",
   "Peon",
+  "Student",
 ];
 
 // Custom hook for departments

@@ -65,14 +65,12 @@ const Card = ({
         <FontAwesomeIcon
           icon={Icon}
           size="3x"
-          className={`${
-            hasAccess ? "text-gray-800 dark:text-white" : "text-gray-500"
-          }`}
+          className={`${hasAccess ? "text-gray-900" : "text-gray-500"}`}
         />
       )}
       <h1
         className={`uppercase text-xl font-semibold !pt-2 text-center ${
-          hasAccess ? "text-gray-900 dark:text-white" : "text-gray-600"
+          hasAccess ? "text-gray-900" : "text-gray-600"
         }`}
       >
         {Heading}
