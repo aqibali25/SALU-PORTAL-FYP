@@ -46,6 +46,8 @@ import TotalBooks from "./components/Library/TotalBooks";
 import IssuedBooks from "./components/Library/IssuedBooks";
 import IssueBook from "./components/Library/IssueBook";
 import AdmissionSchedule from "./components/AdmissionSchedule/AdmissionSchedule";
+import AddAdmissionSchedule from "./components/AdmissionSchedule/AddAdmissionSchedule";
+import ViewAdmissionSchedules from "./components/AdmissionSchedule/ViewAdmissionSchedules";
 
 // Helper function to get roles for a specific route
 const getRolesForRoute = (routePath) => {
@@ -117,6 +119,36 @@ function App() {
                   allowedRoles={getRolesForRoute("admissionsschedule")}
                 >
                   <AdmissionSchedule />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/AdmissionSchedule/AddAdmissionSchedule"
+              element={
+                <ProtectedRoute
+                  allowedRoles={getRolesForRoute("admissionsschedule")}
+                >
+                  <AddAdmissionSchedule Title="Add Admissions Schedule" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/AdmissionSchedule/UpdateAdmissionSchedule"
+              element={
+                <ProtectedRoute
+                  allowedRoles={getRolesForRoute("admissionsschedule")}
+                >
+                  <AddAdmissionSchedule Title="Update Admissions Schedule" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/AdmissionSchedule/ViewAdmissionSchedules"
+              element={
+                <ProtectedRoute
+                  allowedRoles={getRolesForRoute("admissionsschedule")}
+                >
+                  <ViewAdmissionSchedules />
                 </ProtectedRoute>
               }
             />
