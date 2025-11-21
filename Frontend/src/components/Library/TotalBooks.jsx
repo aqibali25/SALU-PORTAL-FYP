@@ -172,10 +172,6 @@ export default function TotalBooks() {
         {
           position: "top-center",
           autoClose: 5000,
-          style: {
-            backgroundColor: theme === "dark" ? "#1f2937" : "#ffffff",
-            color: theme === "dark" ? "#f9fafb" : "#1f2937",
-          },
         }
       );
     } finally {

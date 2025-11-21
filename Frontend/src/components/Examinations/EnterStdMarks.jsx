@@ -48,7 +48,28 @@ function getGradePoint(marks) {
   return 0;
 }
 
-function calculateSubjectGPA(sessional, mid, final) {
+function calculateSubjectGPA(sessional, mid, final, subjectType = "Theory") {
+  // For Practical subjects, only use final marks and convert to percentage out of 100
+  if (subjectType === "Practical") {
+    const finalMarks = parseFloat(final) || 0;
+
+    // Validate practical marks (should be 50 or below)
+    if (finalMarks > 50) {
+      throw new Error("Practical marks cannot exceed 50");
+    }
+
+    // Convert to percentage out of 100 for GPA calculation
+    const percentage = (finalMarks / 50) * 100;
+    const subjectGPA = getGradePoint(percentage);
+
+    return {
+      subjectGPA: subjectGPA,
+      obtainedMarks: finalMarks,
+      totalMarks: 50, // Practical subjects are out of 50
+    };
+  }
+
+  // For Theory subjects (original logic)
   const sessionalMarks = parseFloat(sessional) || 0;
   const midMarks = parseFloat(mid) || 0;
   const finalMarks = parseFloat(final) || 0;
@@ -63,26 +84,41 @@ function calculateSubjectGPA(sessional, mid, final) {
   };
 }
 
-function calculateSemesterGPA(subjects) {
+function calculateSemesterGPA(subjects, allSubjectsData = []) {
   if (!subjects.length) return 0;
 
   let totalGP = 0;
   let validSubjectsCount = 0;
 
   subjects.forEach((sub) => {
-    const totalMarks =
-      (parseFloat(sub.sessional_marks) || 0) +
-      (parseFloat(sub.mid_term_marks) || 0) +
-      (parseFloat(sub.final_term_marks) || 0);
+    // Find subject type from allSubjectsData
+    const subjectInfo = allSubjectsData.find((s) => s.name === sub.subject);
+    const subjectType = subjectInfo?.type || "Theory";
 
-    if (
-      sub.sessional_marks !== null &&
-      sub.mid_term_marks !== null &&
-      sub.final_term_marks !== null
-    ) {
-      const gp = getGradePoint(totalMarks);
-      totalGP += gp;
-      validSubjectsCount++;
+    if (subjectType === "Practical") {
+      // For practical subjects, only check final marks
+      if (sub.final_term_marks !== null && sub.final_term_marks !== undefined) {
+        const percentage = (parseFloat(sub.final_term_marks) / 50) * 100;
+        const gp = getGradePoint(percentage);
+        totalGP += gp;
+        validSubjectsCount++;
+      }
+    } else {
+      // For theory subjects, check all marks
+      if (
+        sub.sessional_marks !== null &&
+        sub.mid_term_marks !== null &&
+        sub.final_term_marks !== null
+      ) {
+        const totalMarks =
+          (parseFloat(sub.sessional_marks) || 0) +
+          (parseFloat(sub.mid_term_marks) || 0) +
+          (parseFloat(sub.final_term_marks) || 0);
+
+        const gp = getGradePoint(totalMarks);
+        totalGP += gp;
+        validSubjectsCount++;
+      }
     }
   });
 
@@ -113,6 +149,40 @@ const EnterStdMarks = () => {
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [calculatedCGPA, setCalculatedCGPA] = useState(0);
+  const [subjectType, setSubjectType] = useState("");
+
+  useEffect(() => {
+    const fetchSubjectInfo = async () => {
+      if (!studentData.subject || !studentData.department) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const API =
+          import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+        // Fetch subject information to determine type
+        const subjectsResponse = await axios.get(`${API}/api/subjects`);
+        if (subjectsResponse.data.success) {
+          const allSubjects = subjectsResponse.data.data;
+          const currentSubject = allSubjects.find(
+            (sub) =>
+              sub.name === studentData.subject &&
+              sub.department === studentData.department
+          );
+
+          if (currentSubject) {
+            setSubjectType(currentSubject.type || "Theory");
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching subject info:", error);
+      }
+    };
+
+    fetchSubjectInfo();
+  }, [studentData.subject, studentData.department]);
 
   useEffect(() => {
     const fetchExistingMarks = async () => {
@@ -208,7 +278,7 @@ const EnterStdMarks = () => {
   ]);
 
   const updateAdmissionCGPA = async (cgpa) => {
-    if (!form_id) return; // ✅ Removed cgpa === 0 check
+    if (!form_id) return;
 
     try {
       const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -216,7 +286,7 @@ const EnterStdMarks = () => {
       const updateData = {
         status: status,
         remarks: null,
-        cgpa: cgpa, // ✅ This will send 0 when CGPA is 0
+        cgpa: cgpa,
       };
 
       console.log("📤 Sending CGPA update:", {
@@ -279,18 +349,27 @@ const EnterStdMarks = () => {
             subject.semester === semester
         );
 
-        const hasAllSubjects = semesterSubjects.every((subject) =>
-          semesterMarks.some(
-            (mark) =>
-              mark.subject === subject.name &&
-              mark.sessional_marks !== null &&
-              mark.mid_term_marks !== null &&
-              mark.final_term_marks !== null
-          )
-        );
+        const hasAllSubjects = semesterSubjects.every((subject) => {
+          const subjectMark = semesterMarks.find(
+            (mark) => mark.subject === subject.name
+          );
+
+          if (subject.type === "Practical") {
+            // For practical, only final marks are required
+            return subjectMark && subjectMark.final_term_marks !== null;
+          } else {
+            // For theory, all marks are required
+            return (
+              subjectMark &&
+              subjectMark.sessional_marks !== null &&
+              subjectMark.mid_term_marks !== null &&
+              subjectMark.final_term_marks !== null
+            );
+          }
+        });
 
         if (hasAllSubjects && semesterMarks.length > 0) {
-          const semesterGPA = calculateSemesterGPA(semesterMarks);
+          const semesterGPA = calculateSemesterGPA(semesterMarks, allSubjects);
           semesterGPAs.push(semesterGPA);
         }
       });
@@ -298,7 +377,6 @@ const EnterStdMarks = () => {
       const cgpa = calculateCGPA(semesterGPAs);
       setCalculatedCGPA(cgpa);
 
-      // ✅ Update CGPA in admissions (will send even if cgpa is 0)
       await updateAdmissionCGPA(cgpa);
 
       return cgpa;
@@ -311,34 +389,63 @@ const EnterStdMarks = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!sessional && !mid && !finalMarks) {
-      toast.error("⚠️ Please enter at least one section mark to update!", {
-        position: "top-center",
-        autoClose: 3000,
-        theme: "colored",
-      });
-      return;
+    // Validation based on subject type
+    if (subjectType === "Practical") {
+      if (!finalMarks) {
+        toast.error("⚠️ Please enter final marks for practical subject!", {
+          position: "top-center",
+          autoClose: 3000,
+          theme: "colored",
+        });
+        return;
+      }
+
+      const finalMarksNum = parseFloat(finalMarks);
+      if (finalMarksNum > 50) {
+        toast.error("⚠️ Practical marks cannot exceed 50!", {
+          position: "top-center",
+          autoClose: 3000,
+          theme: "colored",
+        });
+        return;
+      }
+    } else {
+      // For theory subjects, at least one mark should be entered
+      if (!sessional && !mid && !finalMarks) {
+        toast.error("⚠️ Please enter at least one section mark to update!", {
+          position: "top-center",
+          autoClose: 3000,
+          theme: "colored",
+        });
+        return;
+      }
     }
 
     setSubmitting(true);
 
-    const subjectResult = calculateSubjectGPA(sessional, mid, finalMarks);
-
-    const marksData = {
-      rollNo: studentData.rollNo,
-      studentName: studentData.studentName,
-      department: studentData.department,
-      semester: studentData.semester,
-      subject: studentData.subject,
-      sessional: sessional || null,
-      mid: mid || null,
-      finalMarks: finalMarks || null,
-      gpa: subjectResult.subjectGPA,
-      obtained_marks: subjectResult.obtainedMarks,
-      total_marks: subjectResult.totalMarks,
-    };
-
     try {
+      const subjectResult = calculateSubjectGPA(
+        sessional,
+        mid,
+        finalMarks,
+        subjectType
+      );
+
+      const marksData = {
+        rollNo: studentData.rollNo,
+        studentName: studentData.studentName,
+        department: studentData.department,
+        semester: studentData.semester,
+        subject: studentData.subject,
+        sessional: subjectType === "Practical" ? null : sessional || null,
+        mid: subjectType === "Practical" ? null : mid || null,
+        finalMarks: finalMarks || null,
+        gpa: subjectResult.subjectGPA,
+        obtained_marks: subjectResult.obtainedMarks,
+        total_marks: subjectResult.totalMarks,
+        subject_type: subjectType, // Store subject type for reference
+      };
+
       const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
       await axios.post(`${API}/api/student-marks/upsert`, marksData, {
@@ -376,7 +483,9 @@ const EnterStdMarks = () => {
     } catch (error) {
       let errorMessage = "Failed to save marks. Please try again.";
 
-      if (error.response) {
+      if (error.message.includes("Practical marks cannot exceed")) {
+        errorMessage = error.message;
+      } else if (error.response) {
         errorMessage = error.response.data.message || errorMessage;
       } else if (error.request) {
         errorMessage = "Network error. Please check your connection.";
@@ -467,36 +576,59 @@ const EnterStdMarks = () => {
             readOnly={true}
           />
 
-          <InputContainer
-            placeholder="Enter Sessional Marks"
-            title="Sessional Marks"
-            htmlFor="sessionalMarks"
-            inputType="number"
-            value={sessional}
-            onChange={(e) => setSessional(e.target.value)}
-            min="0"
-            max="100"
-          />
-          <InputContainer
-            placeholder="Enter Mid Term Marks"
-            title="Mid Term Marks"
-            htmlFor="midTermMarks"
-            inputType="number"
-            value={mid}
-            onChange={(e) => setMid(e.target.value)}
-            min="0"
-            max="100"
-          />
-          <InputContainer
-            placeholder="Enter Final Term Marks"
-            title="Final Term Marks"
-            htmlFor="finalTermMarks"
-            inputType="number"
-            value={finalMarks}
-            onChange={(e) => setFinalMarks(e.target.value)}
-            min="0"
-            max="100"
-          />
+          {/* Conditional rendering based on subject type */}
+          {subjectType === "Practical" ? (
+            <>
+              <InputContainer
+                placeholder="Enter Final Marks (Max: 50)"
+                title="Final Marks"
+                htmlFor="finalTermMarks"
+                inputType="number"
+                value={finalMarks}
+                onChange={(e) => setFinalMarks(e.target.value)}
+                min="0"
+                max="50"
+                required
+              />
+              <div className="w-70 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900 !p-2">
+                ℹ️ Practical subjects are out of 50 marks. GPA will be
+                calculated based on percentage.
+              </div>
+            </>
+          ) : (
+            <>
+              <InputContainer
+                placeholder="Enter Sessional Marks"
+                title="Sessional Marks"
+                htmlFor="sessionalMarks"
+                inputType="number"
+                value={sessional}
+                onChange={(e) => setSessional(e.target.value)}
+                min="0"
+                max="100"
+              />
+              <InputContainer
+                placeholder="Enter Mid Term Marks"
+                title="Mid Term Marks"
+                htmlFor="midTermMarks"
+                inputType="number"
+                value={mid}
+                onChange={(e) => setMid(e.target.value)}
+                min="0"
+                max="100"
+              />
+              <InputContainer
+                placeholder="Enter Final Term Marks"
+                title="Final Term Marks"
+                htmlFor="finalTermMarks"
+                inputType="number"
+                value={finalMarks}
+                onChange={(e) => setFinalMarks(e.target.value)}
+                min="0"
+                max="100"
+              />
+            </>
+          )}
 
           <div className="w-full flex justify-end mt-4">
             <button

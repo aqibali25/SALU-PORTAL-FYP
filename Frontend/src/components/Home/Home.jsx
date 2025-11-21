@@ -39,7 +39,7 @@ const Home = () => {
           key={card.id}
           className="
             basis-[16%] 
-            min-w-[150px] 
+            min-w-[200px] 
             max-[950px]:grow 
             h-[150px]
           "

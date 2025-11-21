@@ -111,22 +111,12 @@ function App() {
             />
 
             <Route
-              path="/SALU-PORTAL-FYP/AddAdmissionSchedule"
+              path="/SALU-PORTAL-FYP/AdmissionSchedule"
               element={
                 <ProtectedRoute
                   allowedRoles={getRolesForRoute("admissionsschedule")}
                 >
-                  <AdmissionSchedule Title="Add Admissions Schedule" />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/SALU-PORTAL-FYP/UpdateAdmissionSchedule"
-              element={
-                <ProtectedRoute
-                  allowedRoles={getRolesForRoute("admissionsschedule")}
-                >
-                  <AdmissionSchedule Title="Update Admissions Schedule" />
+                  <AdmissionSchedule />
                 </ProtectedRoute>
               }
             />
