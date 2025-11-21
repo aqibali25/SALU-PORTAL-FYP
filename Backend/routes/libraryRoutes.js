@@ -38,7 +38,7 @@ router.delete("/books/:bookId", deleteBook);
 
 /* --------------------------- ISSUED BOOKS ---------------------------- */
 
-// Issue a book
+// Issue a book`
 // POST /api/book-issues
 router.post("/book-issues", issueBook);
 
