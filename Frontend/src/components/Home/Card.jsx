@@ -69,7 +69,7 @@ const Card = ({
         />
       )}
       <h1
-        className={`uppercase text-xl font-semibold !pt-2 text-center ${
+        className={`uppercase text-lg font-semibold !pt-2 text-center ${
           hasAccess ? "text-gray-900" : "text-gray-600"
         }`}
       >

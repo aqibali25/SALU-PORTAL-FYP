@@ -157,7 +157,7 @@ const NotificationDropdown = () => {
           <div
             className="absolute top-[-10px] right-[123px] 
             sm:right-[123px] max-[375px]:right-[100px]
-            w-[20px] h-[20px] bg-[#f5f5f5] dark:bg-gray-800 rotate-45 z-1 border-t border-l border-gray-200 dark:border-gray-700"
+            w-[20px] h-[20px] bg-white dark:bg-gray-900 rotate-45 z-1"
           />
 
           {/* Header */}

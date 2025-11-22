@@ -77,9 +77,11 @@ const Settings = () => {
       const token = localStorage.getItem("token");
       const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
+      // Create FormData to handle file upload
       const formData = new FormData();
       formData.append("profilePicture", selectedFile);
 
+      /*
       const response = await axios.post(
         `${API}/api/auth/upload-profile-picture`,
         formData,
@@ -93,6 +95,21 @@ const Settings = () => {
       );
 
       toast.success("Profile picture updated successfully!", {
+        position: "top-right",
+        autoClose: 2000,
+      });
+      */
+
+      // For now, simulate success
+      console.log("File upload payload:", {
+        file: selectedFile,
+        fileName: selectedFile.name,
+        fileSize: selectedFile.size,
+        fileType: selectedFile.type,
+        formData: formData,
+      });
+
+      toast.success("Profile picture ready for upload! (API call commented)", {
         position: "top-right",
         autoClose: 2000,
       });
@@ -150,6 +167,8 @@ const Settings = () => {
         newPassword: form.newPassword,
       };
 
+      // TODO: Uncomment the API call when ready
+      /*
       await axios.post(`${API}/api/auth/change-password`, payload, {
         headers: {
           "Content-Type": "application/json",
@@ -160,6 +179,14 @@ const Settings = () => {
 
       // Success toast
       toast.success("Password changed successfully!", {
+        position: "top-right",
+        autoClose: 2000,
+      });
+      */
+
+      // For now, simulate success
+      console.log("Password change payload:", payload);
+      toast.success("Password change ready! (API call commented)", {
         position: "top-right",
         autoClose: 2000,
       });
