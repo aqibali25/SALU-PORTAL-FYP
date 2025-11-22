@@ -82,7 +82,7 @@ const Settings = () => {
       formData.append("profilePicture", selectedFile);
 
       const response = await axios.post(
-        `${API}/api/auth/upload-profile-picture`,
+        `${API}/api/users/upload-profile-picture`,
         formData,
         {
           headers: {

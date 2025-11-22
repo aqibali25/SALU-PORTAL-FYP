@@ -50,7 +50,7 @@ const Profile = () => {
       setImageLoading(true);
       const token = localStorage.getItem("token");
 
-      const response = await axios.get(`${API}/api/auth/profile-image`, {
+      const response = await axios.get(`${API}/api/users/profile-image`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

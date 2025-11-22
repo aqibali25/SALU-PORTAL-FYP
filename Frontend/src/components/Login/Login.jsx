@@ -97,8 +97,18 @@ export default function Login() {
     try {
       setLoading(true);
 
-      // Show loading toast
+      // Add timeout to loading toast (8 seconds)
       const loadingToast = toast.loading("Signing in...");
+
+      // Set timeout to show warning if request takes too long
+      const timeoutId = setTimeout(() => {
+        toast.update(loadingToast, {
+          render: "Taking longer than usual... Please wait",
+          type: "warning",
+          isLoading: true,
+          autoClose: false,
+        });
+      }, 8000);
 
       const response = await axios.post(
         "http://localhost:5000/api/auth/login",
@@ -107,6 +117,9 @@ export default function Login() {
           password: formData.password,
         }
       );
+
+      // Clear the timeout since request completed
+      clearTimeout(timeoutId);
 
       const data = response.data;
       const token = data.token;
