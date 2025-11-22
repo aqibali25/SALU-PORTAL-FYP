@@ -1,14 +1,14 @@
-// Frontend/Settings.jsx
+// Frontend/components/settings/Settings.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
+import Cookies from "js-cookie";
 import Background from "../../assets/Background.png";
 import InputContainer from "../InputContainer";
 import BackButton from "../BackButton";
 
 const Settings = () => {
-  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -33,40 +33,51 @@ const Settings = () => {
     }));
   };
 
-  // ✅ Handle file selection
+  // Clear all authentication data
+  const clearAllAuthData = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    sessionStorage.clear();
+
+    Cookies.remove("isLoggedIn");
+    Cookies.remove("role");
+    Cookies.remove("username");
+    Cookies.remove("user");
+
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c
+        .replace(/^ +/, "")
+        .replace(/=.*/, "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/");
+    });
+  };
+
+  // Handle file selection
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       toast.error("Please select a valid image file (JPEG, PNG, etc.).");
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image size should be less than 5MB.");
       return;
     }
 
     setSelectedFile(file);
-
-    // Create preview URL
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
   };
 
-  // ✅ Cancel file selection
   const handleCancelUpload = () => {
     setSelectedFile(null);
     setPreviewUrl("");
-    // Clear the file input
     const fileInput = document.getElementById("profilePicture");
     if (fileInput) fileInput.value = "";
   };
 
-  // ✅ Profile Picture Upload Handler
   const handleProfilePictureUpload = async () => {
     if (!selectedFile) {
       toast.error("Please select a profile picture first.");
@@ -78,21 +89,16 @@ const Settings = () => {
       const token = localStorage.getItem("token");
       const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-      // Create FormData to handle file upload
       const formData = new FormData();
       formData.append("profilePicture", selectedFile);
 
-      const response = await axios.post(
-        `${API}/api/users/upload-profile-picture`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        }
-      );
+      await axios.post(`${API}/api/users/upload-profile-picture`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
+      });
 
       toast.success("Profile picture updated successfully!", {
         position: "top-right",
@@ -103,29 +109,37 @@ const Settings = () => {
         window.location.reload();
       }, 2500);
 
-      // Reset file selection after successful upload
       setSelectedFile(null);
       setPreviewUrl("");
       const fileInput = document.getElementById("profilePicture");
       if (fileInput) fileInput.value = "";
     } catch (err) {
       console.error("Upload error:", err);
-      toast.error(
-        err.response?.data?.message || "Error uploading profile picture",
-        {
+
+      if (err.response?.status === 401) {
+        toast.error("Your session has expired. Please login again.", {
           position: "top-right",
-        }
-      );
+        });
+        clearAllAuthData();
+        setTimeout(() => {
+          window.location.href = "/SALU-PORTAL-FYP/login";
+        }, 1500);
+      } else {
+        toast.error(
+          err.response?.data?.message || "Error uploading profile picture",
+          {
+            position: "top-right",
+          }
+        );
+      }
     } finally {
       setUploading(false);
     }
   };
 
-  // ✅ Enhanced Password Change Handler
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation
     if (!form.oldPassword) {
       toast.error("Old Password is required.");
       return;
@@ -168,7 +182,6 @@ const Settings = () => {
         }
       );
 
-      // 👇 CHECK IF LOGOUT ALL DEVICES IS REQUIRED
       if (response.data.logoutAll) {
         toast.success(
           "Password changed successfully! Logging out all devices...",
@@ -178,44 +191,22 @@ const Settings = () => {
           }
         );
 
-        // Clear all local storage and redirect to login
         setTimeout(() => {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          sessionStorage.clear();
-          navigate("/login", { replace: true });
+          clearAllAuthData();
+          window.location.href = "/SALU-PORTAL-FYP/login";
         }, 2000);
-      } else {
-        toast.success("Password changed successfully!", {
-          position: "top-right",
-          autoClose: 2000,
-        });
-
-        // Clear form only
-        setForm({
-          oldPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        });
       }
     } catch (err) {
       console.error(err);
 
-      // 👇 HANDLE TOKEN VERSION MISMATCH (already logged out elsewhere)
-      if (
-        err.response?.status === 401 &&
-        err.response?.data?.message?.includes("Session expired")
-      ) {
+      if (err.response?.status === 401) {
         toast.error("Your session has expired. Please login again.", {
           position: "top-right",
         });
-
-        // Clear storage and redirect to login
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        clearAllAuthData();
         setTimeout(() => {
-          navigate("/login", { replace: true });
-        }, 2000);
+          window.location.href = "/SALU-PORTAL-FYP/login";
+        }, 1500);
       } else {
         toast.error(err.response?.data?.message || "Error changing password", {
           position: "top-right",
@@ -226,7 +217,6 @@ const Settings = () => {
     }
   };
 
-  // ✅ NEW: Handle Logout All Devices
   const handleLogoutAllDevices = async () => {
     if (!window.confirm("This will log you out from all devices. Continue?")) {
       return;
@@ -253,26 +243,19 @@ const Settings = () => {
         });
 
         setTimeout(() => {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          sessionStorage.clear();
-          navigate("/SALU-PORTAL-FYP/login", { replace: true });
+          clearAllAuthData();
+          window.location.href = "/SALU-PORTAL-FYP/login";
         }, 2000);
       }
     } catch (err) {
       console.error(err);
 
-      // Handle session expiration
-      if (
-        err.response?.status === 401 &&
-        err.response?.data?.message?.includes("Session expired")
-      ) {
+      if (err.response?.status === 401) {
         toast.error("Your session has expired. Please login again.", {
           position: "top-right",
         });
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/login", { replace: true });
+        clearAllAuthData();
+        window.location.href = "/SALU-PORTAL-FYP/login";
       } else {
         toast.error(
           err.response?.data?.message || "Error logging out all devices",
@@ -314,7 +297,6 @@ const Settings = () => {
               Change Password
             </h3>
 
-            {/* 👇 WARNING MESSAGE */}
             <div className="bg-yellow-50 border border-yellow-200 rounded-md !p-4 !mb-4">
               <p className="text-sm text-yellow-800">
                 <strong>Note:</strong> Changing your password will log you out
@@ -353,7 +335,6 @@ const Settings = () => {
             />
           </div>
 
-          {/* Submit Button for Password Change */}
           <div className="w-full max-w-[800px] flex justify-end !mt-6">
             <button
               type="submit"
@@ -369,7 +350,7 @@ const Settings = () => {
             </button>
           </div>
 
-          {/* 👇 NEW: Logout All Devices Section */}
+          {/* Logout All Devices Section */}
           <div className="w-full max-w-[800px] !space-y-4 !mt-8">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white !mb-4">
               Session Management
@@ -395,15 +376,13 @@ const Settings = () => {
             </div>
           </div>
 
-          {/* Profile Picture Section - Responsive Design */}
+          {/* Profile Picture Section */}
           <div className="w-full max-w-[800px] !space-y-4 !mt-8">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Change Profile Picture
             </h3>
 
-            {/* File Input Section - Responsive Flex */}
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 w-full">
-              {/* Label Section */}
               <div className="w-full lg:w-1/4">
                 <label
                   htmlFor="profilePicture"
@@ -416,7 +395,6 @@ const Settings = () => {
                 </p>
               </div>
 
-              {/* File Input Section */}
               <div className="w-full lg:w-3/4">
                 <input
                   type="file"
@@ -432,10 +410,8 @@ const Settings = () => {
               </div>
             </div>
 
-            {/* Preview and Action Buttons - Responsive Layout */}
             {selectedFile && (
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 !mt-6 !p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 transition-all duration-300">
-                {/* Image Preview - Responsive Sizing */}
                 <div className="flex-shrink-0 mx-auto sm:mx-0">
                   <img
                     src={previewUrl}
@@ -444,9 +420,7 @@ const Settings = () => {
                   />
                 </div>
 
-                {/* File Info and Actions - Responsive Layout */}
                 <div className="flex-1 w-full min-w-0">
-                  {/* File Info */}
                   <div className="mb-3">
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                       {selectedFile.name}
@@ -456,13 +430,11 @@ const Settings = () => {
                     </p>
                   </div>
 
-                  {/* Instructions */}
                   <p className="text-xs text-gray-600 dark:text-gray-400 !mb-3">
                     Click Upload to set as your profile picture or Cancel to
                     choose a different one.
                   </p>
 
-                  {/* Action Buttons - Consistent Styling */}
                   <div className="flex justify-end gap-3 w-full">
                     <button
                       type="button"
@@ -489,7 +461,6 @@ const Settings = () => {
               </div>
             )}
 
-            {/* Instructions when no file selected - Responsive */}
             {!selectedFile && (
               <div className="!mt-6 !p-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800">
                 <div className="text-center">

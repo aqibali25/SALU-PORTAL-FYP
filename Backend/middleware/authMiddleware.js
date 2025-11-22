@@ -11,7 +11,7 @@ export const verifyToken = async (req, res, next) => {
     const token = h.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 👇 ADD TOKEN VERSION CHECK
+    // Check token version
     const user = await User.findByPk(decoded.id);
     if (!user) {
       return res.status(401).json({ message: "User not found" });
@@ -21,6 +21,7 @@ export const verifyToken = async (req, res, next) => {
     if (decoded.tokenVersion !== user.token_version) {
       return res.status(401).json({
         message: "Session expired. Please login again.",
+        code: "TOKEN_VERSION_MISMATCH",
       });
     }
 
@@ -28,6 +29,12 @@ export const verifyToken = async (req, res, next) => {
     req.token = token;
     next();
   } catch (e) {
+    if (e.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token expired" });
+    }
+    if (e.name === "JsonWebTokenError") {
+      return res.status(401).json({ message: "Invalid token" });
+    }
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 };

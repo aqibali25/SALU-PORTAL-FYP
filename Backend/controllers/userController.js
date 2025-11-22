@@ -1,11 +1,9 @@
 // Backend/controllers/userController.js
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { User } from "../models/User.js";
 
 /**
  * Create or update user based on CNIC.
- * If CNIC exists -> update existing user.
- * If CNIC not found -> insert new user.
  */
 export const upsertUser = async (req, res) => {
   try {
@@ -43,6 +41,7 @@ export const upsertUser = async (req, res) => {
       role,
       department,
       password_hash: passwordHash,
+      token_version: 0,
     });
 
     return res.status(201).json({ message: "User created successfully" });
@@ -66,6 +65,7 @@ export const getMe = async (req, res) => {
         "role",
         "department",
         "created_at",
+        "token_version",
       ],
     });
 
@@ -77,7 +77,7 @@ export const getMe = async (req, res) => {
   }
 };
 
-// ✅ Fetch all users
+// Fetch all users
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.findAll({
@@ -99,7 +99,7 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-// ✅ DELETE user by ID
+// DELETE user by ID
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -115,7 +115,7 @@ export const deleteUser = async (req, res) => {
   }
 };
 
-// NEW API #1: Upload profile picture (BLOB)
+// Upload profile picture
 export const uploadProfilePicture = async (req, res) => {
   try {
     if (!req.file)
@@ -134,8 +134,7 @@ export const uploadProfilePicture = async (req, res) => {
   }
 };
 
-// NEW API #2: Change password
-
+// Enhanced Change Password with token version increment
 export const changePassword = async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body;
@@ -154,15 +153,15 @@ export const changePassword = async (req, res) => {
 
     const newHash = await bcrypt.hash(newPassword, 10);
 
-    // 👇 INCREMENT TOKEN VERSION TO LOGOUT ALL DEVICES
+    // Increment token version to logout all devices
     user.password_hash = newHash;
-    user.token_version = user.token_version + 1; // This invalidates all existing tokens
+    user.token_version = user.token_version + 1;
     await user.save();
 
     res.json({
       message:
-        "Password changed successfully. You have been logged out of all devices.",
-      logoutAll: true, // Flag to indicate logout all devices
+        "Password changed successfully. All devices have been logged out.",
+      logoutAll: true,
     });
   } catch (err) {
     console.error("changePassword error:", err);
@@ -170,7 +169,7 @@ export const changePassword = async (req, res) => {
   }
 };
 
-//NEW API #3: Get profile image (for display)
+// Get profile image
 export const getProfileImage = async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id);

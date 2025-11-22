@@ -40,7 +40,6 @@ export const User = sequelize.define(
       allowNull: true,
     },
     token_version: {
-      // 👈 ADD THIS FIELD
       type: DataTypes.INTEGER,
       defaultValue: 0,
       allowNull: false,

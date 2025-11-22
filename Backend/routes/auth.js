@@ -1,3 +1,4 @@
+// Backend/routes/authRoutes.js
 import { Router } from "express";
 import { body } from "express-validator";
 import {
@@ -28,7 +29,7 @@ router.post(
   login
 );
 
-// Protected routes - require authentication
+// Protected routes
 router.post("/logout-all", verifyToken, logoutAllDevices);
 router.get("/token-info", verifyToken, getTokenInfo);
 

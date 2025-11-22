@@ -1,18 +1,18 @@
-// controllers/authController.js
+// Backend/controllers/authController.js
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
 import { Op } from "sequelize";
 import { User } from "../models/User.js";
 
-// 👇 UPDATED: Helper to sign JWT with token version
+// Helper to sign JWT with token version
 function sign(user) {
   return jwt.sign(
     {
       id: user.id,
       role: user.role,
       username: user.username,
-      tokenVersion: user.token_version, // 👈 ADD TOKEN VERSION
+      tokenVersion: user.token_version,
     },
     process.env.JWT_SECRET,
     { expiresIn: "7d" }
@@ -43,7 +43,7 @@ export const register = async (req, res, next) => {
       cnic,
       password_hash,
       role,
-      token_version: 0, // 👈 INITIALIZE TOKEN VERSION
+      token_version: 0,
     });
 
     res.status(201).json({
@@ -79,7 +79,6 @@ export const login = async (req, res, next) => {
     const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) return res.status(401).json({ message: "Invalid credentials" });
 
-    // 👇 UPDATED: Generate token with current token version
     const token = sign(user);
 
     res.json({
@@ -96,7 +95,7 @@ export const login = async (req, res, next) => {
   }
 };
 
-// 👇 NEW: Force logout all devices (optional endpoint)
+// POST /api/auth/logout-all
 export const logoutAllDevices = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.user.id);
@@ -107,7 +106,7 @@ export const logoutAllDevices = async (req, res, next) => {
     await user.save();
 
     res.json({
-      message: "Logged out from all devices successfully. Please login again.",
+      message: "Logged out from all devices successfully.",
       logoutAll: true,
     });
   } catch (e) {
@@ -115,7 +114,7 @@ export const logoutAllDevices = async (req, res, next) => {
   }
 };
 
-// 👇 NEW: Get current token version (for debugging)
+// GET /api/auth/token-info
 export const getTokenInfo = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.user.id, {

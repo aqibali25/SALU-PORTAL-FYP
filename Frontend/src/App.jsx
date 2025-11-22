@@ -1,3 +1,4 @@
+// App.jsx
 import Home from "./components/Home/Home";
 import Navbar from "./components/navbar/Navbar";
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
@@ -62,29 +63,59 @@ const getRolesForRoute = (routePath) => {
   return card ? card.roles : [];
 };
 
+// ✅ Enhanced authentication check
+const checkAuthentication = () => {
+  const token = localStorage.getItem("token");
+  const isLoggedInCookie = Cookies.get("isLoggedIn") === "true";
+
+  // If no token but cookie says logged in, clear the invalid state
+  if (!token && isLoggedInCookie) {
+    Cookies.remove("isLoggedIn");
+    Cookies.remove("role");
+    Cookies.remove("username");
+    return false;
+  }
+
+  // If token exists but no cookie, set the cookie
+  if (token && !isLoggedInCookie) {
+    Cookies.set("isLoggedIn", "true", { expires: 7 }); // 7 days
+  }
+
+  return !!(token && isLoggedInCookie);
+};
+
 function App() {
-  const isLoggedIn = Cookies.get("isLoggedIn") === "true";
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoggedIn && location.pathname !== "/SALU-PORTAL-FYP/login") {
-      navigate("/SALU-PORTAL-FYP/login");
+    const isAuthenticated = checkAuthentication();
+    const isLoginPage = location.pathname === "/SALU-PORTAL-FYP/login";
+
+    if (!isAuthenticated && !isLoginPage) {
+      navigate("/SALU-PORTAL-FYP/login", { replace: true });
     }
-  }, [isLoggedIn, location, navigate]);
+
+    if (isAuthenticated && isLoginPage) {
+      navigate("/SALU-PORTAL-FYP/", { replace: true });
+    }
+  }, [location.pathname, navigate]);
+
+  const isAuthenticated = checkAuthentication();
 
   return (
     <>
       {/* ✅ Toast Container */}
       <ToastContainer position="top-center" autoClose={2000} />
-
       <Navbar />
       <Routes>
         <Route path="/SALU-PORTAL-FYP/login" element={<Login />} />
-        {isLoggedIn && (
+
+        {isAuthenticated && (
           <>
             <Route path="/SALU-PORTAL-FYP/" element={<Home />} />
             <Route path="/SALU-PORTAL-FYP/profile" element={<Profile />} />
+            <Route path="/SALU-PORTAL-FYP/Settings" element={<Settings />} />
 
             {/* Dynamically protected routes using card roles */}
             <Route
@@ -394,7 +425,6 @@ function App() {
               }
             />
 
-            <Route path="/SALU-PORTAL-FYP/Settings" element={<Settings />} />
             <Route
               path="/SALU-PORTAL-FYP/Fees"
               element={
