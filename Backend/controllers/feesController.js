@@ -21,6 +21,7 @@ export const upsertFee = async (req, res) => {
       status,
       challan_no,
       department,
+      challan_image, // NEW: optional image (string / base64 / whatever you send)
     } = req.body || {};
 
     console.log("Received fee data:", req.body);
@@ -70,7 +71,7 @@ export const upsertFee = async (req, res) => {
         .json({ success: false, message: "department is required." });
     }
 
-    // Use year as string directly (since DB field is varchar)
+    // year is varchar(20) in DB
     const yearDb = String(year).trim();
 
     // ✅ Check if CNIC exists in personal_info table
@@ -98,6 +99,7 @@ export const upsertFee = async (req, res) => {
       status,
       challan_no,
       department,
+      hasImage: !!challan_image,
     });
 
     // ---- create or update
@@ -106,8 +108,14 @@ export const upsertFee = async (req, res) => {
       const [result] = await sequelize.query(
         `
         UPDATE \`${DB}\`.fees
-        SET cnic = ?, paid_date = ?, amount = ?, year = ?, status = ?,
-            challan_no = ?, department = ?
+        SET cnic = ?,
+            paid_date = ?,
+            amount = ?,
+            year = ?,
+            status = ?,
+            challan_no = ?,
+            department = ?,
+            challan_image = ?
         WHERE fee_id = ?
         `,
         {
@@ -119,6 +127,7 @@ export const upsertFee = async (req, res) => {
             status,
             challan_no,
             department,
+            challan_image ?? null, // NEW
             fee_id,
           ],
         }
@@ -136,8 +145,8 @@ export const upsertFee = async (req, res) => {
       const [result] = await sequelize.query(
         `
         INSERT INTO \`${DB}\`.fees
-          (cnic, paid_date, amount, year, status, challan_no, department)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+          (cnic, paid_date, amount, year, status, challan_no, department, challan_image)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `,
         {
           replacements: [
@@ -148,6 +157,7 @@ export const upsertFee = async (req, res) => {
             status,
             challan_no,
             department,
+            challan_image ?? null, // NEW
           ],
         }
       );
@@ -159,7 +169,15 @@ export const upsertFee = async (req, res) => {
     const [[row]] = await sequelize.query(
       `
       SELECT
-        fee_id, cnic, paid_date, amount, year, status, challan_no, department
+        fee_id,
+        cnic,
+        paid_date,
+        amount,
+        year,
+        status,
+        challan_no,
+        department,
+        challan_image
       FROM \`${DB}\`.fees
       WHERE cnic = ?
       ORDER BY fee_id DESC
@@ -225,7 +243,7 @@ export const getFees = async (req, res) => {
     }
     if (year) {
       where.push("f.year = ?");
-      params.push(year); // Use string directly
+      params.push(year); // varchar(20)
     }
     if (challan_no) {
       where.push("f.challan_no = ?");
@@ -237,8 +255,15 @@ export const getFees = async (req, res) => {
     const [rows] = await sequelize.query(
       `
       SELECT
-        f.fee_id, f.cnic, f.paid_date, f.amount, f.year, f.status,
-        f.challan_no, f.department
+        f.fee_id,
+        f.cnic,
+        f.paid_date,
+        f.amount,
+        f.year,
+        f.status,
+        f.challan_no,
+        f.department,
+        f.challan_image
       FROM \`${DB}\`.fees f
       ${whereSql}
       ORDER BY f.fee_id DESC
@@ -259,7 +284,16 @@ export const getFeeById = async (req, res) => {
     const { fee_id } = req.params;
     const [[row]] = await sequelize.query(
       `
-      SELECT fee_id, cnic, paid_date, amount, year, status, challan_no, department
+      SELECT
+        fee_id,
+        cnic,
+        paid_date,
+        amount,
+        year,
+        status,
+        challan_no,
+        department,
+        challan_image
       FROM \`${DB}\`.fees
       WHERE fee_id = ?
       LIMIT 1
@@ -289,7 +323,16 @@ export const getFeesByCnic = async (req, res) => {
 
     const [rows] = await sequelize.query(
       `
-      SELECT fee_id, cnic, paid_date, amount, year, status, challan_no, department
+      SELECT
+        fee_id,
+        cnic,
+        paid_date,
+        amount,
+        year,
+        status,
+        challan_no,
+        department,
+        challan_image
       FROM \`${DB}\`.fees
       WHERE cnic = ?
       ORDER BY fee_id DESC
