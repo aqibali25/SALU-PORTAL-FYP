@@ -7,6 +7,7 @@ import Cookies from "js-cookie";
 import Background from "../../assets/Background.png";
 import InputContainer from "../InputContainer";
 import BackButton from "../BackButton";
+import { FaSignOutAlt } from "react-icons/fa";
 
 const Settings = () => {
   const [submitting, setSubmitting] = useState(false);
@@ -217,11 +218,61 @@ const Settings = () => {
     }
   };
 
-  const handleLogoutAllDevices = async () => {
-    if (!window.confirm("This will log you out from all devices. Continue?")) {
-      return;
-    }
+  // ✅ Enhanced Logout All Devices with Toastify Confirmation
+  const handleLogoutAllDevices = () => {
+    // Check if user is in dark mode
+    const isDarkMode = document.documentElement.classList.contains("dark");
 
+    toast.info(
+      <div className="!p-4 !m-2">
+        <div className="flex items-center gap-3 !mb-3">
+          <FaSignOutAlt className="text-red-500 text-xl" />
+          <span className="font-semibold text-gray-900 dark:text-gray-100">
+            Confirm Logout All Devices
+          </span>
+        </div>
+        <p className="!mb-4 text-gray-700 dark:text-gray-300">
+          Are you sure you want to log out from all devices? This will end your
+          sessions on all devices including this one. You'll need to log in
+          again on all devices.
+        </p>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={async () => {
+              toast.dismiss();
+              await processLogoutAllDevices();
+            }}
+            className="!px-4 !py-2 bg-red-500 hover:bg-red-600 text-white cursor-pointer font-medium transition-colors "
+          >
+            Yes, Logout All
+          </button>
+          <button
+            onClick={() => toast.dismiss()}
+            className="!px-4 !py-2 bg-gray-500 hover:bg-gray-600 text-white cursor-pointer font-medium transition-colors "
+          >
+            Cancel
+          </button>
+        </div>
+      </div>,
+      {
+        position: "top-center",
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        style: {
+          minWidth: "450px",
+          backgroundColor: isDarkMode ? "#1f2937" : "#ffffff",
+          color: isDarkMode ? "#f9fafb" : "#1f2937",
+          border: isDarkMode ? "1px solid #374151" : "1px solid #e5e7eb",
+          borderRadius: "8px",
+        },
+      }
+    );
+  };
+
+  // ✅ Process logout all devices
+  const processLogoutAllDevices = async () => {
     try {
       const token = localStorage.getItem("token");
       const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -297,8 +348,8 @@ const Settings = () => {
               Change Password
             </h3>
 
-            <div className="bg-yellow-50 border border-yellow-200 rounded-md !p-4 !mb-4">
-              <p className="text-sm text-yellow-800">
+            <div className="bg-yellow-50 border border-yellow-200  !p-4 !mb-4 dark:bg-yellow-900/20 dark:border-yellow-800">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
                 <strong>Note:</strong> Changing your password will log you out
                 of all devices.
               </p>
@@ -343,9 +394,7 @@ const Settings = () => {
                          before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#e5b300] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60"
             >
               <span className="relative z-10">
-                {submitting
-                  ? "Changing Password..."
-                  : "Change Password & Logout All Devices"}
+                {submitting ? "Changing Password..." : "Change Password"}
               </span>
             </button>
           </div>
@@ -356,8 +405,8 @@ const Settings = () => {
               Session Management
             </h3>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-md !p-4 !mb-4">
-              <p className="text-sm text-blue-800">
+            <div className="bg-blue-50 border border-blue-200 !p-4 !mb-4 dark:bg-blue-900/20 dark:border-blue-800">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
                 <strong>Secure Logout:</strong> Log out from all devices where
                 you are currently logged in. This is useful if you logged in on
                 a public or shared computer.

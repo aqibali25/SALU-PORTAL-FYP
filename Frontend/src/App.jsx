@@ -160,13 +160,16 @@ function App() {
     };
   }, [navigate]);
 
-  // Show loading while checking authentication
+  const theme = localStorage.getItem("theme");
+
   if (!authChecked) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-100 dark:bg-gray-900">
-        <div className="text-xl text-gray-600 dark:text-gray-300">
-          Loading...
-        </div>
+      <div
+        className={`flex justify-center items-center min-h-[calc(100vh)] ${
+          theme === "dark" ? "bg-gray-900" : "bg-white"
+        }`}
+      >
+        <div className="w-16 h-16 border-4 border-yellow-400 border-dashed rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -176,8 +179,8 @@ function App() {
       {/* ✅ Toast Container */}
       <ToastContainer position="top-center" autoClose={2000} />
 
-      {/* ✅ Conditionally render Navbar */}
-      {isAuthenticated && <Navbar />}
+      {/* ✅ Navbar is always visible - both on login page and authenticated pages */}
+      <Navbar />
 
       <Routes>
         <Route path="/SALU-PORTAL-FYP/login" element={<Login />} />

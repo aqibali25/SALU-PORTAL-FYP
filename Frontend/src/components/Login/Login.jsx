@@ -97,18 +97,8 @@ export default function Login() {
     try {
       setLoading(true);
 
-      // Add timeout to loading toast (8 seconds)
+      // Show loading toast
       const loadingToast = toast.loading("Signing in...");
-
-      // Set timeout to show warning if request takes too long
-      const timeoutId = setTimeout(() => {
-        toast.update(loadingToast, {
-          render: "Taking longer than usual... Please wait",
-          type: "warning",
-          isLoading: true,
-          autoClose: false,
-        });
-      }, 8000);
 
       const response = await axios.post(
         "http://localhost:5000/api/auth/login",
@@ -117,9 +107,6 @@ export default function Login() {
           password: formData.password,
         }
       );
-
-      // Clear the timeout since request completed
-      clearTimeout(timeoutId);
 
       const data = response.data;
       const token = data.token;
@@ -154,7 +141,7 @@ export default function Login() {
       });
 
       setTimeout(() => {
-        navigate("/SALU-PORTAL-FYP/");
+        window.location.href = "/SALU-PORTAL-FYP/";
       }, 1000);
     } catch (error) {
       let errorMessage = "Unable to connect to the server.";
