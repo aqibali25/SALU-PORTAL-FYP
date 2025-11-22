@@ -105,7 +105,7 @@ const Card = ({
         cursor-pointer transition-all duration-300
         ${
           hasAccess
-            ? "hover:scale-105 hover:shadow-lg"
+            ? "hover:scale-102 hover:shadow-lg"
             : "opacity-60 cursor-not-allowed grayscale"
         }
       `}

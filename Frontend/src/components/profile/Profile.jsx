@@ -31,8 +31,6 @@ const Profile = () => {
         withCredentials: true,
       });
 
-      console.log("User Data Response:", res.data);
-
       const userWithFormattedRole = {
         ...res.data,
         role: rolesArray.find((role) => role.toLowerCase() === res.data.role),
