@@ -439,7 +439,7 @@ function App() {
               path="/SALU-PORTAL-FYP/Departments/AddDepartment"
               element={
                 <ProtectedRoute allowedRoles={getRolesForRoute("departments")}>
-                  <AddDepartments />
+                  <AddDepartments Title={"Add Department"} />
                 </ProtectedRoute>
               }
             />
@@ -447,7 +447,7 @@ function App() {
               path="/SALU-PORTAL-FYP/Departments/UpdateDepartment/:departmentId"
               element={
                 <ProtectedRoute allowedRoles={getRolesForRoute("departments")}>
-                  <AddDepartments />
+                  <AddDepartments Title={"Update Department"} />
                 </ProtectedRoute>
               }
             />

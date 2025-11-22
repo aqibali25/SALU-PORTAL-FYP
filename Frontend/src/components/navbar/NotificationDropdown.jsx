@@ -111,9 +111,9 @@ const NotificationDropdown = () => {
 
   const getEnvelopeIcon = (isRead) => {
     return isRead ? (
-      <FaEnvelopeOpen className="h-4 w-4 text-gray-400" />
+      <FaEnvelopeOpen className="h-4 w-4 text-gray-400 cursor-pointer" />
     ) : (
-      <FaEnvelope className="h-4 w-4 text-blue-500" />
+      <FaEnvelope className="h-4 w-4 text-blue-500 cursor-pointer" />
     );
   };
 

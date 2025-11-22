@@ -3,6 +3,7 @@ import Cookies from "js-cookie";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { FaUpload } from "react-icons/fa";
 import Background from "../../assets/Background.png";
 import CnicInput from "../CNICInput";
 import InputContainer from "../InputContainer";
@@ -38,9 +39,15 @@ const AddFees = ({ Title }) => {
     challanNo: "",
     department: "",
   });
+
   const [submitting, setSubmitting] = useState(false);
   const [validatingCnic, setValidatingCnic] = useState(false);
   const [studentInfo, setStudentInfo] = useState(null);
+
+  // File upload state
+  const [file, setFile] = useState(null);
+  const [fileName, setFileName] = useState("");
+  const [filePreview, setFilePreview] = useState(null);
 
   // Status options for the dropdown
   const statusOptions = ["Partial Pay", "Full Pay"];
@@ -127,6 +134,66 @@ const AddFees = ({ Title }) => {
     return false;
   };
 
+  // ✅ File change handler
+  const handleFileChange = (e) => {
+    const uploadedFile = e.target.files[0];
+    if (uploadedFile) {
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+
+      // File size validation (10MB limit)
+      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+
+      if (!allowedTypes.includes(uploadedFile.type)) {
+        toast.error(
+          "Invalid file type. Please upload JPEG, PNG, PDF, or DOC files."
+        );
+        e.target.value = "";
+        return;
+      }
+
+      if (uploadedFile.size > maxSize) {
+        toast.error(
+          "File size too large. Please upload files smaller than 10MB."
+        );
+        e.target.value = "";
+        return;
+      }
+
+      setFile(uploadedFile);
+      setFileName(uploadedFile.name);
+
+      // Create preview for images
+      if (uploadedFile.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setFilePreview(e.target.result);
+        };
+        reader.readAsDataURL(uploadedFile);
+      } else {
+        setFilePreview(null);
+      }
+    }
+  };
+
+  // ✅ Remove file handler
+  const removeFile = () => {
+    setFile(null);
+    setFileName("");
+    setFilePreview(null);
+    // Reset the file input
+    const fileInput = document.getElementById("fileAttachment");
+    if (fileInput) {
+      fileInput.value = "";
+    }
+  };
+
   // ✅ Auto-fill department and year when CNIC changes (for both new entries and updates)
   useEffect(() => {
     if (cnic && /^\d{5}-\d{7}-\d$/.test(cnic)) {
@@ -200,6 +267,13 @@ const AddFees = ({ Title }) => {
             setTimeout(() => {
               validateCNIC(editingFee.cnic);
             }, 100);
+          }
+
+          // If editing fee has existing file data, you can set it here
+          // For example, if the API returns file information
+          if (editingFee.fileName) {
+            setFileName(editingFee.fileName);
+            // You might want to fetch the existing file preview if available
           }
         }
       } finally {
@@ -338,6 +412,12 @@ const AddFees = ({ Title }) => {
       return;
     }
 
+    // ✅ File validation - make file required
+    if (!file) {
+      toast.error("Challan file attachment is required.");
+      return;
+    }
+
     // ✅ Validate CNIC exists in enrolled students (only for new entries)
     if (!editingFee) {
       const result = validateCNIC(cnic);
@@ -355,25 +435,30 @@ const AddFees = ({ Title }) => {
       const token = localStorage.getItem("token");
       const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-      // Prepare payload for API - use the properly parsed amount
-      const payload = {
-        cnic: cnic,
-        paid_date: form.paidDate,
-        amount: parsedAmount, // Use the properly parsed amount
-        year: form.year,
-        status: form.status,
-        challan_no: form.challanNo,
-        department: form.department,
-        // fee_id will be included for updates if editingFee exists
-        ...(editingFee && { fee_id: form.feeId }),
-      };
+      // Create FormData to handle file upload
+      const formData = new FormData();
+      formData.append("cnic", cnic);
+      formData.append("paid_date", form.paidDate);
+      formData.append("amount", parsedAmount);
+      formData.append("year", form.year);
+      formData.append("status", form.status);
+      formData.append("challan_no", form.challanNo);
+      formData.append("department", form.department);
 
-      console.log("Submitting fee payload:", payload);
+      // Append the file
+      formData.append("challanFile", file);
 
-      // API call
-      const response = await axios.post(`${API}/api/fees/upsert`, payload, {
+      // Include fee_id for updates if editingFee exists
+      if (editingFee) {
+        formData.append("fee_id", form.feeId);
+      }
+
+      console.log("Submitting fee payload with file...");
+
+      // API call with FormData
+      const response = await axios.post(`${API}/api/fees/upsert`, formData, {
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
         },
         withCredentials: true,
@@ -497,6 +582,61 @@ const AddFees = ({ Title }) => {
             value={form.challanNo}
             onChange={onChange("challanNo")}
           />
+
+          {/* File Attachment with Upload Icon */}
+          <div className="flex w-full max-w-[800px] items-start md:items-center justify-start flex-col md:flex-row gap-[8px] md:gap-5 [@media(max-width:550px)]:gap-[5px]">
+            <label
+              htmlFor="fileAttachment"
+              className="w-auto md:w-1/4 text-start md:text-right text-gray-900 dark:text-white"
+            >
+              <span className="text-[#ff0000] mr-1">*</span>
+              Upload Challan:
+            </label>
+            <div className="w-[40%] [@media(max-width:768px)]:!w-full relative cursor-pointer">
+              <input
+                id="fileAttachment"
+                type="file"
+                onChange={handleFileChange}
+                className="w-full min-w-0 !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 opacity-0 absolute inset-0 cursor-pointer"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                required
+              />
+              <div className="flex items-center gap-2 border-2 border-[#a5a5a5] bg-[#f9f9f9] dark:border-gray-600 dark:bg-gray-800 !px-3 !py-2 cursor-pointer">
+                <FaUpload className="text-gray-600 dark:text-gray-400 cursor-pointer" />
+                <span className="text-gray-600 dark:text-gray-300 text-sm truncate cursor-pointer">
+                  {fileName || "Choose file"}
+                </span>
+              </div>
+
+              {/* Remove file button - only show when file is selected */}
+              {fileName && (
+                <button
+                  type="button"
+                  onClick={removeFile}
+                  className="absolute -right-8 top-1/2 transform -translate-y-1/2 text-red-500 hover:text-red-700 cursor-pointer"
+                  title="Remove file"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* File Preview for Images */}
+          {filePreview && (
+            <div className="flex w-full max-w-[800px] items-start md:items-center justify-start flex-col md:flex-row gap-[8px] md:gap-5 [@media(max-width:550px)]:gap-[5px]">
+              <label className="w-auto md:w-1/4 text-start md:text-right text-gray-900 dark:text-white">
+                File Preview:
+              </label>
+              <div className="w-[40%] [@media(max-width:768px)]:!w-full">
+                <img
+                  src={filePreview}
+                  alt="Challan preview"
+                  className="max-w-full max-h-48 border border-gray-300 rounded-md"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="flex w-full max-w-[800px] items-start md:items-center justify-start flex-col md:flex-row gap-[8px] md:gap-5 [@media(max-width:550px)]:gap-[5px]">
             <label
@@ -656,7 +796,10 @@ const AddFees = ({ Title }) => {
             <button
               type="submit"
               disabled={
-                submitting || validatingCnic || (!editingFee && !studentInfo)
+                submitting ||
+                validatingCnic ||
+                (!editingFee && !studentInfo) ||
+                !file
               }
               className="cursor-pointer relative overflow-hidden !px-[15px] !py-[5px] border-2 border-[#e5b300] text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
                          before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#e5b300] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60"
