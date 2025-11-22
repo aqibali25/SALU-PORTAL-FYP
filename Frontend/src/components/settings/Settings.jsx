@@ -154,7 +154,7 @@ const Settings = () => {
         newPassword: form.newPassword,
       };
 
-      await axios.post(`${API}/api/auth/change-password`, payload, {
+      await axios.post(`${API}/api/users/change-password`, payload, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
