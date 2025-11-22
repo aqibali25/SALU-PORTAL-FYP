@@ -39,6 +39,12 @@ export const User = sequelize.define(
       type: DataTypes.BLOB("long"),
       allowNull: true,
     },
+    token_version: {
+      // 👈 ADD THIS FIELD
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      allowNull: false,
+    },
     created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
     updated_at: { type: DataTypes.DATE },
   },

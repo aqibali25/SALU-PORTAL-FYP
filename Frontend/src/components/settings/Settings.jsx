@@ -1,3 +1,4 @@
+// Frontend/Settings.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -97,6 +98,7 @@ const Settings = () => {
         position: "top-right",
         autoClose: 2000,
       });
+
       setTimeout(() => {
         window.location.reload();
       }, 2500);
@@ -119,7 +121,7 @@ const Settings = () => {
     }
   };
 
-  // ✅ Submit Handler for Password Change
+  // ✅ Enhanced Password Change Handler
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -154,40 +156,131 @@ const Settings = () => {
         newPassword: form.newPassword,
       };
 
-      await axios.post(`${API}/api/users/change-password`, payload, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
+      const response = await axios.post(
+        `${API}/api/users/change-password`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
 
-      // Success toast
-      toast.success("Password changed successfully!", {
-        position: "top-right",
-        autoClose: 2000,
-      });
+      // 👇 CHECK IF LOGOUT ALL DEVICES IS REQUIRED
+      if (response.data.logoutAll) {
+        toast.success(
+          "Password changed successfully! Logging out all devices...",
+          {
+            position: "top-right",
+            autoClose: 3000,
+          }
+        );
 
-      // For now, simulate success
-      console.log("Password change payload:", payload);
-      toast.success("Password change ready! (API call commented)", {
-        position: "top-right",
-        autoClose: 2000,
-      });
+        // Clear all local storage and redirect to login
+        setTimeout(() => {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          sessionStorage.clear();
+          navigate("/login", { replace: true });
+        }, 2000);
+      } else {
+        toast.success("Password changed successfully!", {
+          position: "top-right",
+          autoClose: 2000,
+        });
 
-      // Clear form
-      setForm({
-        oldPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
+        // Clear form only
+        setForm({
+          oldPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+      }
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.message || "Error changing password", {
-        position: "top-right",
-      });
+
+      // 👇 HANDLE TOKEN VERSION MISMATCH (already logged out elsewhere)
+      if (
+        err.response?.status === 401 &&
+        err.response?.data?.message?.includes("Session expired")
+      ) {
+        toast.error("Your session has expired. Please login again.", {
+          position: "top-right",
+        });
+
+        // Clear storage and redirect to login
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setTimeout(() => {
+          navigate("/login", { replace: true });
+        }, 2000);
+      } else {
+        toast.error(err.response?.data?.message || "Error changing password", {
+          position: "top-right",
+        });
+      }
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // ✅ NEW: Handle Logout All Devices
+  const handleLogoutAllDevices = async () => {
+    if (!window.confirm("This will log you out from all devices. Continue?")) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+      const response = await axios.post(
+        `${API}/api/auth/logout-all`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.logoutAll) {
+        toast.success("Logged out from all devices successfully!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+
+        setTimeout(() => {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          sessionStorage.clear();
+          navigate("/SALU-PORTAL-FYP/login", { replace: true });
+        }, 2000);
+      }
+    } catch (err) {
+      console.error(err);
+
+      // Handle session expiration
+      if (
+        err.response?.status === 401 &&
+        err.response?.data?.message?.includes("Session expired")
+      ) {
+        toast.error("Your session has expired. Please login again.", {
+          position: "top-right",
+        });
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login", { replace: true });
+      } else {
+        toast.error(
+          err.response?.data?.message || "Error logging out all devices",
+          {
+            position: "top-right",
+          }
+        );
+      }
     }
   };
 
@@ -220,6 +313,14 @@ const Settings = () => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Change Password
             </h3>
+
+            {/* 👇 WARNING MESSAGE */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md !p-4 !mb-4">
+              <p className="text-sm text-yellow-800">
+                <strong>Note:</strong> Changing your password will log you out
+                of all devices.
+              </p>
+            </div>
 
             <InputContainer
               placeholder="Enter Old Password"
@@ -261,9 +362,37 @@ const Settings = () => {
                          before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#e5b300] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60"
             >
               <span className="relative z-10">
-                {submitting ? "Saving..." : "Save & Proceed"}
+                {submitting
+                  ? "Changing Password..."
+                  : "Change Password & Logout All Devices"}
               </span>
             </button>
+          </div>
+
+          {/* 👇 NEW: Logout All Devices Section */}
+          <div className="w-full max-w-[800px] !space-y-4 !mt-8">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white !mb-4">
+              Session Management
+            </h3>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-md !p-4 !mb-4">
+              <p className="text-sm text-blue-800">
+                <strong>Secure Logout:</strong> Log out from all devices where
+                you are currently logged in. This is useful if you logged in on
+                a public or shared computer.
+              </p>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleLogoutAllDevices}
+                className="cursor-pointer relative overflow-hidden !px-[15px] !py-[5px] border-2 border-red-600 text-white hover:text-black hover:dark:text-white text-[0.8rem] font-medium bg-transparent transition-all duration-300 ease-linear
+                           before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-0 before:bg-red-600 before:transition-all before:duration-300 before:ease-linear hover:before:h-full"
+              >
+                <span className="relative z-10">Logout All Devices</span>
+              </button>
+            </div>
           </div>
 
           {/* Profile Picture Section - Responsive Design */}

@@ -2,13 +2,18 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
-import { Op } from "sequelize";             // <-- ✅ import Op from sequelize
+import { Op } from "sequelize";
 import { User } from "../models/User.js";
 
-// helper to sign JWT
+// 👇 UPDATED: Helper to sign JWT with token version
 function sign(user) {
   return jwt.sign(
-    { id: user.id, role: user.role, username: user.username },
+    {
+      id: user.id,
+      role: user.role,
+      username: user.username,
+      tokenVersion: user.token_version, // 👈 ADD TOKEN VERSION
+    },
     process.env.JWT_SECRET,
     { expiresIn: "7d" }
   );
@@ -18,17 +23,37 @@ function sign(user) {
 export const register = async (req, res, next) => {
   try {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    if (!errors.isEmpty())
+      return res.status(400).json({ errors: errors.array() });
 
     const { username, email, cnic, password, role = "user" } = req.body;
 
-    const exists = await User.findOne({ where: { [Op.or]: [{ email }, { username }, { cnic }] } });
-    if (exists) return res.status(409).json({ message: "Email/username/CNIC already in use" });
+    const exists = await User.findOne({
+      where: { [Op.or]: [{ email }, { username }, { cnic }] },
+    });
+    if (exists)
+      return res
+        .status(409)
+        .json({ message: "Email/username/CNIC already in use" });
 
     const password_hash = await bcrypt.hash(password, 10);
-    const user = await User.create({ username, email, cnic, password_hash, role });
+    const user = await User.create({
+      username,
+      email,
+      cnic,
+      password_hash,
+      role,
+      token_version: 0, // 👈 INITIALIZE TOKEN VERSION
+    });
 
-    res.status(201).json({ user: { id: user.id, username: user.username, email: user.email, role: user.role } });
+    res.status(201).json({
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (e) {
     next(e);
   }
@@ -38,15 +63,15 @@ export const register = async (req, res, next) => {
 export const login = async (req, res, next) => {
   try {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    if (!errors.isEmpty())
+      return res.status(400).json({ errors: errors.array() });
 
     const { identifier, password } = req.body;
 
-    // ✅ Correct operator usage
     const user = await User.findOne({
       where: {
-        [Op.or]: [{ email: identifier }, { username: identifier }]
-      }
+        [Op.or]: [{ email: identifier }, { username: identifier }],
+      },
     });
 
     if (!user) return res.status(401).json({ message: "Invalid credentials" });
@@ -54,10 +79,55 @@ export const login = async (req, res, next) => {
     const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) return res.status(401).json({ message: "Invalid credentials" });
 
+    // 👇 UPDATED: Generate token with current token version
     const token = sign(user);
+
     res.json({
       token,
-      user: { id: user.id, username: user.username, email: user.email, role: user.role }
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+// 👇 NEW: Force logout all devices (optional endpoint)
+export const logoutAllDevices = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Increment token version to invalidate all existing tokens
+    user.token_version = user.token_version + 1;
+    await user.save();
+
+    res.json({
+      message: "Logged out from all devices successfully. Please login again.",
+      logoutAll: true,
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+// 👇 NEW: Get current token version (for debugging)
+export const getTokenInfo = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: ["id", "username", "token_version"],
+    });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json({
+      userId: user.id,
+      username: user.username,
+      tokenVersion: user.token_version,
     });
   } catch (e) {
     next(e);

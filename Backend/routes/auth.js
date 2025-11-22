@@ -1,9 +1,16 @@
 import { Router } from "express";
 import { body } from "express-validator";
-import { login, register } from "../controllers/authController.js";
+import {
+  login,
+  register,
+  logoutAllDevices,
+  getTokenInfo,
+} from "../controllers/authController.js";
+import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = Router();
 
+// Public routes
 router.post(
   "/register",
   [
@@ -14,10 +21,15 @@ router.post(
   ],
   register
 );
+
 router.post(
   "/login",
   [body("identifier").notEmpty(), body("password").notEmpty()],
   login
 );
+
+// Protected routes - require authentication
+router.post("/logout-all", verifyToken, logoutAllDevices);
+router.get("/token-info", verifyToken, getTokenInfo);
 
 export default router;

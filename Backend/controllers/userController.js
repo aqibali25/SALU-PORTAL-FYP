@@ -153,10 +153,17 @@ export const changePassword = async (req, res) => {
       return res.status(400).json({ message: "Old password is incorrect" });
 
     const newHash = await bcrypt.hash(newPassword, 10);
+
+    // 👇 INCREMENT TOKEN VERSION TO LOGOUT ALL DEVICES
     user.password_hash = newHash;
+    user.token_version = user.token_version + 1; // This invalidates all existing tokens
     await user.save();
 
-    res.json({ message: "Password changed successfully" });
+    res.json({
+      message:
+        "Password changed successfully. You have been logged out of all devices.",
+      logoutAll: true, // Flag to indicate logout all devices
+    });
   } catch (err) {
     console.error("changePassword error:", err);
     res.status(500).json({ message: "Server error" });
