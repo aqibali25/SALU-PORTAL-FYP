@@ -5,11 +5,13 @@ import { FiSettings } from "react-icons/fi";
 import ThemeToggle from "./ThemeToggle";
 import Cookies from "js-cookie";
 import Profile from "./Profile";
+import NotificationDropdown from "./NotificationDropdown";
 import { useEffect } from "react";
 import axios from "axios";
 
 const Navbar = () => {
   const isLoggedIn = Cookies.get("isLoggedIn") === "true";
+
   useEffect(() => {
     // Frontend call - no data needed
     const token = localStorage.getItem("token");
@@ -25,7 +27,7 @@ const Navbar = () => {
         console.error("Error updating status:", error);
       });
   }, []);
-  //
+
   return (
     <div
       className="
@@ -89,6 +91,9 @@ const Navbar = () => {
 
         {isLoggedIn && (
           <>
+            {/* Notification Dropdown */}
+            <NotificationDropdown />
+
             {/* Home */}
             <Link
               to="/SALU-PORTAL-FYP/"
@@ -106,7 +111,7 @@ const Navbar = () => {
               to="/SALU-PORTAL-FYP/Settings"
               className="grid h-8 w-8 place-items-center rounded-full
                 bg-white text-gray-900 ring-1 ring-black/10 md:ring-white/40
-                transition hover:ring-black/20 md:hover:ring-white/60
+                transition hover:ring-black/20 md:hover:ring-white-60
                 shrink-0"
               aria-label="Settings"
             >
@@ -115,8 +120,10 @@ const Navbar = () => {
           </>
         )}
 
-        {/* Profile Dropdown (inside clip area, but fixed-positioned menu) */}
-        <Profile />
+        {/* Profile Dropdown - Hidden below 370px */}
+        <div className="[@media(max-width:370px)]:hidden">
+          <Profile />
+        </div>
       </div>
     </div>
   );
