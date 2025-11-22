@@ -81,7 +81,6 @@ const Settings = () => {
       const formData = new FormData();
       formData.append("profilePicture", selectedFile);
 
-      /*
       const response = await axios.post(
         `${API}/api/auth/upload-profile-picture`,
         formData,
@@ -98,21 +97,9 @@ const Settings = () => {
         position: "top-right",
         autoClose: 2000,
       });
-      */
-
-      // For now, simulate success
-      console.log("File upload payload:", {
-        file: selectedFile,
-        fileName: selectedFile.name,
-        fileSize: selectedFile.size,
-        fileType: selectedFile.type,
-        formData: formData,
-      });
-
-      toast.success("Profile picture ready for upload! (API call commented)", {
-        position: "top-right",
-        autoClose: 2000,
-      });
+      setTimeout(() => {
+        window.location.reload();
+      }, 2500);
 
       // Reset file selection after successful upload
       setSelectedFile(null);
@@ -120,7 +107,7 @@ const Settings = () => {
       const fileInput = document.getElementById("profilePicture");
       if (fileInput) fileInput.value = "";
     } catch (err) {
-      console.error(err);
+      console.error("Upload error:", err);
       toast.error(
         err.response?.data?.message || "Error uploading profile picture",
         {
@@ -167,8 +154,6 @@ const Settings = () => {
         newPassword: form.newPassword,
       };
 
-      // TODO: Uncomment the API call when ready
-      /*
       await axios.post(`${API}/api/auth/change-password`, payload, {
         headers: {
           "Content-Type": "application/json",
@@ -182,7 +167,6 @@ const Settings = () => {
         position: "top-right",
         autoClose: 2000,
       });
-      */
 
       // For now, simulate success
       console.log("Password change payload:", payload);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { FaEdit, FaTrash, FaEye } from "react-icons/fa";
+import { FaEdit, FaTrash, FaEye, FaTimes } from "react-icons/fa";
 import DataTable from "../TableData";
 import Pagination from "../../components/Pagination";
 import Background from "./../../assets/Background.png";
@@ -17,6 +17,8 @@ export default function ViewFees() {
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [selectedChallanImage, setSelectedChallanImage] = useState(null);
+  const [imageLoading, setImageLoading] = useState(false);
   const pageSize = 10;
   const navigate = useNavigate();
 
@@ -97,6 +99,48 @@ export default function ViewFees() {
     };
     fetchFees();
   }, [departmentFilter, yearFilter, statusFilter]); // REMOVED query from dependencies
+
+  // ✅ Fetch challan image
+  const fetchChallanImage = async (feeId, challanNo) => {
+    try {
+      setImageLoading(true);
+      const token = localStorage.getItem("token");
+      const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+      const response = await axios.get(
+        `${API}/api/fees/challan-image/${feeId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          responseType: "blob",
+        }
+      );
+
+      // Create URL for the image blob
+      const imageUrl = URL.createObjectURL(response.data);
+      setSelectedChallanImage({
+        url: imageUrl,
+        challanNo: challanNo,
+      });
+    } catch (err) {
+      console.error("Error fetching challan image:", err);
+      toast.error(
+        "Error loading challan image: " +
+          (err.response?.data?.message || "Image not available")
+      );
+    } finally {
+      setImageLoading(false);
+    }
+  };
+
+  // ✅ Close image overlay
+  const closeImageOverlay = () => {
+    if (selectedChallanImage) {
+      URL.revokeObjectURL(selectedChallanImage.url); // Clean up object URL
+    }
+    setSelectedChallanImage(null);
+  };
 
   // ✅ Filter fees by search query and filters (CLIENT-SIDE ONLY)
   const filteredFees = fees.filter((fee) => {
@@ -194,40 +238,41 @@ export default function ViewFees() {
     }
   };
 
-  // ✅ Table actions - Only show if user is admin
-  const actions = isAdmin
-    ? [
-        {
-          label: "Edit",
-          onClick: (row) => {
-            navigate(`/SALU-PORTAL-FYP/Fees/UpdateFees/${row.fee_id}`, {
-              state: { fee: row },
-            });
+  // ✅ Table actions - Show view icon for all users, edit only for admin
+  const actions = [
+    {
+      label: "View Challan",
+      onClick: (row) => {
+        fetchChallanImage(row.fee_id, row.challan_no);
+      },
+      icon: (
+        <FaEye
+          size={20}
+          className="cursor-pointer text-blue-600 hover:text-blue-700"
+          title="View Challan Image"
+        />
+      ),
+    },
+    ...(isAdmin
+      ? [
+          {
+            label: "Edit",
+            onClick: (row) => {
+              navigate(`/SALU-PORTAL-FYP/Fees/UpdateFees/${row.fee_id}`, {
+                state: { fee: row },
+              });
+            },
+            icon: (
+              <FaEdit
+                size={20}
+                className="cursor-pointer text-green-600 hover:text-green-700"
+                title="Edit Fee Record"
+              />
+            ),
           },
-          icon: (
-            <FaEdit
-              size={20}
-              className="cursor-pointer text-green-600 hover:text-green-700"
-            />
-          ),
-        },
-      ]
-    : [
-        {
-          label: "View",
-          onClick: (row) => {
-            navigate(`/SALU-PORTAL-FYP/Fees/ViewFee/${row.fee_id}`, {
-              state: { fee: row },
-            });
-          },
-          icon: (
-            <FaEye
-              size={20}
-              className="cursor-pointer text-blue-600 hover:text-blue-700"
-            />
-          ),
-        },
-      ];
+        ]
+      : []),
+  ];
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -240,6 +285,15 @@ export default function ViewFees() {
       toast.error("Failed to load departments. Using default list.");
     }
   }, [departmentsError]);
+
+  // Clean up object URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (selectedChallanImage) {
+        URL.revokeObjectURL(selectedChallanImage.url);
+      }
+    };
+  }, [selectedChallanImage]);
 
   if (loading || departmentsLoading) {
     return (
@@ -259,6 +313,56 @@ export default function ViewFees() {
         backgroundPosition: "center",
       }}
     >
+      {/* Challan Image Overlay */}
+      {selectedChallanImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl max-h-[90vh] w-full relative">
+            {/* Header */}
+            <div className="flex justify-between items-center p-4 border-b border-gray-300 dark:border-gray-600">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Challan Image - {selectedChallanImage.challanNo}
+              </h3>
+              <button
+                onClick={closeImageOverlay}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              >
+                <FaTimes size={24} />
+              </button>
+            </div>
+
+            {/* Image Content */}
+            <div className="p-4 flex justify-center items-center max-h-[70vh] overflow-auto">
+              {imageLoading ? (
+                <div className="flex justify-center items-center py-20">
+                  <div className="w-16 h-16 border-4 border-yellow-400 border-dashed rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                <img
+                  src={selectedChallanImage.url}
+                  alt={`Challan ${selectedChallanImage.challanNo}`}
+                  className="max-w-full max-h-full object-contain rounded"
+                  onError={(e) => {
+                    console.error("Error loading challan image");
+                    e.target.src =
+                      "https://via.placeholder.com/400x200?text=Image+Not+Available";
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end p-4 border-t border-gray-300 dark:border-gray-600">
+              <button
+                onClick={closeImageOverlay}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
         <div className="flex justify-start items-center gap-3">
           <BackButton url={"/SALU-PORTAL-FYP/Fees"} />

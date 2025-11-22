@@ -1,8 +1,10 @@
+import { useState, useEffect } from "react";
 import Profile from "../../assets/Profile.png";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Cookies from "js-cookie";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 const Card = ({
   isImg = false,
@@ -14,7 +16,47 @@ const Card = ({
   roles = [],
 }) => {
   const navigate = useNavigate();
+  const [profileImage, setProfileImage] = useState(null);
+  const [imageLoading, setImageLoading] = useState(false);
   const userRole = Cookies.get("role")?.toLowerCase(); // Convert to lowercase
+  const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+  // Fetch profile image when this is a profile card and user has access
+  useEffect(() => {
+    if (isImg) {
+      fetchProfileImage();
+    }
+  }, [isImg]);
+
+  // Fetch profile image from API
+  const fetchProfileImage = async () => {
+    try {
+      setImageLoading(true);
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.warn("No token found in localStorage");
+        return;
+      }
+
+      const response = await axios.get(`${API}/api/auth/profile-image`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: "blob",
+        withCredentials: true,
+      });
+
+      // Create URL for the image blob
+      const imageUrl = URL.createObjectURL(response.data);
+      setProfileImage(imageUrl);
+    } catch (err) {
+      console.error("Error fetching profile image:", err);
+      // If no profile image exists or error occurs, profileImage will remain null
+    } finally {
+      setImageLoading(false);
+    }
+  };
 
   const handleClick = (e) => {
     e.preventDefault();
@@ -36,6 +78,23 @@ const Card = ({
 
   const hasAccess = roles.length === 0 || roles.includes(userRole);
 
+  // Determine which image to display for profile cards
+  const getProfileImage = () => {
+    if (!hasAccess) {
+      return Profile; // Return default image if no access
+    }
+    return profileImage || Profile; // Return fetched image or default
+  };
+
+  // Clean up the object URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (profileImage) {
+        URL.revokeObjectURL(profileImage);
+      }
+    };
+  }, [profileImage]);
+
   return (
     <div
       className={`
@@ -56,11 +115,23 @@ const Card = ({
       onClick={handleClick}
     >
       {isImg ? (
-        <img
-          className="w-[70px] h-[70px] rounded-full"
-          src={Profile}
-          alt="Profile"
-        />
+        <div className="relative">
+          {imageLoading ? (
+            <div className="w-[70px] h-[70px] rounded-full bg-gray-300 flex items-center justify-center">
+              <div className="w-6 h-6 border-2 border-yellow-400 border-dashed rounded-full animate-spin"></div>
+            </div>
+          ) : (
+            <img
+              className="w-[70px] h-[70px] rounded-full object-cover border-2 border-gray-300"
+              src={getProfileImage()}
+              alt="Profile"
+              onError={(e) => {
+                // Fallback to default image if the fetched image fails to load
+                e.target.src = Profile;
+              }}
+            />
+          )}
+        </div>
       ) : (
         <FontAwesomeIcon
           icon={Icon}

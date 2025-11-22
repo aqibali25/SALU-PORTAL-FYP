@@ -2,18 +2,21 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Background from "../../assets/Background.png";
 import InputContainer from "../InputContainer";
-import ProfilePic from "../../assets/Profile.png";
+import ProfilePic from "../../assets/Profile.png"; // Default profile image
 import BackButton from "../BackButton";
 import { rolesArray } from "../../Hooks/HomeCards";
 
 const Profile = () => {
   const [userData, setUserData] = useState(null);
+  const [profileImage, setProfileImage] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [imageLoading, setImageLoading] = useState(true);
   const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
   useEffect(() => {
     document.title = "SALU Portal | Profile";
     fetchUserData();
+    fetchProfileImage();
   }, []);
 
   const fetchUserData = async () => {
@@ -43,6 +46,39 @@ const Profile = () => {
       setLoading(false);
     }
   };
+
+  const fetchProfileImage = async () => {
+    try {
+      setImageLoading(true);
+      const token = localStorage.getItem("token");
+
+      const response = await axios.get(`${API}/api/auth/profile-image`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: "blob", // Important for image data
+        withCredentials: true,
+      });
+
+      // Create URL for the image blob
+      const imageUrl = URL.createObjectURL(response.data);
+      setProfileImage(imageUrl);
+    } catch (err) {
+      console.error("Error fetching profile image:", err);
+      // If no profile image exists, profileImage will remain null and default image will be used
+    } finally {
+      setImageLoading(false);
+    }
+  };
+
+  // Clean up the object URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (profileImage) {
+        URL.revokeObjectURL(profileImage);
+      }
+    };
+  }, [profileImage]);
 
   if (loading) {
     return (
@@ -75,11 +111,21 @@ const Profile = () => {
         <div className="flex flex-col md:flex-row justify-evenly items-stretch min-h-[60vh] w-full md:!p-10 !p-6 bg-white dark:bg-gray-900 rounded-md overflow-hidden">
           {/* Left Section */}
           <div className="flex flex-col gap-6 items-center justify-center min-w-[20%] text-gray-900 dark:text-gray-100 font-medium">
-            <img
-              className="rounded-full w-[200px] h-[200px]"
-              src={ProfilePic}
-              alt="Profile"
-            />
+            {imageLoading ? (
+              <div className="w-[200px] h-[200px] rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-yellow-400 border-dashed rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <img
+                className="rounded-full w-[200px] h-[200px] object-cover border-2 border-gray-300 dark:border-gray-600"
+                src={profileImage || ProfilePic}
+                alt="Profile"
+                onError={(e) => {
+                  // If the fetched image fails to load, fall back to default image
+                  e.target.src = ProfilePic;
+                }}
+              />
+            )}
             <h1 className="text-4xl font-bold">
               {userData?.username || "User"}
             </h1>

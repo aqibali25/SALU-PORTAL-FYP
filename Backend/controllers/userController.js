@@ -99,23 +99,82 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-// ✅ DELETE user by ID or CNIC
+// ✅ DELETE user by ID
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Try finding the user
     const user = await User.findByPk(id);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Delete from DB
     await user.destroy();
-
     res.json({ message: "User deleted successfully" });
   } catch (err) {
     console.error("Error deleting user:", err);
     res.status(500).json({ message: "Server error while deleting user" });
+  }
+};
+
+// NEW API #1: Upload profile picture (BLOB)
+export const uploadProfilePicture = async (req, res) => {
+  try {
+    if (!req.file)
+      return res.status(400).json({ message: "No image uploaded" });
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.profile_image = req.file.buffer;
+    await user.save();
+
+    res.json({ message: "Profile picture updated successfully" });
+  } catch (err) {
+    console.error("uploadProfilePicture error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// NEW API #2: Change password
+
+export const changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword)
+      return res
+        .status(400)
+        .json({ message: "Both old and new password are required." });
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const match = await bcrypt.compare(oldPassword, user.password_hash);
+    if (!match)
+      return res.status(400).json({ message: "Old password is incorrect" });
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    user.password_hash = newHash;
+    await user.save();
+
+    res.json({ message: "Password changed successfully" });
+  } catch (err) {
+    console.error("changePassword error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//NEW API #3: Get profile image (for display)
+export const getProfileImage = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+
+    if (!user || !user.profile_image)
+      return res.status(404).json({ message: "No profile picture found" });
+
+    res.setHeader("Content-Type", "image/jpeg");
+    res.send(user.profile_image);
+  } catch (err) {
+    console.error("getProfileImage error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };

@@ -1,14 +1,26 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
+import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import ProfilePic from "../../assets/Profile.png"; // Default profile image
 import { faCog, faSignOutAlt, faUser } from "@fortawesome/free-solid-svg-icons";
 
 const Profile = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
+  const [imageLoading, setImageLoading] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const isLoggedIn = Cookies.get("isLoggedIn") === "true";
+  const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+  // Fetch profile image when logged in
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchProfileImage();
+    }
+  }, [isLoggedIn]);
 
   // Toggle dropdown
   const toggleMenu = () => setMenuOpen(!menuOpen);
@@ -30,10 +42,66 @@ const Profile = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuOpen]);
 
+  // Fetch profile image from API
+  const fetchProfileImage = async () => {
+    try {
+      setImageLoading(true);
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.warn("No token found in localStorage");
+        return;
+      }
+
+      const response = await axios.get(`${API}/api/auth/profile-image`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: "blob",
+        withCredentials: true,
+      });
+
+      // Create URL for the image blob
+      const imageUrl = URL.createObjectURL(response.data);
+      setProfileImage(imageUrl);
+    } catch (err) {
+      console.error("Error fetching profile image:", err);
+      // If no profile image exists or error occurs, profileImage will remain null
+    } finally {
+      setImageLoading(false);
+    }
+  };
+
   // Logout
   const handleLogout = () => {
+    // Clean up the object URL when logging out
+    if (profileImage) {
+      URL.revokeObjectURL(profileImage);
+    }
+
     Cookies.remove("isLoggedIn");
+    localStorage.removeItem("token"); // Also remove token on logout
+    setProfileImage(null); // Reset profile image
     navigate("/SALU-PORTAL-FYP/login");
+  };
+
+  // Clean up the object URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (profileImage) {
+        URL.revokeObjectURL(profileImage);
+      }
+    };
+  }, [profileImage]);
+
+  // Determine which image to display
+  const getProfileImage = () => {
+    if (!isLoggedIn) {
+      return "https://www.w3schools.com/howto/img_avatar.png";
+    }
+
+    // If logged in, use fetched profile image or default ProfilePic
+    return profileImage || ProfilePic;
   };
 
   return (
@@ -46,11 +114,25 @@ const Profile = () => {
         className="w-[50px] h-[50px] rounded-full overflow-hidden border border-gray-300"
         onClick={toggleMenu}
       >
-        <img
-          src="https://www.w3schools.com/howto/img_avatar.png"
-          alt="User Avatar"
-          className="w-full h-full object-cover"
-        />
+        {imageLoading ? (
+          <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+            <div className="w-4 h-4 border-2 border-yellow-400 border-dashed rounded-full animate-spin"></div>
+          </div>
+        ) : (
+          <img
+            src={getProfileImage()}
+            alt="User Avatar"
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              // Fallback to default images if the fetched image fails to load
+              if (isLoggedIn) {
+                e.target.src = ProfilePic;
+              } else {
+                e.target.src = "https://www.w3schools.com/howto/img_avatar.png";
+              }
+            }}
+          />
+        )}
       </div>
 
       {/* Dropdown */}
