@@ -11,7 +11,7 @@ import FormsByStatus from "./components/Admissions/FormsByStatus";
 import ReviewForm from "./components/Admissions/ReviewForm";
 import Login from "./components/Login/Login";
 import Cookies from "js-cookie";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import SubjectAllocation from "./components/SubAlocation/SubjectAllocation";
 import AssigningSubject from "./components/SubAlocation/AssigningSubject";
 import TakeAttendance from "./components/Attendance/TakeAttendance";
@@ -49,69 +49,140 @@ import IssueBook from "./components/Library/IssueBook";
 import AdmissionSchedule from "./components/AdmissionSchedule/AdmissionSchedule";
 import AddAdmissionSchedule from "./components/AdmissionSchedule/AddAdmissionSchedule";
 import ViewAdmissionSchedules from "./components/AdmissionSchedule/ViewAdmissionSchedules";
+import axios from "axios";
 
 // Helper function to get roles for a specific route
 const getRolesForRoute = (routePath) => {
-  // Remove the base path and leading/trailing slashes
   const cleanPath = routePath.replace("/SALU-PORTAL-FYP/", "").replace("/", "");
-
-  // Find the card that matches this route
   const card = cards.find(
     (c) => c.link.toLowerCase() === cleanPath.toLowerCase()
   );
-
   return card ? card.roles : [];
 };
 
-// ✅ Enhanced authentication check
-const checkAuthentication = () => {
+// ✅ Enhanced authentication check with backend verification
+const checkAuthentication = async () => {
   const token = localStorage.getItem("token");
   const isLoggedInCookie = Cookies.get("isLoggedIn") === "true";
 
   // If no token but cookie says logged in, clear the invalid state
   if (!token && isLoggedInCookie) {
-    Cookies.remove("isLoggedIn");
-    Cookies.remove("role");
-    Cookies.remove("username");
+    clearAuthData();
     return false;
   }
 
-  // If token exists but no cookie, set the cookie
-  if (token && !isLoggedInCookie) {
-    Cookies.set("isLoggedIn", "true", { expires: 7 }); // 7 days
+  // If both exist, verify with backend
+  if (token && isLoggedInCookie) {
+    try {
+      const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+      await axios.get(`${API}/api/users/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return true;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        clearAuthData();
+        return false;
+      }
+      // For network errors, assume authenticated (will fail on actual API calls)
+      return true;
+    }
   }
 
-  return !!(token && isLoggedInCookie);
+  return false;
+};
+
+// ✅ Clear all authentication data
+const clearAuthData = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  sessionStorage.clear();
+
+  Cookies.remove("isLoggedIn");
+  Cookies.remove("role");
+  Cookies.remove("username");
+  Cookies.remove("user");
+
+  // Clear all cookies aggressively
+  document.cookie.split(";").forEach((c) => {
+    document.cookie = c
+      .replace(/^ +/, "")
+      .replace(/=.*/, "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/");
+  });
 };
 
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    const isAuthenticated = checkAuthentication();
-    const isLoginPage = location.pathname === "/SALU-PORTAL-FYP/login";
+    const verifyAuth = async () => {
+      const authenticated = await checkAuthentication();
+      setIsAuthenticated(authenticated);
+      setAuthChecked(true);
 
-    if (!isAuthenticated && !isLoginPage) {
-      navigate("/SALU-PORTAL-FYP/login", { replace: true });
-    }
+      const isLoginPage = location.pathname === "/SALU-PORTAL-FYP/login";
 
-    if (isAuthenticated && isLoginPage) {
-      navigate("/SALU-PORTAL-FYP/", { replace: true });
-    }
+      if (!authenticated && !isLoginPage) {
+        navigate("/SALU-PORTAL-FYP/login", { replace: true });
+      }
+
+      if (authenticated && isLoginPage) {
+        navigate("/SALU-PORTAL-FYP/", { replace: true });
+      }
+    };
+
+    verifyAuth();
   }, [location.pathname, navigate]);
 
-  const isAuthenticated = checkAuthentication();
+  // ✅ Add axios interceptor to handle token expiration globally
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          clearAuthData();
+          setIsAuthenticated(false);
+          if (!window.location.pathname.includes("/login")) {
+            navigate("/SALU-PORTAL-FYP/login", { replace: true });
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, [navigate]);
+
+  // Show loading while checking authentication
+  if (!authChecked) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-gray-100 dark:bg-gray-900">
+        <div className="text-xl text-gray-600 dark:text-gray-300">
+          Loading...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
       {/* ✅ Toast Container */}
       <ToastContainer position="top-center" autoClose={2000} />
-      <Navbar />
+
+      {/* ✅ Conditionally render Navbar */}
+      {isAuthenticated && <Navbar />}
+
       <Routes>
         <Route path="/SALU-PORTAL-FYP/login" element={<Login />} />
 
-        {isAuthenticated && (
+        {isAuthenticated ? (
           <>
             <Route path="/SALU-PORTAL-FYP/" element={<Home />} />
             <Route path="/SALU-PORTAL-FYP/profile" element={<Profile />} />
@@ -546,6 +617,9 @@ function App() {
               }
             />
           </>
+        ) : (
+          // Redirect all other routes to login if not authenticated
+          <Route path="*" element={<Login />} />
         )}
       </Routes>
     </>
