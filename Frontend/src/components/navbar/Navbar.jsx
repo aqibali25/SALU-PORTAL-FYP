@@ -5,9 +5,26 @@ import { FiSettings } from "react-icons/fi";
 import ThemeToggle from "./ThemeToggle";
 import Cookies from "js-cookie";
 import Profile from "./Profile";
+import { useEffect } from "react";
+import axios from "axios";
 
 const Navbar = () => {
   const isLoggedIn = Cookies.get("isLoggedIn") === "true";
+  useEffect(() => {
+    // Frontend call - no data needed
+    const token = localStorage.getItem("token");
+    const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+    axios
+      .put(`${API}/api/admission-schedules/update-status`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((response) => {})
+      .catch((error) => {
+        console.error("Error updating status:", error);
+      });
+  }, []);
   //
   return (
     <div

@@ -6,6 +6,7 @@ import {
   getAdmissionScheduleById,
   getAllAdmissionSchedules,
   deleteAdmissionSchedule,
+  updateAdmissionScheduleStatus, // Add this import
 } from "../controllers/admissionScheduleController.js";
 
 const router = express.Router();
@@ -17,6 +18,9 @@ router.post("/admission-schedules/create", createAdmissionSchedule);
 
 // PUT   -> update schedule (used by AdmissionSchedule.jsx for Edit)
 router.put("/admission-schedules/update", updateAdmissionSchedule);
+
+// PUT   -> update all statuses automatically (call this API without any data)
+router.put("/admission-schedules/update-status", updateAdmissionScheduleStatus);
 
 /* ------------- READ ------------- */
 

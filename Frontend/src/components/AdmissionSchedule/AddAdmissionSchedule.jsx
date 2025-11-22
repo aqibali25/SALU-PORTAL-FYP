@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -15,6 +15,28 @@ const AddAdmissionSchedule = ({ Title }) => {
     [location.state]
   );
 
+  // Calculate status based on current date and schedule dates
+  const calculateStatus = (startDate, endDate) => {
+    if (!startDate || !endDate) return "Closed";
+
+    const currentDate = new Date();
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // Set time to beginning of day for accurate comparison
+    currentDate.setHours(0, 0, 0, 0);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    if (currentDate < start) {
+      return "Upcoming";
+    } else if (currentDate >= start && currentDate <= end) {
+      return "Open";
+    } else {
+      return "Closed";
+    }
+  };
+
   const [form, setForm] = useState({
     start_date: "",
     end_date: "",
@@ -23,6 +45,7 @@ const AddAdmissionSchedule = ({ Title }) => {
     shift: "",
   });
 
+  const [status, setStatus] = useState("Closed"); // Default status
   const [submitting, setSubmitting] = useState(false);
 
   // Prefill form if editing
@@ -35,8 +58,23 @@ const AddAdmissionSchedule = ({ Title }) => {
         admission_year: editingSchedule.admission_year?.toString() || "", // Convert number to string
         shift: editingSchedule.shift || "",
       });
+      // Set status from editing schedule if available, otherwise calculate
+      setStatus(
+        editingSchedule.status ||
+          calculateStatus(editingSchedule.start_date, editingSchedule.end_date)
+      );
     }
   }, [editingSchedule]);
+
+  // Update status when dates change
+  useEffect(() => {
+    if (form.start_date && form.end_date) {
+      const newStatus = calculateStatus(form.start_date, form.end_date);
+      setStatus(newStatus);
+    } else {
+      setStatus("Closed");
+    }
+  }, [form.start_date, form.end_date]);
 
   const onChange = (key) => (e) => {
     const value = e.target.value;
@@ -108,6 +146,20 @@ const AddAdmissionSchedule = ({ Title }) => {
     return true;
   };
 
+  // Get status badge color
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Open":
+        return "bg-green-500 text-white";
+      case "Closed":
+        return "bg-red-500 text-white";
+      case "Upcoming":
+        return "bg-blue-500 text-white";
+      default:
+        return "bg-gray-500 text-white";
+    }
+  };
+
   // Submit Handler
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -127,6 +179,7 @@ const AddAdmissionSchedule = ({ Title }) => {
         admission_form_fee: form.admission_form_fee,
         admission_year: parseInt(form.admission_year), // Convert to number for API
         shift: form.shift,
+        status: status, // Include calculated status
       };
 
       // Include ID if editing

@@ -114,7 +114,7 @@ export const getAdmissionById = async (req, res) => {
         g.name AS guardian_name, g.cnic_number AS guardian_cnic_number,
         g.mobile_number AS guardian_mobile, g.occupation AS guardian_occupation,
 
-        pos.applied_department, pos.first_choice, pos.second_choice, pos.third_choice,
+        pos.applied_department, pos.first_choice, pos.second_choice, pos.shift,
 
         m.group_name AS matric_group_name, m.degree_year AS matric_degree_year,
         m.seat_no AS matric_seat_no, m.institution_name AS matric_institution_name,
@@ -204,7 +204,7 @@ export const getAdmissionById = async (req, res) => {
           applied_department: row.applied_department,
           first_choice: row.first_choice,
           second_choice: row.second_choice,
-          third_choice: row.third_choice,
+          shift: row.shift,
         },
         matriculation_latest: {
           group_name: row.matric_group_name,

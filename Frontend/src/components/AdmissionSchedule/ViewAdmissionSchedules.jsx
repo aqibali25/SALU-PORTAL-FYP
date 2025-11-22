@@ -103,6 +103,7 @@ export default function ViewAdmissionSchedules() {
     { key: "end_date_display", label: "End Date" },
     { key: "admission_form_fee", label: "Form Fee" },
     { key: "shift", label: "Shift" },
+    { key: "status", label: "Status" },
   ];
 
   // ✅ Table actions
