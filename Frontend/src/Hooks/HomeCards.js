@@ -13,6 +13,7 @@ import {
   faBookReader,
   faDollarSign,
   faCalendarCheck,
+  faClock,
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 
@@ -78,6 +79,16 @@ export const cards = [
   },
   {
     id: 7,
+    Heading: "Time Table",
+    link: "TimeTable",
+    isImg: false,
+    Icon: faClock,
+    color1: "#7C3AED",
+    color2: "#F3E8FF",
+    roles: ["super admin", "admin"],
+  },
+  {
+    id: 8,
     Heading: "Fees",
     link: "Fees",
     isImg: false,
@@ -87,7 +98,7 @@ export const cards = [
     roles: ["super admin", "admin", "clerk"],
   },
   {
-    id: 8,
+    id: 9,
     Heading: "Subject Allocation",
     link: "SubjectAllocation",
     isImg: false,
@@ -97,7 +108,7 @@ export const cards = [
     roles: ["super admin", "hod"],
   },
   {
-    id: 9,
+    id: 10,
     Heading: "Attendance",
     link: "Attendance",
     isImg: false,
@@ -107,7 +118,7 @@ export const cards = [
     roles: ["super admin", "teacher", "hod"],
   },
   {
-    id: 10,
+    id: 11,
     Heading: "Enter Marks",
     link: "EnterMarks",
     isImg: false,
@@ -117,7 +128,7 @@ export const cards = [
     roles: ["super admin", "hod", "teacher"],
   },
   {
-    id: 11,
+    id: 12,
     Heading: "Subjects",
     link: "Subjects",
     isImg: false,
@@ -127,7 +138,7 @@ export const cards = [
     roles: ["super admin", "hod"],
   },
   {
-    id: 12,
+    id: 13,
     Heading: "Departments",
     link: "Departments",
     isImg: false,
@@ -137,7 +148,7 @@ export const cards = [
     roles: ["super admin", "admin"],
   },
   {
-    id: 13,
+    id: 14,
     Heading: "Library",
     link: "Library",
     isImg: false,
@@ -147,7 +158,7 @@ export const cards = [
     roles: ["super admin", "librarian"],
   },
   {
-    id: 14,
+    id: 15,
     Heading: "Settings",
     link: "Settings",
     isImg: false,

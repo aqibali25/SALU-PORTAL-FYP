@@ -50,6 +50,9 @@ import AdmissionSchedule from "./components/AdmissionSchedule/AdmissionSchedule"
 import AddAdmissionSchedule from "./components/AdmissionSchedule/AddAdmissionSchedule";
 import ViewAdmissionSchedules from "./components/AdmissionSchedule/ViewAdmissionSchedules";
 import axios from "axios";
+import TimeTable from "./components/TimeTable/TimeTable";
+import UploadTimeTable from "./components/TimeTable/UploadTimeTable";
+import ViewTimeTables from "./components/TimeTable/ViewTimeTables";
 
 // Helper function to get roles for a specific route
 const getRolesForRoute = (routePath) => {
@@ -616,6 +619,30 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={getRolesForRoute("library")}>
                   <IssuedBooks title="Overdue Books" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/TimeTable"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("timetable")}>
+                  <TimeTable />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/TimeTable/UploadTimeTable"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("timetable")}>
+                  <UploadTimeTable />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/SALU-PORTAL-FYP/TimeTable/ViewTimeTables"
+              element={
+                <ProtectedRoute allowedRoles={getRolesForRoute("timetable")}>
+                  <ViewTimeTables />
                 </ProtectedRoute>
               }
             />
