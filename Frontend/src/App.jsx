@@ -52,7 +52,7 @@ import ViewAdmissionSchedules from "./components/AdmissionSchedule/ViewAdmission
 import axios from "axios";
 import TimeTable from "./components/TimeTable/TimeTable";
 import UploadTimeTable from "./components/TimeTable/UploadTimeTable";
-import ViewTimeTables from "./components/TimeTable/ViewTimeTables";
+import ViewTimeTable from "./components/TimeTable/ViewTimeTable";
 
 // Helper function to get roles for a specific route
 const getRolesForRoute = (routePath) => {
@@ -639,10 +639,10 @@ function App() {
               }
             />
             <Route
-              path="/SALU-PORTAL-FYP/TimeTable/ViewTimeTables"
+              path="/SALU-PORTAL-FYP/TimeTable/ViewTimeTable"
               element={
                 <ProtectedRoute allowedRoles={getRolesForRoute("timetable")}>
-                  <ViewTimeTables />
+                  <ViewTimeTable />
                 </ProtectedRoute>
               }
             />

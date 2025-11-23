@@ -322,13 +322,14 @@ export default function FormsByStatus({ heading }) {
           let studentEmail = "";
           try {
             const emailRes = await axios.get(
-              `${backendBaseUrl}/api/student-email`,
+              `${backendBaseUrl}/api/signups/${form.cnic}`,
               {
                 params: { cnic: form.cnic },
                 headers: { Authorization: `Bearer ${token}` },
               }
             );
-            studentEmail = emailRes.data.email || "";
+            const data = emailRes.data.data || emailRes.data;
+            studentEmail = data.EMAIL || "";
           } catch (emailError) {
             console.warn(
               `Could not fetch email for CNIC ${form.cnic}:`,
@@ -349,7 +350,7 @@ export default function FormsByStatus({ heading }) {
           console.log(`Creating user account for ${form.roll_no}:`, userData);
 
           const userRes = await axios.post(
-            `${backendBaseUrl}/api/users/create-student`,
+            `${backendBaseUrl}/api/users/upsert`,
             userData,
             {
               headers: {
