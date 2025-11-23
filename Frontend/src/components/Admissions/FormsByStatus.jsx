@@ -227,7 +227,7 @@ export default function FormsByStatus({ heading }) {
       entry_test_roll_no: form.entry_test_roll_no || "Yet to Assign", // ✅ FIXED: Changed from form.test_roll_no to form.entry_test_roll_no
       serialNo: startIndex + index + 1, // Proper sequential numbers per page
     }));
-  /** Generate Regular Roll Numbers for Enrolled Candidates */
+  /** Generate Regular Roll Numbers for Enrolled Candidates and Create User Accounts with Email Notification */
   const generateRollNumbers = async () => {
     try {
       // Check if there are any forms
@@ -265,10 +265,15 @@ export default function FormsByStatus({ heading }) {
         }
       };
 
+      // Function to generate random 6-digit unique password
+      const generateRandomPassword = () => {
+        return Math.floor(100000 + Math.random() * 900000).toString();
+      };
+
       // Create counters for each department
       const departmentCounters = {};
 
-      // ✅ FIXED: Generate roll numbers for ALL forms (not just the ones without roll numbers)
+      // ✅ Generate roll numbers for ALL forms
       const formsToUpdate = filteredForms
         .sort((a, b) => a.student_name?.localeCompare(b.student_name))
         .map((form) => {
@@ -286,17 +291,18 @@ export default function FormsByStatus({ heading }) {
 
           return {
             ...form,
-            roll_no: rollNumber, // Generate new roll number for EVERY form
+            roll_no: rollNumber,
           };
         });
 
       console.log("All forms with new roll numbers:", formsToUpdate);
 
-      // Send roll numbers to backend for ALL forms
+      // Send roll numbers to backend for ALL forms and create user accounts
       const token = localStorage.getItem("token");
       const promises = formsToUpdate.map(async (form) => {
         try {
-          const res = await axios.put(
+          // First, assign roll number to the admission form
+          const rollNoRes = await axios.put(
             `${backendBaseUrl}/api/admissions/assignRollNo/${form.form_id}`,
             { roll_no: form.roll_no },
             {
@@ -306,21 +312,129 @@ export default function FormsByStatus({ heading }) {
               },
             }
           );
-          return {
-            success: true,
-            form_id: form.form_id,
-            roll_no: form.roll_no,
-            assigned: true,
+
+          // Then, create user account for the student
+          const password = generateRandomPassword();
+
+          // Get student email from the API
+          let studentEmail = "";
+          try {
+            const emailRes = await axios.get(
+              `${backendBaseUrl}/api/student-email`,
+              {
+                params: { cnic: form.cnic },
+                headers: { Authorization: `Bearer ${token}` },
+              }
+            );
+            studentEmail = emailRes.data.email || "";
+          } catch (emailError) {
+            console.warn(
+              `Could not fetch email for CNIC ${form.cnic}:`,
+              emailError
+            );
+            // Continue without email if API fails
+          }
+
+          const userData = {
+            username: form.roll_no,
+            password: password,
+            department: form.department,
+            cnic: form.cnic,
+            role: "student",
+            email: studentEmail,
           };
+
+          console.log(`Creating user account for ${form.roll_no}:`, userData);
+
+          const userRes = await axios.post(
+            `${backendBaseUrl}/api/users/create-student`,
+            userData,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          // Send email with credentials if email is available
+          if (studentEmail) {
+            try {
+              const emailResponse = await axios.post(
+                `${backendBaseUrl}/api/email/send-credentials`,
+                {
+                  to: studentEmail,
+                  studentName: form.student_name,
+                  rollNumber: form.roll_no,
+                  password: password,
+                  department: form.department,
+                },
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                  },
+                }
+              );
+
+              console.log(`Credentials email sent to ${studentEmail}`);
+
+              return {
+                success: true,
+                form_id: form.form_id,
+                roll_no: form.roll_no,
+                user_created: true,
+                email_sent: true,
+                username: form.roll_no,
+                password: password,
+                email: studentEmail,
+                assigned: true,
+              };
+            } catch (emailError) {
+              console.warn(
+                `Failed to send email to ${studentEmail}:`,
+                emailError
+              );
+              // User created successfully but email failed
+              return {
+                success: true,
+                form_id: form.form_id,
+                roll_no: form.roll_no,
+                user_created: true,
+                email_sent: false,
+                username: form.roll_no,
+                password: password,
+                email: studentEmail,
+                assigned: true,
+                email_error:
+                  emailError.response?.data?.message || emailError.message,
+              };
+            }
+          } else {
+            // No email available
+            return {
+              success: true,
+              form_id: form.form_id,
+              roll_no: form.roll_no,
+              user_created: true,
+              email_sent: false,
+              username: form.roll_no,
+              password: password,
+              email: null,
+              assigned: true,
+            };
+          }
         } catch (error) {
           console.error(
-            `❌ Error Assigning roll number for form ${form.form_id}:`,
+            `❌ Error Assigning roll number or creating user for form ${form.form_id}:`,
             error
           );
           return {
             success: false,
             form_id: form.form_id,
             error: error.response?.data?.message || error.message,
+            user_created: false,
+            email_sent: false,
           };
         }
       });
@@ -329,16 +443,48 @@ export default function FormsByStatus({ heading }) {
       const successful = results.filter((r) => r && r.success);
       const failed = results.filter((r) => r && !r.success);
 
+      const usersWithCredentials = successful.filter((r) => r.user_created);
+      const emailsSent = successful.filter((r) => r.email_sent);
+      const usersWithoutEmail = successful.filter(
+        (r) => r.user_created && !r.email_sent
+      );
+
+      // Show comprehensive success message
+      let successMessage = `Successfully assigned roll numbers to ${successful.length} students and created ${usersWithCredentials.length} user accounts.`;
+
+      if (emailsSent.length > 0) {
+        successMessage += ` Credentials emailed to ${emailsSent.length} students.`;
+      }
+
+      if (usersWithoutEmail.length > 0) {
+        successMessage += ` ${usersWithoutEmail.length} accounts created but no email sent (missing email address).`;
+      }
+
       if (failed.length > 0) {
-        toast.error(`Failed to assign roll numbers for ${failed.length} forms`);
+        toast.error(`Failed to process ${failed.length} forms`);
         console.error(
           "Failed forms:",
           failed.map((f) => f.form_id)
         );
-      } else {
-        toast.success(
-          `Successfully assigned roll numbers to ${successful.length} students!`
-        );
+      }
+
+      if (successful.length > 0) {
+        toast.success(successMessage);
+
+        // Log details for admin reference
+        console.log("Processing Summary:", {
+          total: formsToUpdate.length,
+          successful: successful.length,
+          failed: failed.length,
+          emailsSent: emailsSent.length,
+          usersWithoutEmail: usersWithoutEmail.length,
+          details: successful.map((u) => ({
+            username: u.username,
+            email: u.email,
+            email_sent: u.email_sent,
+            form_id: u.form_id,
+          })),
+        });
       }
 
       setTimeout(() => {
@@ -347,107 +493,6 @@ export default function FormsByStatus({ heading }) {
     } catch (error) {
       console.error("❌ Error in generateRollNumbers:", error);
       toast.error("Failed to generate roll numbers. Please try again.");
-    }
-  };
-
-  /** Generate Test Roll Numbers for Approved Forms */
-  const generateTestRollNumbers = async () => {
-    try {
-      // Check if there are any forms
-      if (filteredForms.length === 0) {
-        toast.error("There are no students to assign test roll numbers!");
-        return;
-      }
-
-      // Check if ANY form doesn't have test roll number
-      const hasFormsWithoutTestRollNumbers = filteredForms.some(
-        (form) =>
-          !form.entry_test_roll_no || // ✅ FIXED: Changed from test_roll_no to entry_test_roll_no
-          form.entry_test_roll_no === "Yet to Assign" ||
-          form.entry_test_roll_no === ""
-      );
-
-      // If ALL forms already have test roll numbers, show error and return
-      if (!hasFormsWithoutTestRollNumbers) {
-        toast.error("All students already have test roll numbers assigned!");
-        return;
-      }
-
-      // Start from 2100001 and increment sequentially
-      let testRollNumber = 2100001;
-
-      // Generate test roll numbers for ALL approved forms
-      const formsToUpdate = filteredForms
-        .sort((a, b) => a.student_name?.localeCompare(b.student_name))
-        .map((form) => {
-          const testRollNo = testRollNumber.toString();
-          testRollNumber++;
-
-          return {
-            ...form,
-            entry_test_roll_no: testRollNo, // ✅ FIXED: Changed from test_roll_no to entry_test_roll_no
-          };
-        });
-
-      console.log("All forms with new test roll numbers:", formsToUpdate);
-
-      // Send test roll numbers to backend for ALL forms
-      const token = localStorage.getItem("token");
-      const promises = formsToUpdate.map(async (form) => {
-        try {
-          const res = await axios.put(
-            `${backendBaseUrl}/api/admissions/assignTestRollNo/${form.form_id}`,
-            { entry_test_roll_no: form.entry_test_roll_no }, // ✅ Already correct
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-          return {
-            success: true,
-            form_id: form.form_id,
-            entry_test_roll_no: form.entry_test_roll_no, // ✅ FIXED: Changed from test_roll_no to entry_test_roll_no
-            assigned: true,
-          };
-        } catch (error) {
-          console.error(
-            `❌ Error Assigning test roll number for form ${form.form_id}:`,
-            error
-          );
-          return {
-            success: false,
-            form_id: form.form_id,
-            error: error.response?.data?.message || error.message,
-          };
-        }
-      });
-
-      const results = await Promise.all(promises);
-      const successful = results.filter((r) => r && r.success);
-      const failed = results.filter((r) => r && !r.success);
-
-      if (failed.length > 0) {
-        toast.error(
-          `Failed to assign test roll numbers for ${failed.length} forms`
-        );
-        console.error(
-          "Failed forms:",
-          failed.map((f) => f.form_id)
-        );
-      } else {
-        toast.success(
-          `Successfully assigned test roll numbers to ${successful.length} students!`
-        );
-      }
-
-      setTimeout(() => {
-        fetchAdmissions();
-      }, 2000);
-    } catch (error) {
-      console.error("❌ Error in generateTestRollNumbers:", error);
-      toast.error("Failed to generate test roll numbers. Please try again.");
     }
   };
 
