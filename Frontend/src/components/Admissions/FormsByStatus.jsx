@@ -73,7 +73,7 @@ export default function FormsByStatus({ heading }) {
       try {
         const token = localStorage.getItem("token");
         const res = await axios.get(
-          `http://localhost:5000/api/admissions/enrolled/list`,
+          `${backendBaseUrl}/api/admissions/enrolled/list`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setCandidate(res.data.data);
@@ -182,6 +182,7 @@ export default function FormsByStatus({ heading }) {
       setUpdatingStatus((prev) => ({ ...prev, [formId]: false }));
     }
   };
+
   /** 📌 Pagination */
   const startIndex = (page - 1) * pageSize;
   const paginatedForms = filteredForms.slice(startIndex, startIndex + pageSize);
@@ -224,9 +225,10 @@ export default function FormsByStatus({ heading }) {
     .map((form, index) => ({
       ...form,
       roll_no: form.roll_no || "Yet to Assign",
-      entry_test_roll_no: form.entry_test_roll_no || "Yet to Assign", // ✅ FIXED: Changed from form.test_roll_no to form.entry_test_roll_no
-      serialNo: startIndex + index + 1, // Proper sequential numbers per page
+      entry_test_roll_no: form.entry_test_roll_no || "Yet to Assign",
+      serialNo: startIndex + index + 1,
     }));
+
   /** Generate Regular Roll Numbers for Enrolled Candidates and Create User Accounts with Email Notification */
   const generateRollNumbers = async () => {
     try {
@@ -496,6 +498,107 @@ export default function FormsByStatus({ heading }) {
     }
   };
 
+  /** Generate Test Roll Numbers for Approved Forms */
+  const generateTestRollNumbers = async () => {
+    try {
+      // Check if there are any forms
+      if (filteredForms.length === 0) {
+        toast.error("There are no students to assign test roll numbers!");
+        return;
+      }
+
+      // Check if ANY form doesn't have test roll number
+      const hasFormsWithoutTestRollNumbers = filteredForms.some(
+        (form) =>
+          !form.entry_test_roll_no ||
+          form.entry_test_roll_no === "Yet to Assign" ||
+          form.entry_test_roll_no === ""
+      );
+
+      // If ALL forms already have test roll numbers, show error and return
+      if (!hasFormsWithoutTestRollNumbers) {
+        toast.error("All students already have test roll numbers assigned!");
+        return;
+      }
+
+      // Start from 2100001 and increment sequentially
+      let testRollNumber = 2100001;
+
+      // Generate test roll numbers for ALL approved forms
+      const formsToUpdate = filteredForms
+        .sort((a, b) => a.student_name?.localeCompare(b.student_name))
+        .map((form) => {
+          const testRollNo = testRollNumber.toString();
+          testRollNumber++;
+
+          return {
+            ...form,
+            entry_test_roll_no: testRollNo,
+          };
+        });
+
+      console.log("All forms with new test roll numbers:", formsToUpdate);
+
+      // Send test roll numbers to backend for ALL forms
+      const token = localStorage.getItem("token");
+      const promises = formsToUpdate.map(async (form) => {
+        try {
+          const res = await axios.put(
+            `${backendBaseUrl}/api/admissions/assignTestRollNo/${form.form_id}`,
+            { entry_test_roll_no: form.entry_test_roll_no },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          return {
+            success: true,
+            form_id: form.form_id,
+            entry_test_roll_no: form.entry_test_roll_no,
+            assigned: true,
+          };
+        } catch (error) {
+          console.error(
+            `❌ Error Assigning test roll number for form ${form.form_id}:`,
+            error
+          );
+          return {
+            success: false,
+            form_id: form.form_id,
+            error: error.response?.data?.message || error.message,
+          };
+        }
+      });
+
+      const results = await Promise.all(promises);
+      const successful = results.filter((r) => r && r.success);
+      const failed = results.filter((r) => r && !r.success);
+
+      if (failed.length > 0) {
+        toast.error(
+          `Failed to assign test roll numbers for ${failed.length} forms`
+        );
+        console.error(
+          "Failed forms:",
+          failed.map((f) => f.form_id)
+        );
+      } else {
+        toast.success(
+          `Successfully assigned test roll numbers to ${successful.length} students!`
+        );
+      }
+
+      setTimeout(() => {
+        fetchAdmissions();
+      }, 2000);
+    } catch (error) {
+      console.error("❌ Error in generateTestRollNumbers:", error);
+      toast.error("Failed to generate test roll numbers. Please try again.");
+    }
+  };
+
   /** 🎯 Table Actions */
   const actions = [
     (() => {
@@ -515,7 +618,7 @@ export default function FormsByStatus({ heading }) {
                   if (e.target.value) {
                     // Check if test roll number is assigned before allowing status change
                     if (
-                      !row.entry_test_roll_no || // ✅ FIXED: Changed from test_roll_no to entry_test_roll_no
+                      !row.entry_test_roll_no ||
                       row.entry_test_roll_no === "Yet to Assign"
                     ) {
                       toast.error("Please assign test roll number first!");
@@ -662,7 +765,7 @@ export default function FormsByStatus({ heading }) {
                       // Add delay before refreshing data
                       setTimeout(() => {
                         fetchAdmissions();
-                      }, 1500); // 1.5 second delay
+                      }, 1500);
                     } catch (err) {
                       console.error("Error moving form to pending:", err);
                       toast.error("Failed to move form to pending");
@@ -681,7 +784,6 @@ export default function FormsByStatus({ heading }) {
               ),
             };
           }
-          // Return null or empty object for non-admin users
           return null;
 
         case "Trash":
@@ -716,7 +818,7 @@ export default function FormsByStatus({ heading }) {
                       // Add delay before refreshing data
                       setTimeout(() => {
                         fetchAdmissions();
-                      }, 1500); // 1.5 second delay
+                      }, 1500);
                     } catch (err) {
                       console.error("Error moving form to pending:", err);
                       toast.error("Failed to move form to pending");
@@ -848,7 +950,7 @@ export default function FormsByStatus({ heading }) {
         {/* Pagination */}
         <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
           <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
-            Total Forms: {rows.length} {/* Show filtered count */}
+            Total Forms: {rows.length}
           </span>
 
           {/* Show appropriate button based on status */}

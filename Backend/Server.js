@@ -16,6 +16,7 @@ import studentMarksRoutes from "./routes/studentMarks.js";
 import libraryRoutes from "./routes/libraryRoutes.js";
 import admissionScheduleRoutes from "./routes/admissionScheduleRoutes.js";
 import timetableRoutes from "./routes/timetableRoutes.js";
+import emailRoutes from "./routes/emailRoutes.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -23,7 +24,7 @@ const app = express();
 
 // CORS configuration
 const corsOpts = {
-  origin: ["http://localhost:5173"], // your Vite dev URL
+  origin: ["http://localhost:5173"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -39,12 +40,13 @@ app.use(morgan("dev"));
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
 // Routes
+app.use("/api/email", emailRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/admissions", admissionsRoutes);
 app.use("/api/subject-allocations", subjectAllocationRoutes);
 app.use("/api/subjects", subjectsRoutes);
-app.use("/api/departments", departmentsRoutes); // Add this line
+app.use("/api/departments", departmentsRoutes);
 app.use("/api/fees", feesRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/student-marks", studentMarksRoutes);
