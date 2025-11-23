@@ -15,6 +15,7 @@ import departmentsRoutes from "./routes/departments.js";
 import studentMarksRoutes from "./routes/studentMarks.js";
 import libraryRoutes from "./routes/libraryRoutes.js";
 import admissionScheduleRoutes from "./routes/admissionScheduleRoutes.js";
+import timetableRoutes from "./routes/timetableRoutes.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -49,6 +50,7 @@ app.use("/api/attendance", attendanceRoutes);
 app.use("/api/student-marks", studentMarksRoutes);
 app.use("/api/library", libraryRoutes);
 app.use("/api", admissionScheduleRoutes);
+app.use("/api", timetableRoutes);
 // Error handler
 app.use((err, _req, res, _next) => {
   console.error(err);
