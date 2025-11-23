@@ -72,6 +72,7 @@ export const getAllAdmissions = async (req, res) => {
         CONCAT(p.first_name, ' ', p.last_name) AS student_name,
         p.cnic AS cnic,
         p.roll_no,
+        p.entry_test_roll_no,
         p.cgpa,
         p.form_status AS status,
         f.name AS father_name,
@@ -106,7 +107,7 @@ export const getAdmissionById = async (req, res) => {
         p.id AS form_id, p.cnic, p.first_name, p.last_name, p.gender, p.dob,
         p.religion, p.disability, p.disability_description, p.native_language,
         p.blood_group, p.province, p.city, p.postal_address, p.permanent_address,
-        p.remarks, p.roll_no, p.form_status, p.cgpa,
+        p.remarks, p.roll_no, p.entry_test_roll_no, p.form_status, p.cgpa,
 
         f.name AS father_name, f.cnic_number AS father_cnic_number,
         f.mobile_number AS father_mobile, f.occupation AS father_occupation,
@@ -186,6 +187,7 @@ export const getAdmissionById = async (req, res) => {
           permanent_address: row.permanent_address,
           remarks: row.remarks,
           roll_no: row.roll_no,
+          entry_test_roll_no: row.entry_test_roll_no,
           cgpa: row.cgpa,
         },
         father_info: {
@@ -595,6 +597,41 @@ export const assignRollNo = async (req, res) => {
     res.json({
       success: true,
       message: `Roll number assigned: '${roll_no}'.`,
+    });
+  } catch (err) {
+    console.error("assignRollNo error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+export const assignTestRollNo = async (req, res) => {
+  try {
+    const { form_id } = req.params;
+    const { entry_test_roll_no } = req.body;
+
+    if (!entry_test_roll_no) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing 'entry_test_roll_no'." });
+    }
+
+    const [[exists]] = await sequelize.query(
+      `SELECT id FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
+      { replacements: [form_id] }
+    );
+    if (!exists)
+      return res
+        .status(404)
+        .json({ success: false, message: "Form not found" });
+
+    // ✅ CORRECTED: Use UPDATE instead of INSERT
+    await sequelize.query(
+      `UPDATE \`${DB}\`.personal_info SET entry_test_roll_no = ? WHERE id = ?`,
+      { replacements: [entry_test_roll_no, form_id] }
+    );
+
+    res.json({
+      success: true,
+      message: `Roll number assigned: '${entry_test_roll_no}'.`,
     });
   } catch (err) {
     console.error("assignRollNo error:", err);

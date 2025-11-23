@@ -15,11 +15,13 @@ export default function ViewSubject() {
   const pageSize = 10;
   const navigate = useNavigate();
 
-  // Get user department
+  // Get user info
   const userString = localStorage.getItem("user");
   const user = userString ? JSON.parse(userString) : null;
   const userDepartment = user?.department || "";
+  const userRole = user?.role?.toLowerCase() || "";
   const isSuperAdmin = userDepartment === "Super Admin";
+  const isStudent = userRole === "student";
 
   const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
@@ -83,48 +85,58 @@ export default function ViewSubject() {
     { key: "creditHours", label: "Credit Hours" },
   ];
 
-  // ✅ Table actions (Edit & Delete)
-  const actions = [
-    {
-      label: "Edit",
-      onClick: (row) => {
-        navigate(`/SALU-PORTAL-FYP/Subjects/UpdateSubject/${row.subjectId}`, {
-          state: { subject: row },
-        });
-      },
-      icon: (
-        <FaEdit
-          size={20}
-          className="cursor-pointer text-green-600 hover:text-green-700"
-        />
-      ),
-    },
-    {
-      label: "Delete",
-      onClick: async (row) => {
-        if (!window.confirm(`Delete subject "${row.subjectName}"?`)) return;
-        try {
-          setLoading(true);
-          const token = localStorage.getItem("token");
+  // ✅ Table actions (Edit & Delete) - Only show if user is not a student
+  const actions = !isStudent
+    ? [
+        {
+          label: "Edit",
+          onClick: (row) => {
+            navigate(
+              `/SALU-PORTAL-FYP/Subjects/UpdateSubject/${row.subjectId}`,
+              {
+                state: { subject: row },
+              }
+            );
+          },
+          icon: (
+            <FaEdit
+              size={20}
+              className="cursor-pointer text-green-600 hover:text-green-700"
+            />
+          ),
+        },
+        {
+          label: "Delete",
+          onClick: async (row) => {
+            if (!window.confirm(`Delete subject "${row.subjectName}"?`)) return;
+            try {
+              setLoading(true);
+              const token = localStorage.getItem("token");
 
-          await axios.delete(`${API}/api/subjects/${row.subjectId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
-          });
+              await axios.delete(`${API}/api/subjects/${row.subjectId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+                withCredentials: true,
+              });
 
-          setSubjects((prev) =>
-            prev.filter((s) => s.subjectId !== row.subjectId)
-          );
-        } catch (err) {
-          console.error(err);
-          alert("Error deleting subject: " + err.message);
-        } finally {
-          setLoading(false);
-        }
-      },
-      icon: <FaTrash size={20} className="text-red-500 hover:text-red-600" />,
-    },
-  ];
+              setSubjects((prev) =>
+                prev.filter((s) => s.subjectId !== row.subjectId)
+              );
+            } catch (err) {
+              console.error(err);
+              alert("Error deleting subject: " + err.message);
+            } finally {
+              setLoading(false);
+            }
+          },
+          icon: (
+            <FaTrash
+              size={20}
+              className="cursor-pointer text-red-500 hover:text-red-600"
+            />
+          ),
+        },
+      ]
+    : [];
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -154,7 +166,7 @@ export default function ViewSubject() {
         <div className="flex justify-start items-center gap-3">
           <BackButton url={"/SALU-PORTAL-FYP/Subjects"} />
           <h1 className="text-2xl sm:text-3xl md:text-4xl !py-3 font-bold text-gray-900 dark:text-white">
-            Subjects List
+            {isStudent ? "Available Subjects" : "Subjects List"}
           </h1>
         </div>
 
@@ -188,7 +200,8 @@ export default function ViewSubject() {
         {/* Pagination */}
         <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
           <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
-            Total Subjects : {filteredSubjects.length}
+            {isStudent ? "Total Available Subjects" : "Total Subjects"} :{" "}
+            {filteredSubjects.length}
           </span>
           <Pagination
             totalPages={pageCount}

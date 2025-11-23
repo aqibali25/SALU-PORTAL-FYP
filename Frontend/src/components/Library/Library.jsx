@@ -3,10 +3,13 @@ import { FaBookOpen } from "react-icons/fa";
 import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
 import AdmissionCard from "../Admissions/AdmissionCard";
+import cookie from "js-cookie";
 
 const Library = () => {
+  const userRole = cookie.get("role");
+
   const libraryCards = [
-    {
+    userRole !== "student" && {
       id: 1,
       title: "Add Book",
       bgColor: "#F0FDF4",
@@ -23,7 +26,7 @@ const Library = () => {
       iconBg: "#3B82F6",
       Icon: FaBookOpen,
     },
-    {
+    userRole !== "student" && {
       id: 3,
       title: "Issue Book",
       bgColor: "#F3E8FF",
@@ -48,7 +51,7 @@ const Library = () => {
       iconBg: "#EF4444",
       Icon: FaBookOpen,
     },
-  ];
+  ].filter(Boolean); // This removes any false values
 
   return (
     <div
@@ -79,7 +82,7 @@ const Library = () => {
           ) : (
             libraryCards.map((card, index) => (
               <AdmissionCard
-                key={index}
+                key={card.id} // Use card.id instead of index for better performance
                 title={card.title}
                 bgColor={card.bgColor}
                 borderColor={card.borderColor}

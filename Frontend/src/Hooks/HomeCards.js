@@ -25,7 +25,7 @@ export const cards = [
     isImg: true,
     color1: "#4F1A60",
     color2: "#F5F3F7",
-    roles: ["super admin", "admin", "teacher", "hod"],
+    roles: ["super admin", "admin", "teacher", "hod", "student"],
   },
   {
     id: 2,
@@ -135,7 +135,7 @@ export const cards = [
     Icon: faBook,
     color1: "#F97316",
     color2: "#FFF7ED",
-    roles: ["super admin", "hod"],
+    roles: ["super admin", "hod", "student"],
   },
   {
     id: 13,
@@ -155,7 +155,7 @@ export const cards = [
     Icon: faBookReader,
     color1: "#1E3A8A",
     color2: "#E0E7FF",
-    roles: ["super admin", "librarian"],
+    roles: ["super admin", "librarian", "student"],
   },
   {
     id: 15,
@@ -165,7 +165,7 @@ export const cards = [
     Icon: faCog,
     color1: "#6B7280",
     color2: "#F3F4F6",
-    roles: ["super admin", "admin", "teacher", "hod"],
+    roles: ["super admin", "admin", "teacher", "hod", "student"],
   },
 ];
 

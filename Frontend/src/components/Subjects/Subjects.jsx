@@ -3,10 +3,13 @@ import { FaClipboardCheck } from "react-icons/fa";
 import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
 import AdmissionCard from "../Admissions/AdmissionCard";
+import cookie from "js-cookie";
 
 const Subjects = () => {
+  const userRole = cookie.get("role");
+
   const subjectCards = [
-    {
+    userRole !== "student" && {
       id: 1,
       title: "Add Subject",
       bgColor: "#FFFBEB",
@@ -22,7 +25,7 @@ const Subjects = () => {
       iconBg: "#3B82F6",
       Icon: FaClipboardCheck,
     },
-  ];
+  ].filter(Boolean);
 
   return (
     <div

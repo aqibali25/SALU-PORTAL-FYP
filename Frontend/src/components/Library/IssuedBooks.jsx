@@ -15,6 +15,12 @@ export default function BookIssues({ title = "Issued Books" }) {
   const [returningBook, setReturningBook] = useState(null);
   const pageSize = 10;
 
+  // Get user info from localStorage
+  const currentUser = localStorage.getItem("user");
+  const user = currentUser ? JSON.parse(currentUser) : {};
+  const userRole = user.role?.toLowerCase() || "";
+  const userRollNo = user.username || "";
+
   // Determine which status to filter by based on title
   const isOverdueView = title === "Overdue Books";
   const isIssuedView = title === "Issued Books";
@@ -54,6 +60,85 @@ export default function BookIssues({ title = "Issued Books" }) {
     }
   };
 
+  // ✅ Process API response data
+  const processBookIssuesData = (data) => {
+    // Handle case where data might be an object instead of array
+    if (!data) return [];
+
+    // If data is already an array, use it directly
+    if (Array.isArray(data)) {
+      return data.map((issue) => ({
+        ...issue,
+        rollNo: issue.rollNo || "",
+        bookId: issue.bookId || "",
+        bookName: issue.bookName || issue.title || "",
+        bookEdition: issue.bookEdition || "N/A",
+        issueDate: issue.issueDate || "",
+        dueDate: issue.dueDate || "",
+        status: issue.status || "Issued",
+      }));
+    }
+
+    // If data is an object with a results/books/data property
+    if (data.results && Array.isArray(data.results)) {
+      return data.results.map((issue) => ({
+        ...issue,
+        rollNo: issue.rollNo || "",
+        bookId: issue.bookId || "",
+        bookName: issue.bookName || issue.title || "",
+        bookEdition: issue.bookEdition || "N/A",
+        issueDate: issue.issueDate || "",
+        dueDate: issue.dueDate || "",
+        status: issue.status || "Issued",
+      }));
+    }
+
+    if (data.books && Array.isArray(data.books)) {
+      return data.books.map((issue) => ({
+        ...issue,
+        rollNo: issue.rollNo || "",
+        bookId: issue.bookId || "",
+        bookName: issue.bookName || issue.title || "",
+        bookEdition: issue.bookEdition || "N/A",
+        issueDate: issue.issueDate || "",
+        dueDate: issue.dueDate || "",
+        status: issue.status || "Issued",
+      }));
+    }
+
+    if (data.data && Array.isArray(data.data)) {
+      return data.data.map((issue) => ({
+        ...issue,
+        rollNo: issue.rollNo || "",
+        bookId: issue.bookId || "",
+        bookName: issue.bookName || issue.title || "",
+        bookEdition: issue.bookEdition || "N/A",
+        issueDate: issue.issueDate || "",
+        dueDate: issue.dueDate || "",
+        status: issue.status || "Issued",
+      }));
+    }
+
+    // If it's a single object, wrap it in an array
+    if (typeof data === "object" && data !== null) {
+      return [
+        {
+          ...data,
+          rollNo: data.rollNo || "",
+          bookId: data.bookId || "",
+          bookName: data.bookName || data.title || "",
+          bookEdition: data.bookEdition || "N/A",
+          issueDate: data.issueDate || "",
+          dueDate: data.dueDate || "",
+          status: data.status || "Issued",
+        },
+      ];
+    }
+
+    console.warn("Unexpected data format:", data);
+    return [];
+  };
+
   // ✅ Fetch issued books using Axios
   useEffect(() => {
     const fetchIssuedBooks = async () => {
@@ -63,41 +148,71 @@ export default function BookIssues({ title = "Issued Books" }) {
         const API =
           import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-        // First update overdue books status
-        await updateOverdueBooks();
+        // First update overdue books status (only for non-students)
+        if (userRole !== "student") {
+          await updateOverdueBooks();
+        }
 
-        // Then fetch all book issues
-        const res = await axios.get(`${API}/api/library/book-issues`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        let response;
 
-        // Map the data to match the expected structure
-        const data = res.data.map((issue) => ({
-          ...issue,
-          // All data including status should come from DB
-          rollNo: issue.rollNo || "",
-          bookId: issue.bookId || "",
-          bookName: issue.bookName || issue.title || "",
-          bookEdition: issue.bookEdition || "N/A",
-          issueDate: issue.issueDate || "",
-          dueDate: issue.dueDate || "",
-          status: issue.status || "Issued",
-        }));
+        // If user is student, fetch only their books using their roll number
+        if (userRole === "student" && userRollNo) {
+          console.log(`Fetching books for student: ${userRollNo}`);
+          response = await axios.get(
+            `${API}/api/library/book-issues/student/${userRollNo}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+        } else {
+          // For non-students (admin/librarian), fetch all book issues
+          console.log("Fetching all book issues");
+          response = await axios.get(`${API}/api/library/book-issues`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        }
 
+        console.log("API Response:", response.data);
+
+        // Process the response data safely
+        const data = processBookIssuesData(response.data);
         setIssuedBooks(data);
       } catch (err) {
-        console.error(err);
-        toast.error("Error loading book issues: " + err.message);
+        console.error("Error loading book issues:", err);
+
+        // More specific error message
+        let errorMessage = "Error loading book issues: ";
+        if (err.response) {
+          // Server responded with error status
+          errorMessage += `${err.response.status} - ${
+            err.response.data?.message || err.response.statusText
+          }`;
+        } else if (err.request) {
+          // Request made but no response received
+          errorMessage += "No response from server";
+        } else {
+          // Something else happened
+          errorMessage += err.message;
+        }
+
+        toast.error(errorMessage);
+        setIssuedBooks([]); // Set empty array on error
       } finally {
         setLoading(false);
       }
     };
     fetchIssuedBooks();
-  }, []);
+  }, [userRole, userRollNo]);
 
   // ✅ Handle book return
   const handleReturnBook = async (book) => {
-    if (returningBook) return; // Prevent multiple clicks
+    if (returningBook) return;
+
+    // Students cannot return books - only view them
+    if (userRole === "student") {
+      toast.info("Please contact librarian to return books.");
+      return;
+    }
 
     const isOverdue = book.status === "Overdue";
     const theme = getCurrentTheme();
@@ -106,7 +221,6 @@ export default function BookIssues({ title = "Issued Books" }) {
       ? "Are you sure the book is returned with the overdue fees?"
       : "Are you sure the book is returned within due date?";
 
-    // Custom toast for confirmation
     toast.info(
       <div className="!p-4 !m-2">
         <div className="flex items-center gap-3 !mb-3">
@@ -159,7 +273,6 @@ export default function BookIssues({ title = "Issued Books" }) {
       const token = localStorage.getItem("token");
       const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-      // Get current date in YYYY-MM-DD format
       const today = new Date();
       const returnDate = today.toISOString().split("T")[0];
 
@@ -170,23 +283,16 @@ export default function BookIssues({ title = "Issued Books" }) {
         returnDate: returnDate,
       };
 
-      // Update book status to Returned
-      const response = await axios.put(
-        `${API}/api/library/book-issues/status`,
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        }
-      );
+      await axios.put(`${API}/api/library/book-issues/status`, payload, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
+      });
 
-      // ✅ Refresh the table data by fetching updated book issues
       await refreshBookIssues();
 
-      // Success message based on previous status
       const successMessage =
         book.status === "Overdue"
           ? "Book returned successfully with overdue fees!"
@@ -203,7 +309,7 @@ export default function BookIssues({ title = "Issued Books" }) {
           </div>
         </div>,
         {
-          position: "top-center", // Changed to top-center for consistency
+          position: "top-center",
           autoClose: 3000,
           style: {
             backgroundColor: theme === "dark" ? "#1f2937" : "#ffffff",
@@ -224,7 +330,7 @@ export default function BookIssues({ title = "Issued Books" }) {
           </div>
         </div>,
         {
-          position: "top-center", // Changed to top-center for consistency
+          position: "top-center",
           autoClose: 5000,
           style: {
             backgroundColor: theme === "dark" ? "#1f2937" : "#ffffff",
@@ -243,22 +349,22 @@ export default function BookIssues({ title = "Issued Books" }) {
       const token = localStorage.getItem("token");
       const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-      // Fetch updated book issues
-      const res = await axios.get(`${API}/api/library/book-issues`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      let response;
 
-      // Map the data to match the expected structure
-      const data = res.data.map((issue) => ({
-        ...issue,
-        rollNo: issue.rollNo || "",
-        bookId: issue.bookId || "",
-        bookName: issue.bookName || issue.title || "",
-        issueDate: issue.issueDate || "",
-        dueDate: issue.dueDate || "",
-        status: issue.status || "Issued",
-      }));
+      if (userRole === "student" && userRollNo) {
+        response = await axios.get(
+          `${API}/api/library/book-issues/student/${userRollNo}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+      } else {
+        response = await axios.get(`${API}/api/library/book-issues`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
 
+      const data = processBookIssuesData(response.data);
       setIssuedBooks(data);
     } catch (err) {
       console.error("Error refreshing book issues:", err);
@@ -280,17 +386,13 @@ export default function BookIssues({ title = "Issued Books" }) {
       .toLowerCase()
       .includes(query.toLowerCase());
 
-    // Filter by status based on title
     let matchesStatus = true;
 
     if (isIssuedView) {
-      // For Issued Books view, show only books with "Issued" status
       matchesStatus = issue.status === "Issued";
     } else if (isOverdueView) {
-      // For Overdue Books view, show only books with "Overdue" status
       matchesStatus = issue.status === "Overdue";
     }
-    // If it's any other title, show all books
 
     return matchesSearch && matchesStatus;
   });
@@ -303,7 +405,9 @@ export default function BookIssues({ title = "Issued Books" }) {
   );
 
   const columns = [
-    { key: "rollNo", label: "Student Roll No" },
+    ...(userRole !== "student"
+      ? [{ key: "rollNo", label: "Student Roll No" }]
+      : []),
     { key: "bookId", label: "Book ID" },
     { key: "bookName", label: "Book Name" },
     { key: "bookEdition", label: "Book Edition" },
@@ -346,33 +450,42 @@ export default function BookIssues({ title = "Issued Books" }) {
     },
   ];
 
-  // ✅ Table actions
-  const actions = [
-    {
-      label: "Return",
-      onClick: (row) => handleReturnBook(row),
-      render: (row) => (
-        <button
-          onClick={() => handleReturnBook(row)}
-          disabled={returningBook === row._id || row.status === "Returned"}
-          className={`flex items-center gap-1 !px-3 !py-1 font-medium transition-colors cursor-pointer ${
-            row.status === "Returned"
-              ? "bg-gray-300 text-gray-500 dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed"
-              : row.status === "Issued"
-              ? "bg-green-500 hover:bg-green-600 text-white dark:bg-green-600 dark:hover:bg-green-700"
-              : row.status === "Overdue"
-              ? "bg-red-500 hover:bg-red-600 text-white dark:bg-red-600 dark:hover:bg-red-700"
-              : "bg-blue-500 hover:bg-blue-600 text-white dark:bg-blue-600 dark:hover:bg-blue-700"
-          } ${
-            returningBook === row._id ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-        >
-          <FaCheckCircle size={14} />
-          <span>{returningBook === row._id ? "Returning..." : "Return"}</span>
-        </button>
-      ),
-    },
-  ];
+  // ✅ Table actions - Only show return button for non-students
+  const actions =
+    userRole !== "student"
+      ? [
+          {
+            label: "Return",
+            onClick: (row) => handleReturnBook(row),
+            render: (row) => (
+              <button
+                onClick={() => handleReturnBook(row)}
+                disabled={
+                  returningBook === row._id || row.status === "Returned"
+                }
+                className={`flex items-center gap-1 !px-3 !py-1 font-medium transition-colors cursor-pointer ${
+                  row.status === "Returned"
+                    ? "bg-gray-300 text-gray-500 dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed"
+                    : row.status === "Issued"
+                    ? "bg-green-500 hover:bg-green-600 text-white dark:bg-green-600 dark:hover:bg-green-700"
+                    : row.status === "Overdue"
+                    ? "bg-red-500 hover:bg-red-600 text-white dark:bg-red-600 dark:hover:bg-red-700"
+                    : "bg-blue-500 hover:bg-blue-600 text-white dark:bg-blue-600 dark:hover:bg-blue-700"
+                } ${
+                  returningBook === row._id
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                }`}
+              >
+                <FaCheckCircle size={14} />
+                <span>
+                  {returningBook === row._id ? "Returning..." : "Return"}
+                </span>
+              </button>
+            ),
+          },
+        ]
+      : [];
 
   // Reset to page 1 when search query changes
   useEffect(() => {
@@ -401,6 +514,7 @@ export default function BookIssues({ title = "Issued Books" }) {
         <div className="flex justify-start items-center gap-3">
           <BackButton url="/SALU-PORTAL-FYP/Library" />
           <h1 className="text-2xl sm:text-3xl md:text-4xl !py-3 font-bold text-gray-900 dark:text-white">
+            {userRole === "student" ? "My " : ""}
             {title}
           </h1>
         </div>
@@ -412,7 +526,11 @@ export default function BookIssues({ title = "Issued Books" }) {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by roll no, book ID, book name, or status..."
+            placeholder={
+              userRole === "student"
+                ? "Search by book ID, book name, or status..."
+                : "Search by roll no, book ID, book name, or status..."
+            }
             className="w-full sm:w-80 !px-3 !py-2 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           />
         </div>
@@ -434,6 +552,7 @@ export default function BookIssues({ title = "Issued Books" }) {
 
         <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
           <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
+            {userRole === "student" ? "My " : ""}
             {isIssuedView
               ? "Total Issued Books"
               : isOverdueView

@@ -19,6 +19,11 @@ export default function TotalBooks() {
   const pageSize = 10;
   const navigate = useNavigate();
 
+  const currentUser = localStorage.getItem("user");
+  const userRole = currentUser
+    ? JSON.parse(currentUser).role.toLowerCase()
+    : "";
+
   // ✅ Get current theme
   const getCurrentTheme = () => {
     if (typeof window !== "undefined") {
@@ -243,33 +248,36 @@ export default function TotalBooks() {
     },
   ];
 
-  // ✅ Table actions
-  const actions = [
-    {
-      label: "Edit",
-      onClick: (row) => {
-        navigate(`/SALU-PORTAL-FYP/Library/UpdateBook/${row.bookId}`, {
-          state: { book: row },
-        });
+  const actions = [];
+
+  if (userRole !== "student") {
+    actions.push(
+      {
+        label: "Edit",
+        onClick: (row) => {
+          navigate(`/SALU-PORTAL-FYP/Library/UpdateBook/${row.bookId}`, {
+            state: { book: row },
+          });
+        },
+        icon: (
+          <FaEdit
+            size={20}
+            className="cursor-pointer text-green-600 hover:text-green-700"
+          />
+        ),
       },
-      icon: (
-        <FaEdit
-          size={20}
-          className="cursor-pointer text-green-600 hover:text-green-700"
-        />
-      ),
-    },
-    {
-      label: "Delete",
-      onClick: (row) => handleDeleteBook(row),
-      icon: (
-        <FaTrash
-          size={20}
-          className="text-red-500 hover:text-red-600 cursor-pointer"
-        />
-      ),
-    },
-  ];
+      {
+        label: "Delete",
+        onClick: (row) => handleDeleteBook(row),
+        icon: (
+          <FaTrash
+            size={20}
+            className="text-red-500 hover:text-red-600 cursor-pointer"
+          />
+        ),
+      }
+    );
+  }
 
   // Reset to page 1 when filters change
   useEffect(() => {
