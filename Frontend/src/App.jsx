@@ -53,6 +53,8 @@ import axios from "axios";
 import TimeTable from "./components/TimeTable/TimeTable";
 import UploadTimeTable from "./components/TimeTable/UploadTimeTable";
 import ViewTimeTable from "./components/TimeTable/ViewTimeTable";
+import ForgotPassword from "./components/Login/ForgotPassword";
+import ResetPassword from "./components/Login/ResetPassword";
 
 // Helper function to get roles for a specific route
 const getRolesForRoute = (routePath) => {
@@ -128,15 +130,29 @@ function App() {
       setIsAuthenticated(authenticated);
       setAuthChecked(true);
 
-      const isLoginPage = location.pathname === "/SALU-PORTAL-FYP/login";
+      const currentPath = location.pathname;
+      const isLoginPage = currentPath === "/SALU-PORTAL-FYP/login";
+      const isForgotPasswordPage =
+        currentPath === "/SALU-PORTAL-FYP/login/forgot-password";
+      const isResetPasswordPage =
+        currentPath === "/SALU-PORTAL-FYP/reset-password";
 
-      if (!authenticated && !isLoginPage) {
+      // Pages that should be accessible without authentication
+      const publicPages = [
+        isLoginPage,
+        isForgotPasswordPage,
+        isResetPasswordPage,
+      ];
+      const isPublicPage = publicPages.some((page) => page);
+
+      if (!authenticated && !isPublicPage) {
+        // Redirect to login if not authenticated and trying to access protected page
         navigate("/SALU-PORTAL-FYP/login", { replace: true });
-      }
-
-      if (authenticated && isLoginPage) {
+      } else if (authenticated && isLoginPage) {
+        // Redirect to home if authenticated and trying to access login page
         navigate("/SALU-PORTAL-FYP/", { replace: true });
       }
+      // Allow access to forgot/reset password pages regardless of authentication status
     };
 
     verifyAuth();
@@ -187,7 +203,14 @@ function App() {
 
       <Routes>
         <Route path="/SALU-PORTAL-FYP/login" element={<Login />} />
-
+        <Route
+          path="/SALU-PORTAL-FYP/login/forgot-password"
+          element={<ForgotPassword />}
+        />
+        <Route
+          path="/SALU-PORTAL-FYP/reset-password"
+          element={<ResetPassword />}
+        />
         {isAuthenticated ? (
           <>
             <Route path="/SALU-PORTAL-FYP/" element={<Home />} />

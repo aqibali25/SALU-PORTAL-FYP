@@ -343,7 +343,10 @@ export default function Login() {
                 </p>
               )}
 
-              <Link className="hover:underline dark:text-white text-sm">
+              <Link
+                to={"/SALU-PORTAL-FYP/login/forgot-password"}
+                className="hover:underline dark:text-white text-sm"
+              >
                 Forgot your password?
               </Link>
 

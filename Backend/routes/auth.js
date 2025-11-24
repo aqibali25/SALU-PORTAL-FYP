@@ -1,4 +1,3 @@
-// Backend/routes/authRoutes.js
 import { Router } from "express";
 import { body } from "express-validator";
 import {
@@ -7,6 +6,10 @@ import {
   logoutAllDevices,
   getTokenInfo,
 } from "../controllers/authController.js";
+import {
+  forgotPassword,
+  resetPassword,
+} from "../controllers/passwordController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = Router();
@@ -28,6 +31,10 @@ router.post(
   [body("identifier").notEmpty(), body("password").notEmpty()],
   login
 );
+
+// Password reset routes
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 // Protected routes
 router.post("/logout-all", verifyToken, logoutAllDevices);

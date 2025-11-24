@@ -40,8 +40,11 @@ export default function MarkAttendance() {
   const [hasCheckedAttendance, setHasCheckedAttendance] = useState(false);
   const [classStartTime, setClassStartTime] = useState("");
   const [classEndTime, setClassEndTime] = useState("");
+  const [timeSlotError, setTimeSlotError] = useState("");
+  const [changeRequestPending, setChangeRequestPending] = useState(false);
   const pageSize = 10;
   const toastShownRef = useRef(false);
+  const classCountToastIdRef = useRef(null);
 
   const token = localStorage.getItem("token");
 
@@ -72,7 +75,7 @@ export default function MarkAttendance() {
 
   // Format date for display in DD Month format (e.g., 15 Nov)
   const formatDisplayDate = (dateString) => {
-    const date = new Date(dateString + "T00:00:00+05:00"); // Force Pakistan timezone
+    const date = new Date(dateString + "T00:00:00+05:00");
     const day = date.getDate();
     const month = date.toLocaleString("default", { month: "short" });
     return `${day} ${month}`;
@@ -81,7 +84,6 @@ export default function MarkAttendance() {
   // Get current Pakistan time for midnight calculation
   function getPakistanTime() {
     const now = new Date();
-    // Convert to Pakistan time string and back to Date object
     const pakistanTimeString = now.toLocaleString("en-US", {
       timeZone: "Asia/Karachi",
     });
@@ -95,6 +97,10 @@ export default function MarkAttendance() {
   // Storage key for class time
   const getClassTimeStorageKey = (sessionIndex) =>
     `attendance_class_time_${subjectId}_${getTodayDate()}_${sessionIndex}`;
+
+  // Storage key for change request
+  const getChangeRequestKey = () =>
+    `change_request_${subjectId}_${getTodayDate()}`;
 
   const formatSubjectName = (urlString) => {
     return urlString
@@ -127,13 +133,77 @@ export default function MarkAttendance() {
 
     if (todayRecords.length === 0) return 0;
 
-    // Group by unique session (we'll consider each unique set of records as a session)
+    // Group by unique session (consider each unique set of records as a session)
     const studentCount = studentsEnrolledinSubject.length;
     if (studentCount === 0) return 0;
 
     // Each complete set of attendance for all students counts as one session
     const sessions = Math.floor(todayRecords.length / studentCount);
     return sessions;
+  };
+
+  // Check for duplicate time slots
+  const checkDuplicateTimeSlot = (startTime, endTime) => {
+    if (!startTime || !endTime || !subject) return false;
+
+    const today = getTodayDate();
+
+    // Check if there's any attendance record for the same department, date, and overlapping time
+    const duplicateRecord = attendanceRecords.find((record) => {
+      // Check if same department, same date
+      if (
+        record.department === subject.department &&
+        record.attendance_date === today
+      ) {
+        const recordStart = record.class_start_time;
+        const recordEnd = record.class_end_time;
+
+        // Check for time overlap
+        if (recordStart && recordEnd) {
+          // Convert times to minutes for easy comparison
+          const startMinutes = convertTimeToMinutes(startTime);
+          const endMinutes = convertTimeToMinutes(endTime);
+          const recordStartMinutes = convertTimeToMinutes(recordStart);
+          const recordEndMinutes = convertTimeToMinutes(recordEnd);
+
+          // Check for overlap
+          return (
+            startMinutes < recordEndMinutes && endMinutes > recordStartMinutes
+          );
+        }
+      }
+      return false;
+    });
+
+    return duplicateRecord;
+  };
+
+  // Convert time string (HH:MM) to minutes
+  const convertTimeToMinutes = (timeString) => {
+    const [hours, minutes] = timeString.split(":").map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // Handle end time blur to check for duplicates
+  const handleEndTimeBlur = () => {
+    if (!classStartTime || !classEndTime || !subject) return;
+
+    const duplicate = checkDuplicateTimeSlot(classStartTime, classEndTime);
+
+    if (duplicate) {
+      setTimeSlotError(
+        `Time slot conflict! Class already scheduled for ${subject.department} department from ${duplicate.class_start_time} to ${duplicate.class_end_time}. Please choose a different time slot.`
+      );
+      toast.warning(
+        `Time slot conflict! ${subject.department} department already has a class from ${duplicate.class_start_time} to ${duplicate.class_end_time}.`,
+        {
+          position: "top-center",
+          autoClose: 6000,
+        }
+      );
+    } else {
+      setTimeSlotError("");
+    }
   };
 
   // Fetch attendance records from API
@@ -168,7 +238,7 @@ export default function MarkAttendance() {
         const takenToday = calculateClassesTakenToday(subjectAttendance);
         setClassesTakenToday(takenToday);
 
-        // Check if we need to show class input
+        // Check local storage for class count
         const storedClasses = localStorage.getItem(getStorageKey());
 
         if (takenToday > 0 && !storedClasses) {
@@ -179,6 +249,10 @@ export default function MarkAttendance() {
         } else if (storedClasses) {
           setClassesToday(parseInt(storedClasses));
         }
+
+        // Check for pending change request
+        const changeRequest = localStorage.getItem(getChangeRequestKey());
+        setChangeRequestPending(!!changeRequest);
 
         setHasCheckedAttendance(true);
       }
@@ -195,9 +269,6 @@ export default function MarkAttendance() {
   const resetForNewDay = () => {
     const today = getTodayDate();
     if (today !== currentDate) {
-      console.log("🔄 New day detected! Resetting attendance data...");
-      console.log("Previous date:", currentDate, "New date:", today);
-
       setCurrentDate(today);
       setSubmitted(false);
       setClassesToday(0);
@@ -206,9 +277,16 @@ export default function MarkAttendance() {
       setAttendanceData({});
       setClassStartTime("");
       setClassEndTime("");
+      setTimeSlotError("");
+      setChangeRequestPending(false);
+
+      // Reset toast flag for new day
+      toastShownRef.current = false;
+      classCountToastIdRef.current = null;
 
       // Clear all attendance-related localStorage for this subject
       localStorage.removeItem(getStorageKey());
+      localStorage.removeItem(getChangeRequestKey());
       // Clear class time storage for all sessions
       for (let i = 1; i <= 3; i++) {
         localStorage.removeItem(getClassTimeStorageKey(i));
@@ -225,60 +303,125 @@ export default function MarkAttendance() {
     }
   };
 
-  useEffect(() => {
-    if (
-      hasCheckedAttendance &&
-      subject &&
-      studentsEnrolledinSubject.length > 0 &&
-      !toastShownRef.current
-    ) {
-      const today = getTodayDate();
-      const storedClasses = localStorage.getItem(getStorageKey());
+  // Show class count input message (initial setup)
+  const showClassCountMessage = () => {
+    const today = getTodayDate();
 
+    // Clear any existing class count toast
+    if (classCountToastIdRef.current) {
+      toast.dismiss(classCountToastIdRef.current);
+    }
+
+    classCountToastIdRef.current = toast.info(
+      <div className="text-center w-full">
+        <h3 className="font-bold text-lg !mb-2 sm:text-base">
+          How many classes do you have today? ({formatDisplayDate(today)})
+        </h3>
+        <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 !mt-4">
+          <button
+            onClick={() => handleClassInput(1)}
+            className="bg-blue-500 hover:bg-blue-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
+          >
+            1 Class
+          </button>
+          {subject.creditHours > 1 && (
+            <>
+              <button
+                onClick={() => handleClassInput(2)}
+                className="bg-green-500 hover:bg-green-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
+              >
+                2 Classes
+              </button>
+              <button
+                onClick={() => handleClassInput(3)}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
+              >
+                3 Classes
+              </button>
+            </>
+          )}
+        </div>
+      </div>,
+      {
+        position: "top-center",
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        style: {
+          minWidth: "min(450px, 90vw)",
+          maxWidth: "95vw",
+        },
+      }
+    );
+  };
+
+  // Show session message with change count button - FIXED LOGIC
+  const showSessionMessage = () => {
+    const today = getTodayDate();
+    const storedClasses = localStorage.getItem(getStorageKey());
+
+    // Clear any existing class count toast
+    if (classCountToastIdRef.current) {
+      toast.dismiss(classCountToastIdRef.current);
+    }
+
+    if (changeRequestPending) {
+      // Show pending request message for both cases
       if (classesTakenToday >= classesToday && classesToday > 0) {
-        // Limit reached
-        toastShownRef.current = true;
-        toast.warning(
-          `You have already taken attendance for all ${classesToday} class${
-            classesToday > 1 ? "es" : ""
-          } today.`,
-          {
-            position: "top-center",
-            autoClose: 6000,
-          }
-        );
-      } else if (!storedClasses && classesTakenToday === 0) {
-        // No classes set and no attendance taken - show class input
-        toastShownRef.current = true;
-        setShowClassInput(true);
-        toast.info(
+        // Case 4: All attendance taken + change request pending
+        classCountToastIdRef.current = toast.info(
           <div className="text-center w-full">
             <h3 className="font-bold text-lg !mb-2 sm:text-base">
-              How many classes do you have today? ({formatDisplayDate(today)})
+              Request Still Pending
             </h3>
-            <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 !mt-4">
+            <p className="text-sm !mb-3">
+              Your request to update classes for today is still pending approval
+              from HOD.
+            </p>
+            <p className="text-sm !mb-3 text-green-600 font-medium">
+              All attendance has been taken for today ({classesToday} class
+              {classesToday > 1 ? "es" : ""}).
+            </p>
+          </div>,
+          {
+            position: "top-center",
+            autoClose: false,
+            closeOnClick: false,
+            draggable: false,
+            closeButton: false,
+            style: {
+              minWidth: "min(450px, 90vw)",
+              maxWidth: "95vw",
+            },
+          }
+        );
+      } else {
+        // Case 3: Some attendance taken + change request pending
+        const remainingClasses = classesToday - classesTakenToday;
+        classCountToastIdRef.current = toast.info(
+          <div className="text-center w-full">
+            <h3 className="font-bold text-lg !mb-2 sm:text-base">
+              Request Still Pending
+            </h3>
+            <p className="text-sm !mb-3">
+              Your request to update classes for today is still pending approval
+              from HOD.
+            </p>
+            <p className="text-sm !mb-3 text-blue-600 font-medium">
+              Attendance taken: {classesTakenToday} of {classesToday} •
+              Remaining: {remainingClasses}
+            </p>
+            <div className="flex justify-center !mt-2">
               <button
-                onClick={() => handleClassInput(1)}
-                className="bg-blue-500 hover:bg-blue-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
+                onClick={() => {
+                  toast.dismiss(classCountToastIdRef.current);
+                  setShowClassInput(false);
+                }}
+                className="bg-green-500 hover:bg-green-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
               >
-                1 Class
+                Continue Session {classesTakenToday + 1}
               </button>
-              {subject.creditHours > 1 && (
-                <>
-                  <button
-                    onClick={() => handleClassInput(2)}
-                    className="bg-green-500 hover:bg-green-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
-                  >
-                    2 Classes
-                  </button>
-                  <button
-                    onClick={() => handleClassInput(3)}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
-                  >
-                    3 Classes
-                  </button>
-                </>
-              )}
             </div>
           </div>,
           {
@@ -293,20 +436,176 @@ export default function MarkAttendance() {
             },
           }
         );
-      } else if (storedClasses && classesTakenToday > 0) {
-        // Show current status
+      }
+    } else if (classesTakenToday >= classesToday && classesToday > 0) {
+      // Case 4: All attendance taken - show only change count button
+      classCountToastIdRef.current = toast.info(
+        <div className="text-center w-full">
+          <h3 className="font-bold text-lg !mb-2 sm:text-base">
+            Attendance Complete for Today
+          </h3>
+          <p className="text-sm !mb-3">
+            You have taken all {storedClasses} class
+            {parseInt(storedClasses) > 1 ? "es" : ""} for today.
+          </p>
+          <div className="flex justify-center !mt-2">
+            <button
+              onClick={handleChangeCountRequest}
+              className="bg-blue-500 hover:bg-blue-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
+            >
+              Change Class Count
+            </button>
+          </div>
+        </div>,
+        {
+          position: "top-center",
+          autoClose: false,
+          closeOnClick: false,
+          draggable: false,
+          closeButton: false,
+          style: {
+            minWidth: "min(450px, 90vw)",
+            maxWidth: "95vw",
+          },
+        }
+      );
+    } else {
+      // Case 3: Some attendance taken - show start session + change count
+      const remainingClasses = classesToday - classesTakenToday;
+      classCountToastIdRef.current = toast.info(
+        <div className="text-center w-full">
+          <h3 className="font-bold text-lg !mb-2 sm:text-base">
+            Ready to take attendance?
+          </h3>
+          <p className="text-sm !mb-3">
+            Session {classesTakenToday + 1} of {storedClasses}
+          </p>
+          {remainingClasses > 1 && (
+            <p className="text-sm !mb-2 text-green-600 font-medium">
+              Remaining classes today: {remainingClasses - 1}
+            </p>
+          )}
+          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 !mt-2">
+            <button
+              onClick={() => {
+                toast.dismiss(classCountToastIdRef.current);
+                setShowClassInput(false);
+              }}
+              className="bg-green-500 hover:bg-green-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
+            >
+              Start Session {classesTakenToday + 1}
+            </button>
+            <button
+              onClick={handleChangeCountRequest}
+              className="bg-blue-500 hover:bg-blue-600 text-white !px-4 sm:!px-6 !py-2 font-semibold transition-colors cursor-pointer text-sm sm:text-base"
+            >
+              Change Class Count
+            </button>
+          </div>
+        </div>,
+        {
+          position: "top-center",
+          autoClose: false,
+          closeOnClick: false,
+          draggable: false,
+          closeButton: false,
+          style: {
+            minWidth: "min(450px, 90vw)",
+            maxWidth: "95vw",
+          },
+        }
+      );
+    }
+  };
+
+  // Handle change count request
+  const handleChangeCountRequest = () => {
+    // Dismiss the current toast
+    if (classCountToastIdRef.current) {
+      toast.dismiss(classCountToastIdRef.current);
+      classCountToastIdRef.current = null;
+    }
+
+    // Set change request as pending
+    setChangeRequestPending(true);
+    localStorage.setItem(getChangeRequestKey(), "pending");
+
+    // Show success message that request is sent to HOD
+    const remainingClasses = classesToday - classesTakenToday;
+
+    toast.info(
+      <div className="text-center w-full">
+        <h3 className="font-bold text-lg !mb-2">Change Request Sent</h3>
+        <p className="text-sm">
+          Your request to change class count has been sent to HOD.
+        </p>
+        <p className="text-sm !mt-1">
+          You can change the count when HOD approves it.
+        </p>
+        {remainingClasses > 0 && (
+          <p className="text-sm !mt-2 text-blue-600 font-medium">
+            Remaining classes: {remainingClasses} of {classesToday}
+          </p>
+        )}
+      </div>,
+      {
+        position: "top-center",
+        autoClose: 6000,
+        closeButton: true,
+      }
+    );
+
+    // Show the session message again with updated state
+    setTimeout(() => {
+      showSessionMessage();
+    }, 100);
+  };
+
+  // Main useEffect for showing appropriate messages
+  useEffect(() => {
+    if (
+      hasCheckedAttendance &&
+      subject &&
+      studentsEnrolledinSubject.length > 0 &&
+      !toastShownRef.current
+    ) {
+      const storedClasses = localStorage.getItem(getStorageKey());
+
+      console.log("Debug Info:", {
+        classesTakenToday,
+        classesToday,
+        storedClasses,
+        changeRequestPending,
+        hasCheckedAttendance,
+      });
+
+      // CASE 1: No classes set for today AND no attendance taken
+      if (!storedClasses && classesTakenToday === 0) {
+        console.log("Case 1: No classes set, no attendance taken");
         toastShownRef.current = true;
-        toast.info(
-          `Today (${formatDisplayDate(
-            today
-          )}): ${classesTakenToday}/${storedClasses} class${
-            parseInt(storedClasses) > 1 ? "es" : ""
-          } taken`,
-          {
-            position: "top-center",
-            autoClose: 4000,
-          }
-        );
+        setShowClassInput(true);
+        showClassCountMessage();
+      }
+      // CASE 2: Classes are set BUT no attendance taken yet
+      else if (storedClasses && classesTakenToday === 0) {
+        console.log("Case 2: Classes set but no attendance taken");
+        toastShownRef.current = true;
+        setShowClassInput(true);
+        showClassCountMessage();
+      }
+      // CASE 3: Some attendance taken but not all
+      else if (classesTakenToday > 0 && classesTakenToday < classesToday) {
+        console.log("Case 3: Some attendance taken");
+        toastShownRef.current = true;
+        setShowClassInput(false);
+        showSessionMessage();
+      }
+      // CASE 4: All attendance taken
+      else if (classesTakenToday >= classesToday && classesToday > 0) {
+        console.log("Case 4: All attendance taken");
+        toastShownRef.current = true;
+        setShowClassInput(false);
+        showSessionMessage();
       }
     }
   }, [
@@ -315,22 +614,28 @@ export default function MarkAttendance() {
     studentsEnrolledinSubject,
     classesTakenToday,
     classesToday,
+    changeRequestPending,
   ]);
 
   // Reset the toast shown flag when date changes
   useEffect(() => {
     toastShownRef.current = false;
+    classCountToastIdRef.current = null;
   }, [currentDate]);
 
   const handleClassInput = (classCount) => {
     setClassesToday(classCount);
     setShowClassInput(false);
     localStorage.setItem(getStorageKey(), classCount.toString());
-    toast.dismiss();
+
+    // Dismiss the class count toast
+    if (classCountToastIdRef.current) {
+      toast.dismiss(classCountToastIdRef.current);
+      classCountToastIdRef.current = null;
+    }
+
     toast.success(
-      `Set to ${classCount} class${
-        classCount > 1 ? "es" : ""
-      } for today (${formatDisplayDate(getTodayDate())})!`,
+      `Set to ${classCount} class${classCount > 1 ? "es" : ""} for today!`,
       {
         position: "top-center",
         autoClose: 3000,
@@ -350,7 +655,7 @@ export default function MarkAttendance() {
         setClassStartTime(startTime);
         setClassEndTime(endTime);
       } else {
-        setClassStartTime(getCurrentPakistanTime());
+        setClassStartTime("");
         setClassEndTime("");
       }
     }
@@ -388,7 +693,7 @@ export default function MarkAttendance() {
     const getMillisecondsUntilMidnight = () => {
       const now = getPakistanTime();
       const midnight = new Date(now);
-      midnight.setHours(24, 0, 0, 0); // Next midnight
+      midnight.setHours(24, 0, 0, 0);
       midnight.setMinutes(0, 0, 0);
       return midnight.getTime() - now.getTime();
     };
@@ -396,7 +701,7 @@ export default function MarkAttendance() {
     // Set interval for checking date change (every minute)
     const interval = setInterval(() => {
       checkDateChange();
-    }, 60000); // Check every minute
+    }, 60000);
 
     // Set timeout for midnight reset
     const midnightTimeout = setTimeout(() => {
@@ -404,7 +709,7 @@ export default function MarkAttendance() {
       // After midnight, set up the next midnight check
       const dailyInterval = setInterval(() => {
         resetForNewDay();
-      }, 24 * 60 * 60 * 1000); // Check every 24 hours
+      }, 24 * 60 * 60 * 1000);
 
       return () => clearInterval(dailyInterval);
     }, getMillisecondsUntilMidnight());
@@ -446,9 +751,9 @@ export default function MarkAttendance() {
 
     // Sort by date descending (newest first) and take latest 5
     const sortedRecords = studentRecords
-      .filter((record) => record.attendance_date) // Ensure date exists
+      .filter((record) => record.attendance_date)
       .sort((a, b) => new Date(b.attendance_date) - new Date(a.attendance_date))
-      .slice(0, 5); // Get only the latest 5 records
+      .slice(0, 5);
 
     return sortedRecords.map((record) => ({
       date: record.attendance_date,
@@ -551,6 +856,14 @@ export default function MarkAttendance() {
       return false;
     }
 
+    if (timeSlotError) {
+      toast.error("Please resolve the time slot conflict before saving.", {
+        position: "top-center",
+        autoClose: 4000,
+      });
+      return false;
+    }
+
     return true;
   };
 
@@ -600,25 +913,21 @@ export default function MarkAttendance() {
         );
 
         return {
-          subject_name: subject?.subName, // from subject
-          roll_no: record.rollNo, // from current row
-          department: student?.department || subject?.department, // department from enrolled student or subject
-          attendance_date: getTodayDate(), // current date in Pakistan timezone
-          status: record.status, // status from action select options
-          class_start_time: classStartTime, // class start time
-          class_end_time: classEndTime, // class end time
-          session_number: classesTakenToday + 1, // current session number
+          subject_name: subject?.subName,
+          roll_no: record.rollNo,
+          department: student?.department || subject?.department,
+          attendance_date: getTodayDate(),
+          status: record.status,
+          class_start_time: classStartTime,
+          class_end_time: classEndTime,
+          semester: subject?.semester || student?.current_semester,
         };
       });
 
-      console.log("✅ Saving Attendance Data:", attendancePayload);
-      console.log("📅 Using Pakistan date:", getTodayDate());
-      console.log("⏰ Class Time:", classStartTime, "-", classEndTime);
-
-      // Send attendance data to API - Send array directly, not wrapped in object
+      // Send attendance data to API
       const response = await axios.post(
         `${backendBaseUrl}/api/attendance`,
-        attendancePayload, // Send array directly here
+        attendancePayload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -626,8 +935,6 @@ export default function MarkAttendance() {
           },
         }
       );
-
-      console.log("✅ Attendance saved successfully:", response.data);
 
       // Save class time for this session
       const currentSession = classesTakenToday + 1;
@@ -644,9 +951,10 @@ export default function MarkAttendance() {
 
       setSubmitting(false);
       setSubmitted(true);
-      setAttendanceData({}); // Clear current attendance data
-      setClassStartTime(""); // Reset start time
-      setClassEndTime(""); // Reset end time
+      setAttendanceData({});
+      setClassStartTime("");
+      setClassEndTime("");
+      setTimeSlotError("");
 
       toast.success("Attendance saved successfully!", {
         position: "top-center",
@@ -873,7 +1181,7 @@ export default function MarkAttendance() {
         }}
       >
         <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
-          {/* Header Section - Made Responsive */}
+          {/* Header Section */}
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1">
               <BackButton url={"/SALU-PORTAL-FYP/Attendance/TakeAttendance"} />
@@ -883,12 +1191,14 @@ export default function MarkAttendance() {
               </h1>
             </div>
 
-            {/* Class Info Display - Made Responsive */}
+            {/* Class Info Display */}
             {classesToday > 0 && (
               <div
                 className={`border !px-3 sm:!px-4 !py-2 rounded-lg ${
                   isAttendanceLimitReached
                     ? "bg-red-100 border-red-300"
+                    : changeRequestPending
+                    ? "bg-yellow-100 border-yellow-300"
                     : "bg-blue-100 border-blue-300"
                 }`}
               >
@@ -897,6 +1207,8 @@ export default function MarkAttendance() {
                     className={`font-semibold text-sm sm:text-base ${
                       isAttendanceLimitReached
                         ? "text-red-800"
+                        : changeRequestPending
+                        ? "text-yellow-800"
                         : "text-blue-800"
                     }`}
                   >
@@ -908,6 +1220,11 @@ export default function MarkAttendance() {
                       Limit reached
                     </p>
                   )}
+                  {changeRequestPending && (
+                    <p className="text-yellow-600 text-xs sm:text-sm font-medium">
+                      Change pending
+                    </p>
+                  )}
                 </div>
               </div>
             )}
@@ -915,11 +1232,16 @@ export default function MarkAttendance() {
 
           <hr className="border-t-[3px] border-gray-900 dark:border-white !mb-4" />
 
-          {/* Class Slot Time Input Section - Made Responsive */}
+          {/* Class Slot Time Input Section */}
           {classesToday > 0 && classesTakenToday < classesToday && (
             <div className="w-full bg-white dark:bg-gray-900 text-black dark:text-white border border-blue-200 !p-4 !mb-4 rounded-lg">
               <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-300 mb-3">
                 Class Slot Time (Session {classesTakenToday + 1})
+                {changeRequestPending && (
+                  <span className="ml-2 text-yellow-600 text-sm font-normal">
+                    (Change request pending HOD approval)
+                  </span>
+                )}
               </h3>
               <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
                 <div className="flex-1 w-full">
@@ -942,9 +1264,19 @@ export default function MarkAttendance() {
                     type="time"
                     value={classEndTime}
                     onChange={(e) => setClassEndTime(e.target.value)}
-                    className="w-full !px-3 !py-2 border-2 border-gray-800 dark:border-gray-300 focus:outline-none focus:border-yellow-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    onBlur={handleEndTimeBlur}
+                    className={`w-full !px-3 !py-2 border-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white ${
+                      timeSlotError
+                        ? "border-red-500 focus:border-red-500"
+                        : "border-gray-800 dark:border-gray-300 focus:border-yellow-500"
+                    }`}
                     required
                   />
+                  {timeSlotError && (
+                    <p className="text-red-600 text-sm !mt-2">
+                      {timeSlotError}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex-1 w-full">
@@ -952,7 +1284,7 @@ export default function MarkAttendance() {
                   Current Pakistan Time: {getCurrentPakistanTime()}
                 </p>
               </div>
-              {(!classStartTime || !classEndTime) && (
+              {(!classStartTime || !classEndTime) && !timeSlotError && (
                 <p className="text-red-600 text-sm !mt-2">
                   * Class start and end time are required to save attendance
                 </p>
@@ -960,7 +1292,7 @@ export default function MarkAttendance() {
             </div>
           )}
 
-          {/* Search Input - Made Responsive */}
+          {/* Search Input */}
           <div className="w-full flex justify-end">
             <input
               value={query}
@@ -978,7 +1310,7 @@ export default function MarkAttendance() {
 
           <DataTable columns={columns} students={paginatedStudents} />
 
-          {/* Footer Section - Made Responsive */}
+          {/* Footer Section */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 !mt-4">
             <span className="font-bold text-lg sm:text-xl text-gray-900 dark:text-white text-center sm:text-left">
               Total Students: {filteredStudents.length}
@@ -993,7 +1325,8 @@ export default function MarkAttendance() {
                 isAttendanceLimitReached ||
                 classesToday === 0 ||
                 !classStartTime ||
-                !classEndTime
+                !classEndTime ||
+                timeSlotError
               }
               className="cursor-pointer relative overflow-hidden !px-4 !py-2 border-2 border-[#22c55e] text-white text-base font-medium bg-transparent transition-all duration-300 ease-linear min-w-[140px]
                   before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-full before:bg-[#22c55e] before:transition-all before:duration-300 before:ease-linear hover:before:h-0 disabled:opacity-60 disabled:cursor-not-allowed"
