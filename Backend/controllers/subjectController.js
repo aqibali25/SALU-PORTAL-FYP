@@ -8,7 +8,6 @@ const TABLE = `${DB}.subjects`;
 const ALLOWED_SORTS = new Set([
   "subject_allocation_id",
   "subject_name",
-  "department",
   "credit_hours",
   "subject_type",
 ]);
@@ -16,7 +15,7 @@ const ALLOWED_SORTS = new Set([
 /**
  * GET /api/subjects
  * Query:
- *   search   - matches subject_name / department / credit_hours / type
+ *   search   - matches subject_name / credit_hours / type
  *   sortBy   - any of ALLOWED_SORTS (default subject_allocation_id)
  *   sortDir  - ASC|DESC (default DESC)
  *   No pagination - returns all entries
@@ -35,13 +34,12 @@ export const listSubjects = async (req, res) => {
     const where = search
       ? `WHERE (
             subject_name LIKE ?
-         OR department   LIKE ?
          OR subject_type LIKE ?
          OR credit_hours LIKE ?
         )`
       : "";
 
-    const params = search ? Array(4).fill(`${search}`) : [];
+    const params = search ? Array(3).fill(`${search}`) : [];
 
     const [rows] = await sequelize.query(
       `
@@ -49,7 +47,6 @@ export const listSubjects = async (req, res) => {
         subject_allocation_id AS subjectId,
         subject_name          AS subjectName,
         subject_type          AS subjectType,
-        department,
         credit_hours          AS creditHours
       FROM ${TABLE}
       ${where}
@@ -81,7 +78,6 @@ export const getSubjectById = async (req, res) => {
         subject_allocation_id AS subjectId,
         subject_name          AS subjectName,
         subject_type          AS subjectType,
-        department,
         credit_hours          AS creditHours
       FROM ${TABLE}
       WHERE subject_allocation_id = ?
@@ -107,23 +103,15 @@ export const getSubjectById = async (req, res) => {
  * POST /api/subjects/upsert
  * Body (from AddSubject.jsx):
  * {
- *   subjectId, subjectName, subjectType, department,
- *   creditHours
+ *   subjectId, subjectName, subjectType, creditHours
  * }
  * If subjectId exists -> UPDATE, else INSERT
  */
 export const upsertSubject = async (req, res) => {
   try {
-    const {
-      subjectId,
-      subjectName,
-      subjectType,
-      department,
-      creditHours,
-      // semester, year may still come from FE but are ignored now
-    } = req.body;
+    const { subjectId, subjectName, subjectType, creditHours } = req.body;
 
-    if (!subjectName || !subjectType || !department || !creditHours) {
+    if (!subjectName || !subjectType || !creditHours) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -135,18 +123,11 @@ export const upsertSubject = async (req, res) => {
         SET 
           subject_name = ?,
           subject_type = ?,
-          department   = ?,
           credit_hours = ?
         WHERE subject_allocation_id = ?
         `,
         {
-          replacements: [
-            subjectName,
-            subjectType,
-            department,
-            creditHours,
-            subjectId,
-          ],
+          replacements: [subjectName, subjectType, creditHours, subjectId],
         }
       );
 
@@ -156,11 +137,11 @@ export const upsertSubject = async (req, res) => {
     // ✅ INSERT
     await sequelize.query(
       `
-      INSERT INTO ${TABLE} (subject_name, subject_type, department, credit_hours)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO ${TABLE} (subject_name, subject_type, credit_hours)
+      VALUES (?, ?, ?)
       `,
       {
-        replacements: [subjectName, subjectType, department, creditHours],
+        replacements: [subjectName, subjectType, creditHours],
       }
     );
 

@@ -176,7 +176,7 @@ export default function BookIssues({ title = "Issued Books" }) {
 
         // Process the response data safely
         const data = processBookIssuesData(response.data);
-        setIssuedBooks(data);
+        setIssuedBooks(data.sort((a, b) => a.bookId - b.bookId));
       } catch (err) {
         console.error("Error loading book issues:", err);
 

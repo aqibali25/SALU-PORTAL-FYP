@@ -128,7 +128,6 @@ export const useStudentAttendance = (
     } else if (enrolledStudents && !student) {
       setLoading(false);
       setError("Student not found in enrolled students.");
-      toast.error("Student not found in enrolled students.");
     }
   }, [enrolledStudents, student, fetchStudentAttendance]);
 

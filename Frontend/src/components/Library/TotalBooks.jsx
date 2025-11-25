@@ -58,7 +58,7 @@ export default function TotalBooks() {
           book.status ||
           (book.availableCopies > 0 ? "Available" : "Out of Stock"), // Use status from DB if available
       }));
-      setBooks(data);
+      setBooks(data.sort((a, b) => a.bookId - b.bookId));
     } catch (err) {
       console.error(err);
       toast.error("Error loading books: " + err.message);

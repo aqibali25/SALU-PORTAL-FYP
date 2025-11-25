@@ -14,6 +14,8 @@ const DB = process.env.DB_NAME || "u291434058_SALU_GC";
  *   roll_no: "CS-23-045",
  *   department: "Computer Science",
  *   attendance_date: "2025-11-14",
+ *   class_time: "09:00-10:30",
+ *   semester: "5",
  *   status: "Present"   // Present | Absent | Leave
  * }
  */
@@ -35,8 +37,7 @@ export const createAttendance = async (req, res) => {
         roll_no,
         department,
         attendance_date,
-        class_start_time,
-        class_end_time,
+        class_time,
         semester,
         status,
       } = rec || {};
@@ -46,8 +47,7 @@ export const createAttendance = async (req, res) => {
         !roll_no ||
         !department ||
         !attendance_date ||
-        !class_start_time ||
-        !class_end_time ||
+        !class_time ||
         !semester ||
         !status
       ) {
@@ -58,14 +58,13 @@ export const createAttendance = async (req, res) => {
       await sequelize.query(
         `
         INSERT INTO \`${DB}\`.mark_attendance
-          (attendance_date, class_start_time, class_end_time, semester, status, subject_name, roll_no, department)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          (attendance_date, class_time, semester, status, subject_name, roll_no, department)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         `,
         {
           replacements: [
             attendance_date,
-            class_start_time,
-            class_end_time,
+            class_time,
             semester,
             status,
             subject_name,
@@ -93,19 +92,12 @@ export const createAttendance = async (req, res) => {
 /**
  * GET /api/attendance
  * Optional query params:
- *   ?subject_name=...&roll_no=...&department=...&date=YYYY-MM-DD
+ *   ?subject_name=...&roll_no=...&department=...&date=YYYY-MM-DD&class_time=...
  */
 export const getAttendance = async (req, res) => {
   try {
-    const {
-      subject_name,
-      roll_no,
-      department,
-      semester,
-      date,
-      class_start_time,
-      class_end_time,
-    } = req.query;
+    const { subject_name, roll_no, department, semester, date, class_time } =
+      req.query;
 
     const filters = [];
     const params = [];
@@ -126,13 +118,9 @@ export const getAttendance = async (req, res) => {
       filters.push("a.attendance_date = ?");
       params.push(date);
     }
-    if (class_start_time) {
-      filters.push("a.class_start_time = ?");
-      params.push(class_start_time);
-    }
-    if (class_end_time) {
-      filters.push("a.class_end_time = ?");
-      params.push(class_end_time);
+    if (class_time) {
+      filters.push("a.class_time = ?");
+      params.push(class_time);
     }
     if (semester) {
       filters.push("a.semester = ?");
@@ -146,8 +134,7 @@ export const getAttendance = async (req, res) => {
       SELECT
         a.attendance_id,
         a.attendance_date,
-        a.class_start_time,
-        a.class_end_time,
+        a.class_time,
         a.semester,
         a.status,
         a.subject_name,
@@ -174,7 +161,7 @@ export const getAttendance = async (req, res) => {
  * PUT /api/attendance/:attendance_id
  * Body (any of these—commonly you'll change status):
  *   { status: "Absent" }  // Present | Absent | Leave
- *   { subject_name, roll_no, department, attendance_date } // optional edits
+ *   { subject_name, roll_no, department, attendance_date, class_time } // optional edits
  */
 export const updateAttendance = async (req, res) => {
   try {
@@ -185,8 +172,7 @@ export const updateAttendance = async (req, res) => {
       roll_no,
       department,
       attendance_date,
-      class_start_time,
-      class_end_time,
+      class_time,
       semester,
     } = req.body || {};
 
@@ -225,13 +211,9 @@ export const updateAttendance = async (req, res) => {
       fields.push("attendance_date = ?");
       params.push(attendance_date);
     }
-    if (class_start_time !== undefined) {
-      fields.push("class_start_time = ?");
-      params.push(class_start_time);
-    }
-    if (class_end_time !== undefined) {
-      fields.push("class_end_time = ?");
-      params.push(class_end_time);
+    if (class_time !== undefined) {
+      fields.push("class_time = ?");
+      params.push(class_time);
     }
     if (semester !== undefined) {
       fields.push("semester = ?");

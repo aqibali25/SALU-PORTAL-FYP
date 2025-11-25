@@ -165,14 +165,9 @@ const StudentAttendance = ({ data }) => {
         render: renderDate,
       },
       {
-        key: "class_start_time",
-        label: "Class Start Time",
-        render: (row) => renderText(row, "class_start_time"),
-      },
-      {
-        key: "class_end_time",
-        label: "Class End Time",
-        render: (row) => renderText(row, "class_end_time"),
+        key: "class_time",
+        label: "Class Time",
+        render: (row) => renderText(row, "class_time"),
       },
       {
         key: "status",
@@ -221,14 +216,6 @@ const StudentAttendance = ({ data }) => {
   useEffect(() => {
     setPage(1);
   }, [query]);
-
-  // Check if data exists
-  useEffect(() => {
-    if (!studentData) {
-      console.warn("No student data found");
-      toast.error("No student data available");
-    }
-  }, [studentData, navigate]);
 
   return (
     <div

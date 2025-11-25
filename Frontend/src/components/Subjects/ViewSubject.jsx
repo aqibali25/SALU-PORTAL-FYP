@@ -22,11 +22,10 @@ export default function ViewSubject() {
   // Get user info
   const userString = localStorage.getItem("user");
   const user = userString ? JSON.parse(userString) : null;
-  const userDepartment = user?.department || "";
   const userRole = user?.role?.toLowerCase() || "";
   const userName = user?.username || "";
   const userCNIC = user?.cnic || "";
-  const isSuperAdmin = userDepartment === "Super Admin";
+  const isSuperAdmin = user?.department === "Super Admin";
   const isStudent = userRole === "student";
   const isTeacher = userRole === "teacher";
   const isHOD = userRole === "hod";
@@ -72,19 +71,14 @@ export default function ViewSubject() {
         let filteredSubjects = [];
 
         if (isStudent) {
-          const studentDepartment =
-            enrolledStudent?.department || userDepartment;
           const studentCurrentSemester = enrolledStudent?.current_semester;
 
-          if (studentDepartment && studentCurrentSemester) {
+          if (studentCurrentSemester) {
             filteredSubjects = allSubjects.filter(
-              (subject) =>
-                subject.department === studentDepartment &&
-                subject.semester === studentCurrentSemester
+              (subject) => subject.semester === studentCurrentSemester
             );
           } else {
-            toast.warn("Student department or semester not available");
-
+            toast.warn("Student semester not available");
             filteredSubjects = [];
           }
         } else if (isTeacher) {
@@ -92,14 +86,9 @@ export default function ViewSubject() {
           filteredSubjects = allSubjects.filter(
             (allocation) => allocation.teacherName === userName
           );
-        } else if (isSuperAdmin) {
-          // Super Admin sees all subjects
-          filteredSubjects = allSubjects;
         } else {
-          // HOD and other roles see only their department subjects
-          filteredSubjects = allSubjects.filter(
-            (subject) => subject.department === userDepartment
-          );
+          // Super Admin, HOD and other roles see all subjects
+          filteredSubjects = allSubjects;
         }
 
         setSubjects(filteredSubjects);
@@ -114,7 +103,6 @@ export default function ViewSubject() {
     fetchSubjects();
   }, [
     isSuperAdmin,
-    userDepartment,
     isStudent,
     isTeacher,
     userName,
@@ -122,22 +110,15 @@ export default function ViewSubject() {
     userCNIC,
     students,
     API,
-    useSubjectAllocations, // Add this to dependencies
+    useSubjectAllocations,
   ]);
 
   // ✅ Filter subjects by search query
   const filteredSubjects = subjects
     .filter((s) => {
       const searchableFields = useSubjectAllocations
-        ? [s.saId, s.subName, s.teacherName, s.department, s.semester, s.year]
-        : [
-            s.subjectId,
-            s.subjectName,
-            s.subjectType,
-            s.creditHours,
-            s.year,
-            s.department,
-          ];
+        ? [s.saId, s.subName, s.teacherName, s.semester, s.year]
+        : [s.subjectId, s.subjectName, s.subjectType, s.creditHours, s.year];
 
       return searchableFields
         .join(" ")
@@ -164,7 +145,6 @@ export default function ViewSubject() {
         { key: "saId", label: "ID" },
         { key: "subName", label: "Subject Name" },
         ...(isTeacher ? [] : [{ key: "teacherName", label: "Teacher Name" }]),
-        { key: "department", label: "Department" },
         { key: "semester", label: "Semester" },
         { key: "year", label: "Academic Year" },
         { key: "creditHours", label: "Credit Hours" },
@@ -173,7 +153,6 @@ export default function ViewSubject() {
         { key: "subjectId", label: "Subject ID" },
         { key: "subjectName", label: "Subject Name" },
         { key: "subjectType", label: "Subject Type" },
-        { key: "department", label: "Department" },
         { key: "creditHours", label: "Credit Hours" },
       ];
 
@@ -286,7 +265,7 @@ export default function ViewSubject() {
           {/* Teacher Info */}
           {isTeacher && (
             <div className="w-full !p-2 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-gray-500">
-              Teacher: {userName} | Department: {userDepartment}
+              Teacher: {userName}
             </div>
           )}
 
@@ -297,8 +276,8 @@ export default function ViewSubject() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder={
                 useSubjectAllocations
-                  ? "Search by ID, subject name, teacher, department..."
-                  : "Search subjects by ID, name, type, department..."
+                  ? "Search by ID, subject name, teacher, semester..."
+                  : "Search subjects by ID, name, type..."
               }
               className="w-full lg:w-80 !px-3 !py-2 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
             />

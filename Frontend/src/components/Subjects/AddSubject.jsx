@@ -14,34 +14,16 @@ const AddSubject = ({ Title }) => {
     () => location.state?.subject ?? null,
     [location.state]
   );
-  const {
-    departmentsArray,
-    loading: departmentsLoading,
-    error: departmentsError,
-  } = useDepartments();
 
   // Get user department with safe parsing
   const userString = localStorage.getItem("user");
   const user = userString ? JSON.parse(userString) : null;
   const userDepartment = user?.department || "";
 
-  // Check if user is from one of the specific departments (not Super Admin)
-  const isSpecificDepartment = [
-    "Computer Science",
-    "Business Administration",
-    "English Linguistics and Literature",
-  ].includes(userDepartment);
-  const isSuperAdmin = userDepartment === "Super Admin";
-
   const [form, setForm] = useState({
     subjectId: "",
     subjectName: "",
     subjectType: "",
-    department: isSpecificDepartment
-      ? userDepartment
-      : isSuperAdmin
-      ? ""
-      : userDepartment,
     creditHours: "",
   });
 
@@ -55,26 +37,23 @@ const AddSubject = ({ Title }) => {
       try {
         setLoading(true);
         if (editingSubject) {
+          // Remove everything after " - " from subject name for display
+          const originalSubjectName = editingSubject.subjectName || "";
+          const cleanedSubjectName = originalSubjectName.split(" - ")[0]; // Remove " - Theory" or " - Practical"
+
           setForm({
             subjectId: editingSubject.subjectId || "",
-            subjectName: editingSubject.subjectName || "",
+            subjectName: cleanedSubjectName, // Use cleaned name without type suffix for display
             subjectType: editingSubject.subjectType || "",
-            department: editingSubject.department || "",
             creditHours: editingSubject.creditHours || "",
           });
-        } else if (isSpecificDepartment || (!isSuperAdmin && userDepartment)) {
-          // Auto-set department for specific department users when adding new subject
-          setForm((prev) => ({
-            ...prev,
-            department: userDepartment,
-          }));
         }
       } finally {
         setLoading(false);
       }
     };
     initData();
-  }, [editingSubject, isSpecificDepartment, isSuperAdmin, userDepartment]);
+  }, [editingSubject]);
 
   const onChange = (key) => (e) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -91,13 +70,14 @@ const AddSubject = ({ Title }) => {
         ...form,
       };
 
-      Title === "Add Subject"
-        ? (payload.subjectName = `${form.subjectName}${
-            form.subjectType ? " - " + form.subjectType : ""
-          }`)
-        : null;
+      // For both "Add Subject" and "Update Subject", append subject type to subject name
+      payload.subjectName = `${form.subjectName}${
+        form.subjectType ? " - " + form.subjectType : ""
+      }`;
 
-      if (Title === "Add Subject") delete payload.subjectId;
+      if (Title === "Add Subject") {
+        delete payload.subjectId;
+      }
 
       await axios.post(`${API}/api/subjects/upsert`, payload, {
         headers: {
@@ -215,34 +195,6 @@ const AddSubject = ({ Title }) => {
               </option>
               <option value="Theory">Theory</option>
               <option value="Practical">Practical</option>
-            </select>
-          </div>
-
-          {/* Department */}
-          <div className="flex w-full max-w-[800px] items-start md:items-center justify-start flex-col md:flex-row gap-[8px] md:gap-5 [@media(max-width:550px)]:gap-[5px]">
-            <label
-              htmlFor="department"
-              className="w-auto md:w-1/4 text-start md:text-right text-gray-900 dark:text-white"
-            >
-              <span className="text-[#ff0000] mr-1">*</span>
-              Department:
-            </label>
-            <select
-              id="department"
-              className="w-[40%] [@media(max-width:768px)]:!w-full min-w-0 !px-2 !py-1 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-              required
-              value={form.department}
-              onChange={onChange("department")}
-              disabled={isSpecificDepartment} // Disable only for specific departments
-            >
-              <option value="" disabled>
-                Select Department
-              </option>
-              {departmentsArray.map((dept, index) => (
-                <option key={index} value={dept}>
-                  {dept}
-                </option>
-              ))}
             </select>
           </div>
 

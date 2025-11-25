@@ -74,10 +74,10 @@ export default function useSubjectAllocation({ pageSize = 10 }) {
             subName:
               allocation.subName || allocation.subjectName || "Unknown Subject",
             teacherName: allocation.teacherName || "Yet to assign",
-            department: allocation.department,
+            department: allocation.department || "Yet to assign",
             semester: allocation.semester,
             creditHours: allocation.creditHours,
-            year: allocation.year,
+            year: allocation.year || "Yet to assign",
             createdAt: allocation.createdAt,
             updatedAt: allocation.updatedAt,
             source: "allocation",
