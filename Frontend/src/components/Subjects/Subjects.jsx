@@ -7,16 +7,18 @@ import cookie from "js-cookie";
 
 const Subjects = () => {
   const userRole = cookie.get("role");
+  console.log(userRole);
 
   const subjectCards = [
-    userRole !== "student" && {
-      id: 1,
-      title: "Add Subject",
-      bgColor: "#FFFBEB",
-      borderColor: "#FACC15",
-      iconBg: "#FACC15",
-      Icon: FaClipboardCheck,
-    },
+    userRole !== "student" &&
+      userRole !== "teacher" && {
+        id: 1,
+        title: "Add Subject",
+        bgColor: "#FFFBEB",
+        borderColor: "#FACC15",
+        iconBg: "#FACC15",
+        Icon: FaClipboardCheck,
+      },
     {
       id: 2,
       title: "View Subject",

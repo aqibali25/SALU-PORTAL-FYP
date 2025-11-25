@@ -85,7 +85,7 @@ export const cards = [
     Icon: faClock,
     color1: "#7C3AED",
     color2: "#F3E8FF",
-    roles: ["super admin", "hod", "teacher", "student"],
+    roles: ["super admin", "hod", "student"],
   },
   {
     id: 8,
@@ -135,7 +135,7 @@ export const cards = [
     Icon: faBook,
     color1: "#F97316",
     color2: "#FFF7ED",
-    roles: ["super admin", "hod", "student"],
+    roles: ["super admin", "hod", "teacher", "student"],
   },
   {
     id: 13,

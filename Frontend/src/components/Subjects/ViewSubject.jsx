@@ -6,6 +6,7 @@ import Pagination from "../../components/Pagination";
 import Background from "./../../assets/Background.png";
 import { useNavigate } from "react-router-dom";
 import BackButton from "../BackButton";
+import { useEnrolledStudents } from "../../Hooks/useEnrolledStudents";
 
 export default function ViewSubject() {
   const [subjects, setSubjects] = useState([]);
@@ -15,13 +16,29 @@ export default function ViewSubject() {
   const pageSize = 10;
   const navigate = useNavigate();
 
+  // Get student data from useEnrolledStudents hook
+  const { students } = useEnrolledStudents();
+
   // Get user info
   const userString = localStorage.getItem("user");
   const user = userString ? JSON.parse(userString) : null;
   const userDepartment = user?.department || "";
   const userRole = user?.role?.toLowerCase() || "";
+  const userName = user?.username || "";
+  const userCNIC = user?.cnic || "";
   const isSuperAdmin = userDepartment === "Super Admin";
   const isStudent = userRole === "student";
+  const isTeacher = userRole === "teacher";
+  const isHOD = userRole === "hod";
+
+  // Determine data source based on user role
+  const useSubjectAllocations = isStudent || isTeacher;
+  const useSubjectsData = isSuperAdmin || isHOD || (!isStudent && !isTeacher);
+
+  // Find the logged-in student from the students array
+  const enrolledStudent = students?.find(
+    (student) => student.cnic === userCNIC
+  );
 
   const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
@@ -32,21 +49,56 @@ export default function ViewSubject() {
         setLoading(true);
         const token = localStorage.getItem("token");
 
-        const res = await axios.get(`${API}/api/subject-allocations`, {
+        // Determine which endpoint to use based on user role
+        const endpoint = useSubjectAllocations
+          ? "subject-allocations"
+          : "subjects";
+
+        const res = await axios.get(`${API}/api/${endpoint}`, {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         });
+        const currentYear = new Date().getFullYear();
 
-        // res.data.data because backend sends { success, total, data }
-        const allSubjects = res.data.data || [];
-        console.log("Fetched subjects:", allSubjects);
+        const allSubjects =
+          endpoint === "subject-allocations"
+            ? res.data.data.filter(
+                (allocation) => allocation.year === currentYear
+              )
+            : res.data.data || [];
 
-        // Filter subjects by department if user is not Super Admin
-        const filteredSubjects = isSuperAdmin
-          ? allSubjects
-          : allSubjects.filter(
-              (subject) => subject.department === userDepartment
+        let filteredSubjects = [];
+
+        if (isStudent) {
+          const studentDepartment =
+            enrolledStudent?.department || userDepartment;
+          const studentCurrentSemester = enrolledStudent?.current_semester;
+
+          if (studentDepartment && studentCurrentSemester) {
+            filteredSubjects = allSubjects.filter(
+              (subject) =>
+                subject.department === studentDepartment &&
+                subject.semester === studentCurrentSemester
             );
+          } else {
+            toast.warn("Student department or semester not available");
+
+            filteredSubjects = [];
+          }
+        } else if (isTeacher) {
+          // For teachers: show only their assigned subjects
+          filteredSubjects = allSubjects.filter(
+            (allocation) => allocation.teacherName === userName
+          );
+        } else if (isSuperAdmin) {
+          // Super Admin sees all subjects
+          filteredSubjects = allSubjects;
+        } else {
+          // HOD and other roles see only their department subjects
+          filteredSubjects = allSubjects.filter(
+            (subject) => subject.department === userDepartment
+          );
+        }
 
         setSubjects(filteredSubjects);
       } catch (err) {
@@ -58,17 +110,44 @@ export default function ViewSubject() {
     };
 
     fetchSubjects();
-  }, [isSuperAdmin, userDepartment]);
+  }, [
+    isSuperAdmin,
+    userDepartment,
+    isStudent,
+    isTeacher,
+    userName,
+    enrolledStudent,
+    userCNIC,
+    students,
+    API,
+    useSubjectAllocations, // Add this to dependencies
+  ]);
 
   // ✅ Filter subjects by search query
   const filteredSubjects = subjects
-    .filter((s) =>
-      [s.subjectId, s.subjectName, s.subjectType, s.creditHours, s.year]
+    .filter((s) => {
+      const searchableFields = useSubjectAllocations
+        ? [s.saId, s.subName, s.teacherName, s.department, s.semester, s.year]
+        : [
+            s.subjectId,
+            s.subjectName,
+            s.subjectType,
+            s.creditHours,
+            s.year,
+            s.department,
+          ];
+
+      return searchableFields
         .join(" ")
         .toLowerCase()
-        .includes(query.toLowerCase())
-    )
-    .sort((a, b) => a.subjectId - b.subjectId);
+        .includes(query.toLowerCase());
+    })
+    .sort((a, b) => {
+      // Sort by appropriate ID based on data source
+      const idA = useSubjectAllocations ? a.saId : a.subjectId;
+      const idB = useSubjectAllocations ? b.saId : b.subjectId;
+      return idA - idB;
+    });
 
   // ✅ Pagination logic
   const pageCount = Math.ceil(filteredSubjects.length / pageSize);
@@ -77,28 +156,40 @@ export default function ViewSubject() {
     page * pageSize
   );
 
-  // ✅ Columns for subject table
-  const columns = [
-    { key: "saId", label: "Subject ID" },
-    { key: "subName", label: "Subject Name" },
-    { key: "teacherName", label: "Teacher Name" },
-    { key: "department", label: "Department" },
-    { key: "semester", label: "Semester" },
-    { key: "creditHours", label: "Credit Hours" },
-  ];
+  // ✅ Columns for subject table - different based on data source
+  const columns = useSubjectAllocations
+    ? [
+        { key: "saId", label: "ID" },
+        { key: "subName", label: "Subject Name" },
+        ...(isTeacher ? [] : [{ key: "teacherName", label: "Teacher Name" }]),
+        { key: "department", label: "Department" },
+        { key: "semester", label: "Semester" },
+        { key: "year", label: "Academic Year" },
+        { key: "creditHours", label: "Credit Hours" },
+      ]
+    : [
+        { key: "subjectId", label: "Subject ID" },
+        { key: "subjectName", label: "Subject Name" },
+        { key: "subjectType", label: "Subject Type" },
+        { key: "department", label: "Department" },
+        { key: "creditHours", label: "Credit Hours" },
+      ];
 
-  // ✅ Table actions (Edit & Delete) - Only show if user is not a student
-  const actions = !isStudent
+  // ✅ Table actions (Edit & Delete) - Only show for HOD and Super Admin
+  const showActions = !isStudent && !isTeacher && (isSuperAdmin || isHOD);
+
+  const actions = showActions
     ? [
         {
           label: "Edit",
           onClick: (row) => {
-            navigate(
-              `/SALU-PORTAL-FYP/Subjects/UpdateSubject/${row.subjectId}`,
-              {
-                state: { subject: row },
-              }
-            );
+            const route = useSubjectAllocations
+              ? `/SALU-PORTAL-FYP/Subjects/UpdateSubject/${row.saId}`
+              : `/SALU-PORTAL-FYP/Subjects/UpdateSubject/${row.subjectId}`;
+
+            navigate(route, {
+              state: { subject: row },
+            });
           },
           icon: (
             <FaEdit
@@ -110,18 +201,30 @@ export default function ViewSubject() {
         {
           label: "Delete",
           onClick: async (row) => {
-            if (!window.confirm(`Delete subject "${row.subjectName}"?`)) return;
+            const subjectName = useSubjectAllocations
+              ? row.subName
+              : row.subjectName;
+            if (!window.confirm(`Delete subject "${subjectName}"?`)) return;
             try {
               setLoading(true);
               const token = localStorage.getItem("token");
 
-              await axios.delete(`${API}/api/subjects/${row.subjectId}`, {
+              // Use appropriate endpoint based on data source
+              const endpoint = useSubjectAllocations
+                ? `subject-allocations/${row.saId}`
+                : `subjects/${row.subjectId}`;
+
+              await axios.delete(`${API}/api/${endpoint}`, {
                 headers: { Authorization: `Bearer ${token}` },
                 withCredentials: true,
               });
 
               setSubjects((prev) =>
-                prev.filter((s) => s.subjectId !== row.subjectId)
+                prev.filter((s) =>
+                  useSubjectAllocations
+                    ? s.saId !== row.saId
+                    : s.subjectId !== row.subjectId
+                )
               );
             } catch (err) {
               console.error(err);
@@ -168,20 +271,36 @@ export default function ViewSubject() {
         <div className="flex justify-start items-center gap-3">
           <BackButton url={"/SALU-PORTAL-FYP/Subjects"} />
           <h1 className="text-2xl sm:text-3xl md:text-4xl !py-3 font-bold text-gray-900 dark:text-white">
-            {isStudent ? "Available Subjects" : "Subjects List"}
+            {isStudent
+              ? "Available Subjects"
+              : isTeacher
+              ? "My Assigned Subjects"
+              : "Subjects List"}
           </h1>
         </div>
-
         <hr className="border-t-[3px] border-gray-900 dark:border-white mb-4" />
 
-        {/* Search Input */}
-        <div className="w-full flex justify-end lg:w-auto">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search subjects by ID, name, type, department..."
-            className="w-full lg:w-80 !px-3 !py-2 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-          />
+        <div className="flex flex-col md:flex-row justify-between items-center gap-3">
+          {/* Teacher Info */}
+          {isTeacher && (
+            <div className="w-full !p-2 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-gray-500">
+              Teacher: {userName} | Department: {userDepartment}
+            </div>
+          )}
+
+          {/* Search Input */}
+          <div className="w-full flex justify-end lg:w-auto">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={
+                useSubjectAllocations
+                  ? "Search by ID, subject name, teacher, department..."
+                  : "Search subjects by ID, name, type, department..."
+              }
+              className="w-full lg:w-80 !px-3 !py-2 border-2 border-[#a5a5a5] outline-none bg-[#f9f9f9] text-[#2a2a2a] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            />
+          </div>
         </div>
 
         {/* Clear Search Button */}
@@ -196,21 +315,26 @@ export default function ViewSubject() {
           </div>
         )}
 
-        {/* Table */}
         <DataTable columns={columns} rows={currentPageRows} actions={actions} />
 
         {/* Pagination */}
-        <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
-          <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
-            {isStudent ? "Total Available Subjects" : "Total Subjects"} :{" "}
-            {filteredSubjects.length}
-          </span>
-          <Pagination
-            totalPages={pageCount}
-            currentPage={page}
-            onPageChange={setPage}
-          />
-        </div>
+        {filteredSubjects.length > 0 && (
+          <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
+            <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
+              {isStudent
+                ? "Total Available Subjects"
+                : isTeacher
+                ? "Total Assigned Subjects"
+                : "Total Subjects"}{" "}
+              : {filteredSubjects.length}
+            </span>
+            <Pagination
+              totalPages={pageCount}
+              currentPage={page}
+              onPageChange={setPage}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
