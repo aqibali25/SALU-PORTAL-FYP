@@ -7,6 +7,7 @@ import Background from "./../../assets/Background.png";
 import { useNavigate } from "react-router-dom";
 import BackButton from "../BackButton";
 import { useEnrolledStudents } from "../../Hooks/useEnrolledStudents";
+import { toast } from "react-toastify";
 
 export default function ViewSubject() {
   const [subjects, setSubjects] = useState([]);
@@ -75,10 +76,11 @@ export default function ViewSubject() {
 
           if (studentCurrentSemester) {
             filteredSubjects = allSubjects.filter(
-              (subject) => subject.semester === studentCurrentSemester
+              (subject) =>
+                subject.semester === studentCurrentSemester &&
+                subject.department === enrolledStudent?.department
             );
           } else {
-            toast.warn("Student semester not available");
             filteredSubjects = [];
           }
         } else if (isTeacher) {
@@ -145,6 +147,7 @@ export default function ViewSubject() {
         { key: "saId", label: "ID" },
         { key: "subName", label: "Subject Name" },
         ...(isTeacher ? [] : [{ key: "teacherName", label: "Teacher Name" }]),
+        { key: "department", label: "Department" },
         { key: "semester", label: "Semester" },
         { key: "year", label: "Academic Year" },
         { key: "creditHours", label: "Credit Hours" },
