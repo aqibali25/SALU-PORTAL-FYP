@@ -85,7 +85,7 @@ export const cards = [
     Icon: faClock,
     color1: "#7C3AED",
     color2: "#F3E8FF",
-    roles: ["super admin", "hod"],
+    roles: ["super admin", "hod", "teacher", "student"],
   },
   {
     id: 8,

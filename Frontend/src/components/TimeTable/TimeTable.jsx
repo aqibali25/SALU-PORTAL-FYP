@@ -3,10 +3,13 @@ import { FaUpload, FaTable } from "react-icons/fa";
 import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
 import AdmissionCard from "../Admissions/AdmissionCard";
+import cookie from "js-cookie";
 
 const TimeTable = () => {
+  const userRole = cookie.get("role");
+
   const timeTableCards = [
-    {
+    (userRole !== "student" || userRole === "teacher") && {
       id: 1,
       title: "Upload Time Table",
       bgColor: "#F0FDF4",
@@ -16,13 +19,13 @@ const TimeTable = () => {
     },
     {
       id: 2,
-      title: "View Time Tables",
+      title: "View Time Table",
       bgColor: "#EFF6FF",
       borderColor: "#3B82F6",
       iconBg: "#3B82F6",
       Icon: FaTable,
     },
-  ];
+  ].filter(Boolean);
 
   return (
     <div

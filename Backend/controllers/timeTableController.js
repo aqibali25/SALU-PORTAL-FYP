@@ -30,9 +30,10 @@ export const uploadTimeTable = async (req, res) => {
 
     const yearInt = parseInt(year, 10);
     if (!Number.isInteger(yearInt) || yearInt < 1900 || yearInt > 3000) {
-      return res
-        .status(400)
-        .json({ success: false, message: "year must be a valid 4-digit year." });
+      return res.status(400).json({
+        success: false,
+        message: "year must be a valid 4-digit year.",
+      });
     }
 
     const buffer = req.file.buffer;
@@ -74,7 +75,7 @@ export const uploadTimeTable = async (req, res) => {
  */
 export const getTimeTables = async (req, res) => {
   try {
-    const { department, semester, year } = req.query;
+    const { department, semester, year, timeTableImage } = req.query;
 
     const where = [];
     const params = [];
@@ -91,6 +92,9 @@ export const getTimeTables = async (req, res) => {
       where.push("year = ?");
       params.push(year);
     }
+    if (timeTableImage) {
+      where.push("timetable_image IS NOT NULL");
+    }
 
     const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
@@ -98,6 +102,7 @@ export const getTimeTables = async (req, res) => {
       `
       SELECT
         id,
+        timetable_image,
         uploaded_on,
         department,
         semester,
@@ -130,6 +135,7 @@ export const getTimeTableById = async (req, res) => {
       `
       SELECT
         id,
+        timetable_image,
         uploaded_on,
         department,
         semester,

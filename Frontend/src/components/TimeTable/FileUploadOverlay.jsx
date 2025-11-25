@@ -24,6 +24,10 @@ const FileUploadOverlay = ({ department, onClose }) => {
     "8th",
   ];
 
+  // Allowed file types
+  const allowedFileTypes = ["image/png", "image/jpeg", "image/jpg"];
+  const allowedExtensions = [".png", ".jpg", ".jpeg"];
+
   // Get current year
   const currentYear = new Date().getFullYear();
 
@@ -88,6 +92,11 @@ const FileUploadOverlay = ({ department, onClose }) => {
     );
   };
 
+  // Validate file type
+  const validateFileType = (file) => {
+    return allowedFileTypes.includes(file.type);
+  };
+
   const handleFileUpload = async (selectedFiles) => {
     if (!semester) {
       toast.error("Please select a semester first!");
@@ -131,16 +140,35 @@ const FileUploadOverlay = ({ department, onClose }) => {
       return;
     }
 
-    // If there's already a file, replace it
-    const uploaded = Array.from(selectedFiles).map((file) => ({
-      id: Date.now() + Math.random(),
-      file,
-      status: "pending",
-      size: file.size,
-      semester: semester,
-      department: department.title,
-      year: currentYear,
-    }));
+    const file = selectedFiles[0];
+
+    // Validate file type
+    if (!validateFileType(file)) {
+      toast.error(
+        `Invalid file format. Please upload only PNG, JPG, or JPEG files.`
+      );
+      return;
+    }
+
+    // Validate file size (optional: 5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+      toast.error(`File size too large. Please upload files smaller than 5MB.`);
+      return;
+    }
+
+    // If validation passes, create file object
+    const uploaded = [
+      {
+        id: Date.now() + Math.random(),
+        file,
+        status: "pending",
+        size: file.size,
+        semester: semester,
+        department: department.title,
+        year: currentYear,
+      },
+    ];
 
     // Replace existing files with new one (only one file allowed)
     setFiles(uploaded);
@@ -150,7 +178,7 @@ const FileUploadOverlay = ({ department, onClose }) => {
       fileInputRef.current.value = "";
     }
 
-    toast.success(`File selected for upload: ${selectedFiles[0].name}`);
+    toast.success(`File selected for upload: ${file.name}`);
   };
 
   const removeFile = (id) => {
@@ -447,7 +475,7 @@ const FileUploadOverlay = ({ department, onClose }) => {
                   Choose a file or drag & drop it here.
                 </div>
                 <div className="text-xs text-gray-400 dark:text-gray-500">
-                  JPEG, PNG, and PDF formats. Only one file allowed.
+                  PNG, JPG, and JPEG formats only. Only one file allowed.
                 </div>
 
                 <label className="!mt-4 inline-block bg-gray-200 dark:bg-gray-500 !px-4 !py-2 cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-400 transition-colors text-gray-800 dark:text-white">
@@ -457,7 +485,7 @@ const FileUploadOverlay = ({ department, onClose }) => {
                     type="file"
                     className="hidden"
                     onChange={handleFileInputChange}
-                    accept=".jpg,.jpeg,.png,.pdf"
+                    accept=".png,.jpg,.jpeg"
                   />
                 </label>
               </div>
@@ -595,22 +623,6 @@ const FileUploadOverlay = ({ department, onClose }) => {
                     alt="Preview"
                     className="max-w-full max-h-[60vh] object-contain"
                   />
-                </div>
-              ) : selectedFile.file.type === "application/pdf" ? (
-                <div className="flex flex-col items-center">
-                  <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900 rounded-lg">
-                    <p className="text-yellow-800 dark:text-yellow-200 text-sm">
-                      PDF preview is not available in this view. The file will
-                      be properly stored and can be viewed after upload.
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-                    <span>File: {selectedFile.file.name}</span>
-                    <span>•</span>
-                    <span>
-                      Size: {(selectedFile.file.size / 1024).toFixed(0)} KB
-                    </span>
-                  </div>
                 </div>
               ) : (
                 <div className="text-center text-gray-500 dark:text-gray-400">

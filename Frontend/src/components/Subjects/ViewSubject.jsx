@@ -32,13 +32,14 @@ export default function ViewSubject() {
         setLoading(true);
         const token = localStorage.getItem("token");
 
-        const res = await axios.get(`${API}/api/subjects`, {
+        const res = await axios.get(`${API}/api/subject-allocations`, {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         });
 
         // res.data.data because backend sends { success, total, data }
         const allSubjects = res.data.data || [];
+        console.log("Fetched subjects:", allSubjects);
 
         // Filter subjects by department if user is not Super Admin
         const filteredSubjects = isSuperAdmin
@@ -78,10 +79,11 @@ export default function ViewSubject() {
 
   // ✅ Columns for subject table
   const columns = [
-    { key: "subjectId", label: "Subject ID" },
-    { key: "subjectName", label: "Subject Name" },
-    { key: "subjectType", label: "Subject Type" },
+    { key: "saId", label: "Subject ID" },
+    { key: "subName", label: "Subject Name" },
+    { key: "teacherName", label: "Teacher Name" },
     { key: "department", label: "Department" },
+    { key: "semester", label: "Semester" },
     { key: "creditHours", label: "Credit Hours" },
   ];
 
