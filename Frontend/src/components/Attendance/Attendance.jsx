@@ -3,10 +3,13 @@ import { FaClipboardCheck } from "react-icons/fa";
 import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
 import AdmissionCard from "../Admissions/AdmissionCard";
+import cookie from "js-cookie";
 
 const Attendance = () => {
+  const userRole = cookie.get("role");
+
   const attendanceCards = [
-    {
+    userRole !== "student" && {
       id: 1,
       title: "Take Attendance",
       bgColor: "#FFFBEB",
@@ -22,7 +25,7 @@ const Attendance = () => {
       iconBg: "#3B82F6",
       Icon: FaClipboardCheck,
     },
-  ];
+  ].filter(Boolean);
 
   return (
     <div

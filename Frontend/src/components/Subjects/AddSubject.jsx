@@ -49,6 +49,8 @@ const AddSubject = ({ Title }) => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    document.title = "SALU Portal | Add Subject";
+
     const initData = async () => {
       try {
         setLoading(true);

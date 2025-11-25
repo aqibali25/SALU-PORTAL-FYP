@@ -44,6 +44,8 @@ export default function ViewSubject() {
 
   // ✅ Fetch subjects from backend
   useEffect(() => {
+    document.title = "SALU Portal | View Subjects";
+
     const fetchSubjects = async () => {
       try {
         setLoading(true);

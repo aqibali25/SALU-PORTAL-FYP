@@ -115,7 +115,7 @@ export const cards = [
     Icon: faCalendarAlt,
     color1: "#2563EB",
     color2: "#EFF6FF",
-    roles: ["super admin", "teacher", "hod"],
+    roles: ["super admin", "teacher", "hod", "student"],
   },
   {
     id: 11,

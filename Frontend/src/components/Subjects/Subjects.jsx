@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { FaClipboardCheck } from "react-icons/fa";
 import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
@@ -8,6 +8,9 @@ import cookie from "js-cookie";
 const Subjects = () => {
   const userRole = cookie.get("role");
   console.log(userRole);
+  useEffect(() => {
+    document.title = "SALU Portal | Subjects";
+  }, []);
 
   const subjectCards = [
     userRole !== "student" &&

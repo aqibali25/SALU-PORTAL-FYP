@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEdit } from "@fortawesome/free-solid-svg-icons";
@@ -8,199 +8,227 @@ import Background from "../../assets/Background.png";
 import BackButton from "../BackButton";
 import { toast } from "react-toastify";
 
-const StudentAttendance = () => {
+const StudentAttendance = ({ data }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
   const pageSize = 10;
   const user = JSON.parse(localStorage.getItem("user"));
   const userRole = user?.role;
 
-  // Get student data from navigation state
-  const studentData = location.state;
-
-  // Check if data exists
-  useEffect(() => {
-    if (!studentData) {
-      toast.error("No student data found. Please go back and try again.");
-      navigate("/SALU-PORTAL-FYP/Attendance/ViewAttendance");
-    }
-  }, [studentData, navigate]);
-
-  if (!studentData) {
-    return (
-      <div className="flex justify-center items-center min-h-[calc(100vh-90px)] bg-white dark:bg-gray-900">
-        <div className="w-16 h-16 border-4 border-yellow-400 border-dashed rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  const { student, attendanceRecords, subject, overallPercentage } =
-    studentData;
-
-  // Debug: Check the actual data structure
-  useEffect(() => {
-    console.log("Attendance Records:", attendanceRecords);
-    if (attendanceRecords.length > 0) {
-      console.log("First record structure:", attendanceRecords[0]);
-    }
-  }, [attendanceRecords]);
+  // Use data from props if available, otherwise from location state
+  const studentData = data || location.state;
 
   // Safe value extraction function
-  const getSafeValue = (row, key) => {
-    if (!row || typeof row !== "object") return "";
+  const getSafeValue = useMemo(
+    () => (row, key) => {
+      if (!row || typeof row !== "object") return "";
 
-    // Direct property access
-    if (row[key] !== undefined && row[key] !== null) {
-      return String(row[key]);
-    }
-
-    // Nested object access
-    if (typeof row === "object") {
-      const value = row[key];
-      if (value !== undefined && value !== null) {
-        return String(value);
+      // Direct property access
+      if (row[key] !== undefined && row[key] !== null) {
+        return String(row[key]);
       }
-    }
 
-    return "";
-  };
+      // Nested object access
+      if (typeof row === "object") {
+        const value = row[key];
+        if (value !== undefined && value !== null) {
+          return String(value);
+        }
+      }
 
-  // Add serial numbers to records
-  const recordsWithSerialNo = attendanceRecords.map((record, index) => ({
-    ...record,
-    serialno: index + 1,
-  }));
-
-  // Filter attendance records based on search query
-  const filteredRecords = recordsWithSerialNo.filter((record) => {
-    if (!query.trim()) return true;
-
-    const searchTerm = query.toLowerCase();
-
-    const serialNo = String(record.serialno).toLowerCase();
-    const date = getSafeValue(record, "attendance_date").toLowerCase();
-    const status = getSafeValue(record, "status").toLowerCase();
-    const subjectName = getSafeValue(record, "subject_name").toLowerCase();
-
-    return (
-      serialNo.includes(searchTerm) ||
-      date.includes(searchTerm) ||
-      status.includes(searchTerm) ||
-      subjectName.includes(searchTerm)
-    );
-  });
-
-  // Pagination logic
-  const pageCount = Math.ceil(filteredRecords.length / pageSize);
-  const currentPageRows = filteredRecords.slice(
-    (page - 1) * pageSize,
-    page * pageSize
+      return "";
+    },
+    []
   );
 
-  // Safe status display function
-  const renderStatus = (row) => {
-    const statusValue = getSafeValue(row, "status");
-    const lowerStatus = statusValue.toLowerCase();
+  // Safe destructuring with defaults
+  const { student, attendanceRecords, subject, overallPercentage } = useMemo(
+    () => ({
+      student: {
+        rollNo: studentData?.student?.rollNo || studentData?.rollNo || "",
+        name: studentData?.student?.name || "Unknown Student",
+        department: studentData?.student?.department || "",
+        semester: studentData?.student?.semester || "",
+      },
+      attendanceRecords: studentData?.attendanceRecords || [],
+      subject: {
+        name: studentData?.subject?.name || "Unknown Subject",
+        id: studentData?.subject?.id || "",
+      },
+      overallPercentage: studentData?.overallPercentage || 0,
+    }),
+    [studentData]
+  );
 
-    let displayText = statusValue || "N/A";
-    let colorClass = "text-gray-600";
+  // Add serial numbers to records
+  const recordsWithSerialNo = useMemo(
+    () =>
+      Array.isArray(attendanceRecords)
+        ? attendanceRecords.map((record, index) => ({
+            ...record,
+            serialno: index + 1,
+          }))
+        : [],
+    [attendanceRecords]
+  );
 
-    if (lowerStatus === "present") {
-      colorClass = "text-green-600";
-    } else if (lowerStatus === "leave") {
-      colorClass = "text-yellow-600";
-    } else if (lowerStatus === "absent") {
-      colorClass = "text-red-600";
-    }
+  // Filter attendance records based on search query
+  const filteredRecords = useMemo(
+    () =>
+      recordsWithSerialNo.filter((record) => {
+        if (!query.trim()) return true;
 
-    return <span className={`font-semibold ${colorClass}`}>{displayText}</span>;
-  };
+        const searchTerm = query.toLowerCase();
 
-  // Safe text renderer for all values
-  const renderText = (row, key) => {
-    const textValue = getSafeValue(row, key);
-    return <span>{textValue}</span>;
-  };
+        const serialNo = String(record.serialno).toLowerCase();
+        const date = getSafeValue(record, "attendance_date").toLowerCase();
+        const status = getSafeValue(record, "status").toLowerCase();
+        const subjectName = getSafeValue(record, "subject_name").toLowerCase();
 
-  // Render serial number
-  const renderSerialNo = (row) => {
-    return <span className="font-semibold">{row.serialno}</span>;
-  };
+        return (
+          serialNo.includes(searchTerm) ||
+          date.includes(searchTerm) ||
+          status.includes(searchTerm) ||
+          subjectName.includes(searchTerm)
+        );
+      }),
+    [recordsWithSerialNo, query, getSafeValue]
+  );
 
-  // Render date
-  const renderDate = (row) => {
-    const dateValue = getSafeValue(row, "attendance_date");
-    return <span>{dateValue}</span>;
-  };
+  // Pagination
+  const pageCount = Math.ceil(filteredRecords.length / pageSize);
+  const currentPageRows = useMemo(
+    () => filteredRecords.slice((page - 1) * pageSize, page * pageSize),
+    [filteredRecords, page, pageSize]
+  );
+
+  // Render functions
+  const renderStatus = useMemo(
+    () => (row) => {
+      const statusValue = getSafeValue(row, "status");
+      const lowerStatus = statusValue.toLowerCase();
+
+      let displayText = statusValue || "N/A";
+      let colorClass = "text-gray-600";
+
+      if (lowerStatus === "present") {
+        colorClass = "text-green-600";
+      } else if (lowerStatus === "leave") {
+        colorClass = "text-yellow-600";
+      } else if (lowerStatus === "absent") {
+        colorClass = "text-red-600";
+      }
+
+      return (
+        <span className={`font-semibold ${colorClass}`}>{displayText}</span>
+      );
+    },
+    [getSafeValue]
+  );
+
+  const renderText = useMemo(
+    () => (row, key) => {
+      const textValue = getSafeValue(row, key);
+      return <span>{textValue || "N/A"}</span>;
+    },
+    [getSafeValue]
+  );
+
+  const renderSerialNo = useMemo(
+    () => (row) => {
+      return <span className="font-semibold">{row.serialno}</span>;
+    },
+    []
+  );
+
+  const renderDate = useMemo(
+    () => (row) => {
+      const dateValue = getSafeValue(row, "attendance_date");
+      return <span>{dateValue || "N/A"}</span>;
+    },
+    [getSafeValue]
+  );
 
   // Columns configuration
-  const columns = [
-    {
-      key: "serialno",
-      label: "Serial No.",
-      render: (row) => renderSerialNo(row),
-    },
-    {
-      key: "attendance_date",
-      label: "Date",
-      render: (row) => renderDate(row),
-    },
-    {
-      key: "class_start_time",
-      label: "Class Start Time",
-      render: (row) => renderText(row, "class_start_time"),
-    },
-    {
-      key: "class_end_time",
-      label: "Class End Time",
-      render: (row) => renderText(row, "class_end_time"),
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: (row) => renderStatus(row),
-    },
-  ];
+  const columns = useMemo(
+    () => [
+      {
+        key: "serialno",
+        label: "Serial No.",
+        render: renderSerialNo,
+      },
+      {
+        key: "attendance_date",
+        label: "Date",
+        render: renderDate,
+      },
+      {
+        key: "class_start_time",
+        label: "Class Start Time",
+        render: (row) => renderText(row, "class_start_time"),
+      },
+      {
+        key: "class_end_time",
+        label: "Class End Time",
+        render: (row) => renderText(row, "class_end_time"),
+      },
+      {
+        key: "status",
+        label: "Status",
+        render: renderStatus,
+      },
+    ],
+    [renderSerialNo, renderDate, renderText, renderStatus]
+  );
 
   // Actions configuration
-  const actions = [
-    {
-      label: "Edit",
-      onClick: (row) => {
-        if (userRole === "hod" || userRole === "super admin") {
-          navigate(
-            `/SALU-PORTAL-FYP/Attendance/ViewAttendance/${subject.name.replace(
-              /\s+/g,
-              ""
-            )}/${student.rollNo}/UpdateAttendance`,
+  const actions = useMemo(
+    () =>
+      userRole === "hod" || userRole === "super admin"
+        ? [
             {
-              state: {
-                attendanceRecord: row,
-                student: student,
-                subject: subject,
+              label: "Edit",
+              onClick: (row) => {
+                navigate(
+                  `/SALU-PORTAL-FYP/Attendance/ViewAttendance/${subject.name.replace(
+                    /\s+/g,
+                    ""
+                  )}/${student.rollNo}/UpdateAttendance`,
+                  {
+                    state: {
+                      attendanceRecord: row,
+                      student: student,
+                      subject: subject,
+                    },
+                  }
+                );
               },
-            }
-          );
-        } else {
-          toast.error("Only HOD can edit attendance records.");
-        }
-      },
-      icon: (
-        <FontAwesomeIcon
-          icon={faEdit}
-          className="cursor-pointer text-green-600 hover:text-green-700 text-lg"
-        />
-      ),
-    },
-  ];
+              icon: (
+                <FontAwesomeIcon
+                  icon={faEdit}
+                  className="cursor-pointer text-green-600 hover:text-green-700 text-lg"
+                />
+              ),
+            },
+          ]
+        : [],
+    [userRole, navigate, subject, student]
+  );
 
   // Reset to page 1 when search query changes
   useEffect(() => {
     setPage(1);
   }, [query]);
+
+  // Check if data exists
+  useEffect(() => {
+    if (!studentData) {
+      console.warn("No student data found");
+      toast.error("No student data available");
+    }
+  }, [studentData, navigate]);
 
   return (
     <div
@@ -215,7 +243,7 @@ const StudentAttendance = () => {
       <div className="flex flex-col gap-3 w-full min-h-[80vh] bg-[#D5BBE0] rounded-md !p-5">
         {/* Header with Back Button */}
         <div className="flex justify-start items-center gap-3">
-          <BackButton url={"-1"} />
+          <BackButton url="/SALU-PORTAL-FYP/Attendance/ViewAttendance" />
           <h1 className="text-2xl sm:text-3xl md:text-4xl !py-3 font-bold text-gray-900 dark:text-white">
             {subject.name}
           </h1>
@@ -223,9 +251,9 @@ const StudentAttendance = () => {
 
         <hr className="border-t-[3px] border-gray-900 dark:border-white !mb-4" />
 
-        {/* Student Info and Search in same line - Responsive */}
+        {/* Student Info and Search */}
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 !mb-4">
-          {/* Student Information - Responsive flex layout */}
+          {/* Student Information */}
           <div className="flex flex-col sm:flex-row gap-3 w-full xl:flex-1 xl:min-w-0">
             <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 !p-3 flex-1 min-w-0">
               <p className="text-sm text-gray-600 dark:text-gray-400">
