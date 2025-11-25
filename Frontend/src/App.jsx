@@ -20,7 +20,6 @@ import AddTestMarks from "./components/Admissions/AddTestMarks";
 import SelectedInMaritList from "./components/Admissions/SelectedInMeritList";
 import Marking from "./components/Examinations/Marking";
 import ShowStudentsForMarking from "./components/Examinations/ShowStudentsForMarking";
-import EnterStdMarks from "./components/Examinations/EnterStdMarks";
 import Subjects from "./components/Subjects/Subjects";
 import AddSubject from "./components/Subjects/AddSubject";
 import ViewSubject from "./components/Subjects/ViewSubject";
@@ -513,14 +512,6 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={getRolesForRoute("entermarks")}>
                   <ShowStudentsForMarking />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/SALU-PORTAL-FYP/EnterMarks/Subject/:subjectId/EnterStdMarks"
-              element={
-                <ProtectedRoute allowedRoles={getRolesForRoute("entermarks")}>
-                  <EnterStdMarks />
                 </ProtectedRoute>
               }
             />
