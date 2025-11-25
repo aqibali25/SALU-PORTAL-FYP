@@ -266,8 +266,6 @@ export const useEnrolledStudents = () => {
 
   // Main data fetching effect
   useEffect(() => {
-    document.title = `SALU Portal | Enrolled Students`;
-
     const fetchAllData = async () => {
       try {
         setLoading(true);

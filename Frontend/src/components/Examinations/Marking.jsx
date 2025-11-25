@@ -32,7 +32,11 @@ const Marking = () => {
         },
         withCredentials: true,
       });
-      const data = response.data.data;
+      const currentYear = new Date().getFullYear();
+
+      const data = response.data.data.filter(
+        (subject) => subject.year === currentYear
+      );
 
       // Check if user is super admin
       const isSuperAdmin = userRole === "super admin";

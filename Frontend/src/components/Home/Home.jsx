@@ -6,7 +6,7 @@ import Cookies from "js-cookie";
 
 const Home = () => {
   useEffect(() => {
-    document.title = "SALU Portal | Home ";
+    document.title = "SALU Portal ";
   });
 
   const userRole = Cookies.get("role")?.toLowerCase(); // Convert to lowercase
