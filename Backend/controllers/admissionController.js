@@ -109,6 +109,19 @@ export const getAdmissionById = async (req, res) => {
         p.blood_group, p.province, p.city, p.postal_address, p.permanent_address,
         p.remarks, p.roll_no, p.entry_test_roll_no, p.form_status, p.cgpa,
 
+        /* NEW FIELDS */
+        p.surname,
+        p.phone_no,
+        p.email,
+        p.are_you_employed,
+        p.self_finance,
+        p.hostel,
+        p.transport,
+        p.domicile_district,
+        p.block_no,
+        p.admission_year,
+        p.form_fee_status,
+
         f.name AS father_name, f.cnic_number AS father_cnic_number,
         f.mobile_number AS father_mobile, f.occupation AS father_occupation,
 
@@ -174,6 +187,20 @@ export const getAdmissionById = async (req, res) => {
         personal_info: {
           first_name: row.first_name,
           last_name: row.last_name,
+
+          /* NEW FIELDS ADDED */
+          surname: row.surname,
+          phone_no: row.phone_no,
+          email: row.email,
+          are_you_employed: row.are_you_employed,
+          self_finance: row.self_finance,
+          hostel: row.hostel,
+          transport: row.transport,
+          domicile_district: row.domicile_district,
+          block_no: row.block_no,
+          admission_year: row.admission_year,
+          form_fee_status: row.form_fee_status,
+
           gender: row.gender,
           dob: row.dob,
           religion: row.religion,
@@ -249,11 +276,10 @@ export const updateEntryTestMarks = async (req, res) => {
       passing_marks,
       merit_list,
       department,
-      fee_status, // "Paid" | "Unpaid"
-      status, // optional: any extended enum
+      fee_status,
+      status,
     } = req.body;
 
-    // 1) resolve CNIC
     const [[pi]] = await sequelize.query(
       `SELECT cnic FROM \`${DB}\`.personal_info WHERE id = ? LIMIT 1`,
       { replacements: [form_id] }
@@ -274,7 +300,6 @@ export const updateEntryTestMarks = async (req, res) => {
     const feeStatus = fee_status ?? "Unpaid";
     const enumStatus = status ? mapStatusToEnum(status) : null;
 
-    // 2) upsert enroll_students by CNIC
     const [[existing]] = await sequelize.query(
       `SELECT enroll_id FROM \`${DB}\`.enroll_students WHERE cnic = ? LIMIT 1`,
       { replacements: [cnic] }
@@ -338,7 +363,6 @@ export const updateEntryTestMarks = async (req, res) => {
       );
     }
 
-    // 3) if status provided, mirror to personal_info (your personal_info enum is extended)
     if (enumStatus) {
       await sequelize.query(
         `UPDATE \`${DB}\`.personal_info SET form_status = ? WHERE id = ?`,
@@ -346,7 +370,6 @@ export const updateEntryTestMarks = async (req, res) => {
       );
     }
 
-    // 4) return latest enroll row
     const [[row]] = await sequelize.query(
       `
       SELECT
@@ -528,7 +551,7 @@ export const getDocumentsById = async (req, res) => {
 };
 
 /* ============================== Status Only ================================ */
-/** PATCH /api/admissions/updateStatus/:form_id   Body: { status, remarks } */
+/** PATCH /api/admissions/updateStatus/:form_id   Body: { status, remarks, cgpa } */
 export const updateFormStatus = async (req, res) => {
   try {
     const { form_id } = req.params;
@@ -551,10 +574,9 @@ export const updateFormStatus = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Form not found" });
 
-    // Update both status and remarks
     await sequelize.query(
       `UPDATE \`${DB}\`.personal_info SET form_status = ?, remarks = ?, cgpa = ? WHERE id = ?`,
-      { replacements: [enumStatus, remarks || null, cgpa || 0, form_id] } // Use null if remarks is not provided
+      { replacements: [enumStatus, remarks || null, cgpa || 0, form_id] }
     );
 
     res.json({
@@ -568,6 +590,7 @@ export const updateFormStatus = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 export const assignRollNo = async (req, res) => {
   try {
     const { form_id } = req.params;
@@ -588,7 +611,6 @@ export const assignRollNo = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Form not found" });
 
-    // ✅ CORRECTED: Use UPDATE instead of INSERT
     await sequelize.query(
       `UPDATE \`${DB}\`.personal_info SET roll_no = ? WHERE id = ?`,
       { replacements: [roll_no, form_id] }
@@ -603,6 +625,7 @@ export const assignRollNo = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 export const assignTestRollNo = async (req, res) => {
   try {
     const { form_id } = req.params;
@@ -623,7 +646,6 @@ export const assignTestRollNo = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Form not found" });
 
-    // ✅ CORRECTED: Use UPDATE instead of INSERT
     await sequelize.query(
       `UPDATE \`${DB}\`.personal_info SET entry_test_roll_no = ? WHERE id = ?`,
       { replacements: [entry_test_roll_no, form_id] }
