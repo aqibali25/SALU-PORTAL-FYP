@@ -544,9 +544,9 @@ export default function MarkAttendance() {
                               "Present"
                             )
                           }
-                          className={`!px-3 !py-1 border-2 border-green-800 cursor-pointer text-white font-semibold text-sm transition-colors ${
+                          className={`!px-3 !py-1 border-2 dark:border-green-800 cursor-pointer text-white font-semibold text-sm transition-colors ${
                             currentStatus === "Present"
-                              ? "bg-green-600  border-white"
+                              ? "bg-green-600  border-gray-900 dark:border-white "
                               : "bg-green-500 hover:bg-green-600"
                           }`}
                         >
@@ -560,9 +560,9 @@ export default function MarkAttendance() {
                               "Absent"
                             )
                           }
-                          className={`!px-3 !py-1 border-2 border-red-800 cursor-pointer text-white font-semibold text-sm transition-colors ${
+                          className={`!px-3 !py-1 border-2 dark:border-red-800 cursor-pointer text-white font-semibold text-sm transition-colors ${
                             currentStatus === "Absent"
-                              ? "bg-red-600  border-white"
+                              ? "bg-red-600 border-gray-900 dark:border-white"
                               : "bg-red-500 hover:bg-red-600"
                           }`}
                         >
@@ -576,9 +576,9 @@ export default function MarkAttendance() {
                               "Leave"
                             )
                           }
-                          className={`!px-3 !py-1 border-2 border-yellow-800 cursor-pointer text-white font-semibold text-sm transition-colors ${
+                          className={`!px-3 !py-1 border-2 dark:border-yellow-800 cursor-pointer text-white font-semibold text-sm transition-colors ${
                             currentStatus === "Leave"
-                              ? "bg-yellow-600  border-white"
+                              ? "bg-yellow-600  border-gray-900 dark:!border-white"
                               : "bg-yellow-500 hover:bg-yellow-600"
                           }`}
                         >
@@ -715,7 +715,7 @@ export default function MarkAttendance() {
                 ))}
               </div>
               {selectedSlot && (
-                <p className="text-green-600 text-sm mt-2">
+                <p className="text-green-600 text-sm !mt-2">
                   Selected:{" "}
                   {currentSlots.find((s) => s.id === selectedSlot)?.time}
                 </p>

@@ -555,8 +555,7 @@ export const getDocumentsById = async (req, res) => {
 export const updateFormStatus = async (req, res) => {
   try {
     const { form_id } = req.params;
-    const { status, remarks, cgpa } = req.body;
-
+    const { status, remarks, cgpa, formFeeStatus } = req.body;
     if (!status) {
       return res
         .status(400)
@@ -575,8 +574,16 @@ export const updateFormStatus = async (req, res) => {
         .json({ success: false, message: "Form not found" });
 
     await sequelize.query(
-      `UPDATE \`${DB}\`.personal_info SET form_status = ?, remarks = ?, cgpa = ? WHERE id = ?`,
-      { replacements: [enumStatus, remarks || null, cgpa || 0, form_id] }
+      `UPDATE \`${DB}\`.personal_info SET form_status = ?, form_fee_status = ?, remarks = ?, cgpa = ? WHERE id = ?`,
+      {
+        replacements: [
+          enumStatus,
+          formFeeStatus || "Unpaid",
+          remarks || null,
+          cgpa || 0,
+          form_id,
+        ],
+      }
     );
 
     res.json({
@@ -629,12 +636,18 @@ export const assignRollNo = async (req, res) => {
 export const assignTestRollNo = async (req, res) => {
   try {
     const { form_id } = req.params;
-    const { entry_test_roll_no } = req.body;
+    const { entry_test_roll_no, block_no } = req.body;
 
     if (!entry_test_roll_no) {
       return res
         .status(400)
         .json({ success: false, message: "Missing 'entry_test_roll_no'." });
+    }
+
+    if (!block_no) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing 'block_no'." });
     }
 
     const [[exists]] = await sequelize.query(
@@ -647,8 +660,8 @@ export const assignTestRollNo = async (req, res) => {
         .json({ success: false, message: "Form not found" });
 
     await sequelize.query(
-      `UPDATE \`${DB}\`.personal_info SET entry_test_roll_no = ? WHERE id = ?`,
-      { replacements: [entry_test_roll_no, form_id] }
+      `UPDATE \`${DB}\`.personal_info SET entry_test_roll_no = ? , block_no = ? WHERE id = ?`,
+      { replacements: [entry_test_roll_no, block_no, form_id] }
     );
 
     res.json({

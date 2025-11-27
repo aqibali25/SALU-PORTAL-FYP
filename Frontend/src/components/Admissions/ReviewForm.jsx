@@ -71,7 +71,8 @@ const ReviewForm = () => {
         return null;
     }
   };
-
+  const formData = location.state?.form?.data;
+  console.log(formData);
   const handleBack = () => {
     if (step > 1) setStep((prev) => prev - 1);
     else window.history.back();
@@ -80,6 +81,47 @@ const ReviewForm = () => {
   const handleNext = () => {
     if (step < Object.keys(stepTitles).length) setStep((prev) => prev + 1);
   };
+
+  // Add this function to your ReviewForm component
+  const sendStatusEmail = async (status, remarks) => {
+    const formData = location.state?.form?.data;
+    if (!formData) {
+      console.error("Form data not available for email");
+      return;
+    }
+
+    // You'll need to get the student's email from your form data
+    const studentEmail = formData?.personal_info?.email;
+    const studentName =
+      formData?.personal_info?.first_name +
+      " " +
+      formData?.personal_info?.last_name;
+
+    if (!studentEmail) {
+      console.error("Student email not found");
+      return;
+    }
+
+    const backendBaseUrl =
+      import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
+    try {
+      await axios.post(`${backendBaseUrl}/api/email/send-form-status`, {
+        to: studentEmail,
+        studentName: studentName || "Student",
+        status: status,
+        remarks: remarks,
+        formId: formData.form_id,
+      });
+
+      console.log(`✅ ${status} email sent successfully to ${studentEmail}`);
+    } catch (error) {
+      console.error(`❌ Failed to send ${status} email:`, error);
+      // Don't throw error here to avoid blocking the main action
+    }
+  };
+
+  // Update your existing handlers to include email sending:
 
   // Approve function
   const handleApprove = async () => {
@@ -95,15 +137,22 @@ const ReviewForm = () => {
       import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
     try {
+      // Update status in database
       await axios.patch(
         `${backendBaseUrl}/api/admissions/updateStatus/${formData.form_id}`,
         {
           status: "Approved",
-          remarks: "Form approved successfully", // Optional approval remarks
+          remarks: "Form approved successfully",
+          formFeeStatus: "Paid",
         }
       );
 
-      toast.success("Form approved successfully!", { position: "top-center" });
+      // Send approval email
+      await sendStatusEmail("Approved", "Form approved successfully");
+
+      toast.success("Form approved successfully and email sent!", {
+        position: "top-center",
+      });
       localStorage.removeItem("reviewFormStep");
 
       setTimeout(() => {
@@ -115,7 +164,8 @@ const ReviewForm = () => {
     }
   };
 
-  // Handle revert function with remarks
+  // Update handleRevert and handleTrash similarly:
+
   const handleRevert = async (remarks) => {
     setShowRevert(false);
 
@@ -133,11 +183,16 @@ const ReviewForm = () => {
         `${backendBaseUrl}/api/admissions/updateStatus/${formData.form_id}`,
         {
           status: "Revert",
-          remarks: remarks, // Send remarks to API
+          remarks: remarks,
         }
       );
 
-      toast.success("Form reverted successfully!", { position: "top-center" });
+      // Send revert email
+      await sendStatusEmail("Revert", remarks);
+
+      toast.success("Form reverted successfully and email sent!", {
+        position: "top-center",
+      });
       localStorage.removeItem("reviewFormStep");
 
       setTimeout(() => {
@@ -149,7 +204,6 @@ const ReviewForm = () => {
     }
   };
 
-  // Handle trash function with remarks
   const handleTrash = async (remarks) => {
     setShowTrash(false);
 
@@ -171,7 +225,10 @@ const ReviewForm = () => {
         }
       );
 
-      toast.success("Form moved to trash successfully!", {
+      // Send trash email
+      await sendStatusEmail("Trash", remarks);
+
+      toast.success("Form moved to trash successfully and email sent!", {
         position: "top-center",
       });
       localStorage.removeItem("reviewFormStep");

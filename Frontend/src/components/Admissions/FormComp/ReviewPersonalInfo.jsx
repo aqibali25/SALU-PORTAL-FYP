@@ -21,6 +21,7 @@ const ReviewPersonalInfo = () => {
 
   return (
     <div className="flex flex-col w-full justify-evenly items-center gap-6 !mt-10 !p-4">
+      {/* Basic Information */}
       <InputContainer
         htmlFor="firstName"
         title="First Name"
@@ -31,6 +32,30 @@ const ReviewPersonalInfo = () => {
         htmlFor="lastName"
         title="Last Name"
         value={personalInfo.last_name || ""}
+        disabled
+      />
+
+      {/* New: Surname */}
+      <InputContainer
+        htmlFor="surname"
+        title="Surname"
+        value={personalInfo.surname || ""}
+        disabled
+      />
+
+      {/* New: Email */}
+      <InputContainer
+        htmlFor="email"
+        title="Email"
+        value={personalInfo.email || ""}
+        disabled
+      />
+
+      {/* New: Number */}
+      <InputContainer
+        htmlFor="number"
+        title="Number"
+        value={personalInfo.phone_no || ""}
         disabled
       />
 
@@ -112,6 +137,25 @@ const ReviewPersonalInfo = () => {
         disabled
       />
 
+      {/* New: Disability */}
+      <InputContainer
+        htmlFor="disability"
+        title="Disability"
+        value={personalInfo.disability || "N/A"}
+        disabled
+      />
+
+      {/* New: Disability Description (conditionally shown) */}
+      {personalInfo.disability === "Yes" &&
+        personalInfo.disability_description && (
+          <InputContainer
+            htmlFor="disabilityDescription"
+            title="Disability Description"
+            value={personalInfo.disability_description || ""}
+            disabled
+          />
+        )}
+
       {/* Province */}
       <InputContainer
         width="40%"
@@ -132,6 +176,14 @@ const ReviewPersonalInfo = () => {
         className="sm:w-full"
       />
 
+      {/* New: Domicile District */}
+      <InputContainer
+        htmlFor="domicileDistrict"
+        title="Domicile District"
+        value={personalInfo.domicile_district || ""}
+        disabled
+      />
+
       {/* Addresses */}
       <InputContainer
         htmlFor="postalAddress"
@@ -143,6 +195,45 @@ const ReviewPersonalInfo = () => {
         htmlFor="permanentAddress"
         title="Permanent Address"
         value={personalInfo.permanent_address || ""}
+        disabled
+      />
+
+      {/* New: Employment Status */}
+      <InputContainer
+        htmlFor="areYouEmployed"
+        title="Are You Employed?"
+        value={personalInfo.are_you_employed || "N/A"}
+        disabled
+      />
+
+      {/* New: Self Finance */}
+      <InputContainer
+        htmlFor="selfFinance"
+        title="Self Finance?"
+        value={personalInfo.self_finance || "N/A"}
+        disabled
+      />
+
+      {/* New: Hostel Required */}
+      <InputContainer
+        htmlFor="hostel"
+        title="Require Hostel?"
+        value={personalInfo.hostel || "N/A"}
+        disabled
+      />
+
+      {/* New: Transport Required */}
+      <InputContainer
+        htmlFor="transport"
+        title="Require Transport?"
+        value={personalInfo.transport || "N/A"}
+        disabled
+      />
+
+      <InputContainer
+        htmlFor="admissionYear"
+        title="Admission Year"
+        value={personalInfo.admission_year || "N/A"}
         disabled
       />
     </div>

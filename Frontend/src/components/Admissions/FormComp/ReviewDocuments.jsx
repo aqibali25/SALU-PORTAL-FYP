@@ -10,7 +10,6 @@ const ReviewDocuments = () => {
   const location = useLocation();
   const formData = location.state?.form?.data;
   const documents = formData?.uploaded_documents || [];
-
   const [previewUrl, setPreviewUrl] = useState(null);
   const [previewType, setPreviewType] = useState(null); // 'image', 'pdf', 'document'
   const [showApproved, setShowApproved] = useState(false);

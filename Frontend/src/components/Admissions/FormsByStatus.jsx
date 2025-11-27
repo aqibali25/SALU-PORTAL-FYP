@@ -502,7 +502,6 @@ export default function FormsByStatus({ heading }) {
   /** Generate Test Roll Numbers for Approved Forms */
   const generateTestRollNumbers = async () => {
     try {
-      // Check if there are any forms
       if (filteredForms.length === 0) {
         toast.error("There are no students to assign test roll numbers!");
         return;
@@ -522,31 +521,63 @@ export default function FormsByStatus({ heading }) {
         return;
       }
 
+      // Configuration for block numbers
+      const BLOCK_CONFIG = {
+        STUDENTS_PER_BLOCK: 40,
+        STARTING_ROLL_NUMBER: 2100001,
+        BLOCK_PREFIX: "Block ",
+      };
+
       // Start from 2100001 and increment sequentially
-      let testRollNumber = 2100001;
+      let testRollNumber = BLOCK_CONFIG.STARTING_ROLL_NUMBER;
 
       // Generate test roll numbers for ALL approved forms
       const formsToUpdate = filteredForms
         .sort((a, b) => a.student_name?.localeCompare(b.student_name))
         .map((form) => {
           const testRollNo = testRollNumber.toString();
+
+          // Calculate block number based on roll number
+          const studentsFromStart =
+            testRollNumber - BLOCK_CONFIG.STARTING_ROLL_NUMBER;
+          const blockNumber =
+            Math.floor(studentsFromStart / BLOCK_CONFIG.STUDENTS_PER_BLOCK) + 1;
+
+          // Format block number to 2 digits (01, 02, 03, etc.)
+          const blockNo = blockNumber.toString().padStart(2, "0");
+
           testRollNumber++;
 
           return {
             ...form,
             entry_test_roll_no: testRollNo,
+            block_no: blockNo,
           };
         });
 
-      console.log("All forms with new test roll numbers:", formsToUpdate);
+      console.log(
+        "All forms with new test roll numbers and block numbers:",
+        formsToUpdate
+      );
 
-      // Send test roll numbers to backend for ALL forms
+      // Display block distribution summary
+      const blockSummary = formsToUpdate.reduce((acc, form) => {
+        acc[form.block_no] = (acc[form.block_no] || 0) + 1;
+        return acc;
+      }, {});
+
+      console.log("Block Distribution:", blockSummary);
+
+      // Send test roll numbers and block numbers to backend for ALL forms
       const token = localStorage.getItem("token");
       const promises = formsToUpdate.map(async (form) => {
         try {
           const res = await axios.put(
             `${backendBaseUrl}/api/admissions/assignTestRollNo/${form.form_id}`,
-            { entry_test_roll_no: form.entry_test_roll_no },
+            {
+              entry_test_roll_no: form.entry_test_roll_no,
+              block_no: form.block_no,
+            },
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -558,6 +589,7 @@ export default function FormsByStatus({ heading }) {
             success: true,
             form_id: form.form_id,
             entry_test_roll_no: form.entry_test_roll_no,
+            block_no: form.block_no,
             assigned: true,
           };
         } catch (error) {
@@ -586,8 +618,13 @@ export default function FormsByStatus({ heading }) {
           failed.map((f) => f.form_id)
         );
       } else {
+        // Create success message with block distribution
+        const blockMessage = Object.entries(blockSummary)
+          .map(([block, count]) => `Block ${block}: ${count} students`)
+          .join(", ");
+
         toast.success(
-          `Successfully assigned test roll numbers to ${successful.length} students!`
+          `Successfully assigned test roll numbers to ${successful.length} students! Distribution: ${blockMessage}`
         );
       }
 
@@ -951,7 +988,7 @@ export default function FormsByStatus({ heading }) {
         {/* Pagination */}
         <div className="flex flex-col gap-5 sm:flex-row items-center justify-between mt-4">
           <span className="font-bold text-[1.3rem] text-gray-900 dark:text-white">
-            Total Forms: {rows.length}
+            Total Forms: {filteredForms.length}
           </span>
 
           {/* Show appropriate button based on status */}

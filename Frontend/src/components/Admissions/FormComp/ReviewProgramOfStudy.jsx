@@ -42,9 +42,9 @@ const ReviewProgramOfStudy = () => {
       />
       <InputContainer
         width="50%"
-        value={programData.third_choice || ""}
-        title="Third Choice"
-        htmlFor="thirdChoice"
+        value={programData.shift || ""}
+        title="Shift"
+        htmlFor="shift"
         inputType="text"
         disabled
       />
