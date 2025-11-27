@@ -9,36 +9,24 @@ const calculateStatus = (startDate, endDate) => {
   const start = new Date(startDate);
   const end = new Date(endDate);
 
-  // Set time to beginning of day for accurate comparison
   currentDate.setHours(0, 0, 0, 0);
   start.setHours(0, 0, 0, 0);
   end.setHours(0, 0, 0, 0);
 
-  if (currentDate < start) {
-    return "Upcoming";
-  } else if (currentDate >= start && currentDate <= end) {
-    return "Open";
-  } else {
-    return "Closed";
-  }
+  if (currentDate < start) return "Upcoming";
+  if (currentDate >= start && currentDate <= end) return "Open";
+  return "Closed";
 };
 
 /* ---------------------------- STATUS UPDATE ---------------------------- */
-/**
- * PUT /api/admission-schedules/update-status
- * No body required - automatically updates all statuses based on current date
- */
 export const updateAdmissionScheduleStatus = async (req, res) => {
   try {
-    // First, get all admission schedules
     const schedules = await sequelize.query(
       `SELECT id, start_date, end_date FROM admission_schedule`,
-      {
-        type: sequelize.QueryTypes.SELECT,
-      }
+      { type: sequelize.QueryTypes.SELECT }
     );
 
-    if (!schedules || schedules.length === 0) {
+    if (!schedules.length) {
       return res.status(200).json({
         success: true,
         message: "No admission schedules found to update",
@@ -47,45 +35,32 @@ export const updateAdmissionScheduleStatus = async (req, res) => {
     }
 
     let updatedCount = 0;
-
-    // Update status for each record
     for (const schedule of schedules) {
       const newStatus = calculateStatus(schedule.start_date, schedule.end_date);
 
       await sequelize.query(
         `UPDATE admission_schedule SET status = :status WHERE id = :id`,
         {
-          replacements: {
-            status: newStatus,
-            id: schedule.id,
-          },
+          replacements: { status: newStatus, id: schedule.id },
           type: sequelize.QueryTypes.UPDATE,
         }
       );
-
       updatedCount++;
     }
 
     res.status(200).json({
       success: true,
       message: "Admission schedule status updated successfully",
-      updatedCount: updatedCount,
+      updatedCount,
       totalRecords: schedules.length,
     });
   } catch (err) {
     console.error("updateAdmissionScheduleStatus error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Server error: " + err.message,
-    });
+    res.status(500).json({ success: false, message: "Server error: " + err.message });
   }
 };
 
 /* ---------------------------- CREATE ---------------------------- */
-/**
- * POST /api/admission-schedules/create
- * Body: { start_date, end_date, admission_form_fee, admission_year, shift }
- */
 export const createAdmissionSchedule = async (req, res) => {
   try {
     const {
@@ -95,29 +70,32 @@ export const createAdmissionSchedule = async (req, res) => {
       admission_year,
       shift,
       status,
+      test_date,
+      reporting_time,
+      test_time,
+      test_venue,
+      test_total_marks,
+      test_passing_marks
     } = req.body;
 
-    if (
-      !start_date ||
-      !end_date ||
-      !admission_form_fee ||
-      !admission_year ||
-      !shift
-    ) {
-      return res
-        .status(400)
-        .json({ success: false, message: "All fields are required." });
+    if (!start_date || !end_date || !admission_form_fee || !admission_year || !shift) {
+      return res.status(400).json({ success: false, message: "All fields are required." });
     }
 
-    // Calculate status automatically if not provided
     const calculatedStatus = status || calculateStatus(start_date, end_date);
 
-    // Insert record
     const [result] = await sequelize.query(
       `
       INSERT INTO admission_schedule 
-        (start_date, end_date, admission_form_fee, admission_year, \`Shift\`, status)
-      VALUES (:start_date, :end_date, :admission_form_fee, :admission_year, :shift, :status)
+      (
+        start_date, end_date, admission_form_fee, admission_year, \`Shift\`, status,
+        test_date, reporting_time, test_time, test_venue, test_total_marks, test_passing_marks
+      )
+      VALUES 
+      (
+        :start_date, :end_date, :admission_form_fee, :admission_year, :shift, :status,
+        :test_date, :reporting_time, :test_time, :test_venue, :test_total_marks, :test_passing_marks
+      )
       `,
       {
         replacements: {
@@ -127,6 +105,12 @@ export const createAdmissionSchedule = async (req, res) => {
           admission_year: Number(admission_year),
           shift,
           status: calculatedStatus,
+          test_date,
+          reporting_time,
+          test_time,
+          test_venue,
+          test_total_marks,
+          test_passing_marks
         },
         type: sequelize.QueryTypes.INSERT,
       }
@@ -134,45 +118,30 @@ export const createAdmissionSchedule = async (req, res) => {
 
     const insertedId = result;
 
-    // Return newly inserted row
     const [rows] = await sequelize.query(
       `
       SELECT
-        id,
-        start_date,
-        end_date,
-        admission_form_fee,
-        admission_year,
-        \`Shift\` AS shift,
-        status
+        id, start_date, end_date, admission_form_fee, admission_year,
+        \`Shift\` AS shift, status,
+        test_date, reporting_time, test_time, test_venue, test_total_marks, test_passing_marks
       FROM admission_schedule
-      WHERE id = :id
-      LIMIT 1
+      WHERE id = :id LIMIT 1
       `,
-      {
-        replacements: { id: insertedId },
-        type: sequelize.QueryTypes.SELECT,
-      }
+      { replacements: { id: insertedId }, type: sequelize.QueryTypes.SELECT }
     );
 
     res.json({
       success: true,
       message: "Admission schedule created successfully.",
-      data: rows ? rows[0] : null,
+      data: rows || null,
     });
   } catch (err) {
     console.error("createAdmissionSchedule error:", err);
-    res
-      .status(500)
-      .json({ success: false, message: "Server error: " + err.message });
+    res.status(500).json({ success: false, message: "Server error: " + err.message });
   }
 };
 
 /* ----------------------------- UPDATE --------------------------- */
-/**
- * PUT /api/admission-schedules/update
- * Body: { id, start_date, end_date, admission_form_fee, admission_year, shift }
- */
 export const updateAdmissionSchedule = async (req, res) => {
   try {
     const {
@@ -183,97 +152,87 @@ export const updateAdmissionSchedule = async (req, res) => {
       admission_year,
       shift,
       status,
+      test_date,
+      reporting_time,
+      test_time,
+      test_venue,
+      test_total_marks,
+      test_passing_marks
     } = req.body;
 
-    if (!id) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Schedule id is required." });
-    }
+    if (!id)
+      return res.status(400).json({ success: false, message: "Schedule id is required." });
 
-    // Check record exists
     const [exists] = await sequelize.query(
       `SELECT id FROM admission_schedule WHERE id = :id LIMIT 1`,
-      {
-        replacements: { id },
-        type: sequelize.QueryTypes.SELECT,
-      }
+      { replacements: { id }, type: sequelize.QueryTypes.SELECT }
     );
 
-    if (!exists || exists.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Admission schedule not found." });
-    }
+    if (!exists)
+      return res.status(404).json({ success: false, message: "Admission schedule not found." });
 
-    // Calculate status automatically if dates are updated
     const calculatedStatus = status || calculateStatus(start_date, end_date);
 
-    // Update record
     await sequelize.query(
       `
-      UPDATE admission_schedule
-      SET
-        start_date         = :start_date,
-        end_date           = :end_date,
+      UPDATE admission_schedule SET
+        start_date = :start_date,
+        end_date = :end_date,
         admission_form_fee = :admission_form_fee,
-        admission_year     = :admission_year,
-        \`Shift\`          = :shift,
-        status             = :status
+        admission_year = :admission_year,
+        \`Shift\` = :shift,
+        status = :status,
+        test_date = :test_date,
+        reporting_time = :reporting_time,
+        test_time = :test_time,
+        test_venue = :test_venue,
+        test_total_marks = :test_total_marks,
+        test_passing_marks = :test_passing_marks
       WHERE id = :id
       `,
       {
         replacements: {
           start_date,
           end_date,
-          admission_form_fee: String(admission_form_fee),
-          admission_year: Number(admission_year),
+          admission_form_fee,
+          admission_year,
           shift,
           status: calculatedStatus,
-          id,
+          test_date,
+          reporting_time,
+          test_time,
+          test_venue,
+          test_total_marks,
+          test_passing_marks,
+          id
         },
         type: sequelize.QueryTypes.UPDATE,
       }
     );
 
-    // Get updated record
     const [rows] = await sequelize.query(
       `
       SELECT
-        id,
-        start_date,
-        end_date,
-        admission_form_fee,
-        admission_year,
-        \`Shift\` AS shift,
-        status
+        id, start_date, end_date, admission_form_fee, admission_year, \`Shift\` AS shift, status,
+        test_date, reporting_time, test_time, test_venue, test_total_marks, test_passing_marks
       FROM admission_schedule
-      WHERE id = :id
-      LIMIT 1
+      WHERE id = :id LIMIT 1
       `,
-      {
-        replacements: { id },
-        type: sequelize.QueryTypes.SELECT,
-      }
+      { replacements: { id }, type: sequelize.QueryTypes.SELECT }
     );
 
     res.json({
       success: true,
       message: "Admission schedule updated successfully.",
-      data: rows ? rows[0] : null,
+      data: rows || null,
     });
   } catch (err) {
     console.error("updateAdmissionSchedule error:", err);
-    res
-      .status(500)
-      .json({ success: false, message: "Server error: " + err.message });
+    res.status(500).json({ success: false, message: "Server error: " + err.message });
   }
 };
 
 /* ----------------------------- GET ONE -------------------------- */
-/**
- * GET /api/admission-schedules/:id
- */
 export const getAdmissionScheduleById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -281,30 +240,19 @@ export const getAdmissionScheduleById = async (req, res) => {
     const [rows] = await sequelize.query(
       `
       SELECT
-        id,
-        start_date,
-        end_date,
-        admission_form_fee,
-        admission_year,
-        \`Shift\` AS shift,
-        status
+        id, start_date, end_date, admission_form_fee, admission_year,
+        \`Shift\` AS shift, status,
+        test_date, reporting_time, test_time, test_venue, test_total_marks, test_passing_marks
       FROM admission_schedule
-      WHERE id = :id
-      LIMIT 1
+      WHERE id = :id LIMIT 1
       `,
-      {
-        replacements: { id },
-        type: sequelize.QueryTypes.SELECT,
-      }
+      { replacements: { id }, type: sequelize.QueryTypes.SELECT }
     );
 
-    if (!rows || rows.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Admission schedule not found." });
-    }
+    if (!rows)
+      return res.status(404).json({ success: false, message: "Admission schedule not found." });
 
-    res.json({ success: true, data: rows[0] });
+    res.json({ success: true, data: rows });
   } catch (err) {
     console.error("getAdmissionScheduleById error:", err);
     res.status(500).json({ success: false, message: "Server error" });
@@ -312,12 +260,6 @@ export const getAdmissionScheduleById = async (req, res) => {
 };
 
 /* ----------------------------- GET ALL -------------------------- */
-/**
- * GET /api/admission-schedules
- * Optional query:
- *   year  -> filter by admission_year
- *   shift -> filter by Shift
- */
 export const getAllAdmissionSchedules = async (req, res) => {
   try {
     const { year, shift } = req.query;
@@ -339,61 +281,36 @@ export const getAllAdmissionSchedules = async (req, res) => {
     const rows = await sequelize.query(
       `
       SELECT
-        id,
-        start_date,
-        end_date,
-        admission_form_fee,
-        admission_year,
-        \`Shift\` AS shift,
-        status
+        id, start_date, end_date, admission_form_fee, admission_year,
+        \`Shift\` AS shift, status,
+        test_date, reporting_time, test_time, test_venue, test_total_marks, test_passing_marks
       FROM admission_schedule
       ${where}
       ORDER BY admission_year DESC, start_date DESC
       `,
-      {
-        replacements,
-        type: sequelize.QueryTypes.SELECT,
-      }
+      { replacements, type: sequelize.QueryTypes.SELECT }
     );
-
-    // Ensure we always return an array
-    const data = Array.isArray(rows) ? rows : [];
 
     res.json({
       success: true,
-      total: data.length,
-      data: data,
+      total: rows.length,
+      data: rows,
     });
   } catch (err) {
     console.error("getAllAdmissionSchedules error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Server error: " + err.message,
-    });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
 /* ----------------------------- DELETE --------------------------- */
-/**
- * DELETE /api/admission-schedules/:id
- */
 export const deleteAdmissionSchedule = async (req, res) => {
   try {
     const { id } = req.params;
 
     const [result] = await sequelize.query(
       `DELETE FROM admission_schedule WHERE id = :id`,
-      {
-        replacements: { id },
-        type: sequelize.QueryTypes.DELETE,
-      }
+      { replacements: { id }, type: sequelize.QueryTypes.DELETE }
     );
-
-    if (!result || result.affectedRows === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Admission schedule not found." });
-    }
 
     res.json({
       success: true,
